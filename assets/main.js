@@ -58,10 +58,11 @@
         } else url = '';
       }
 
-      if (!url && alertOnFail) h5Utils.alert('请输入正确的 m3u8 视频地址');
+      if (!url && alertOnFail) h5Utils.alert(translate('petc'));
       return url;
     },
-    init() {
+    async init() {
+      await import('./i18n.main.js');
       MP.el.urlInput.setAttribute('placeholder', MP.cdn.m3u8Demo);
       MP.renderList('history');
       MP.renderList('fav');
@@ -101,7 +102,7 @@
               if (url.startsWith('http')) {
                 m3u8Str = m3u8Str.replace(m[0], `EXT-X-KEY:METHOD=AES-128,URI="${new URL(url).origin}/`);
               } else {
-                return h5Utils.alert('您输入的 M3U8 内容为加密资源，若播放失败，请同时输入来源页面 URL 地址尝试获取解密信息');
+                return h5Utils.alert(translate('tmcy'));
               }
             }
 
@@ -150,9 +151,9 @@
             MP.el.m3u8Content.value = str;
             MP.el.m3u8Content.setAttribute('rows', 10);
             MP.addHistory(url);
-            h5Utils.alert('获取成功，请在下方编辑后播放', { icon: 'success' }).then(() => setTimeout(() => MP.el.m3u8Content.focus(), 350));
+            h5Utils.alert(translate('sopebap'), { icon: 'success' }).then(() => setTimeout(() => MP.el.m3u8Content.focus(), 350));
           })
-          .catch(err => h5Utils.alert('获取失败：' + err.message));
+          .catch(err => h5Utils.alert('Error：' + err.message));
       });
 
       let vedioRotate = 0;
@@ -167,7 +168,7 @@
       MP.el.downloadBtn.addEventListener('click', () => {
         let url = MP.getUrl(true);
         if (!url) return;
-        if (!url.includes('.m3u8')) return h5Utils.alert('仅支持 m3u8 格式的视频下载');
+        if (!url.includes('.m3u8')) return h5Utils.alert(translate('osdv'));
         window.open('https://lzw.me/x/m3u8-downloader?source=' + encodeURIComponent(url));
       });
 
@@ -217,8 +218,8 @@
       document.addEventListener('click', function (e) {
         if (e.target.classList.contains('copy-btn')) {
           h5Utils.copy(e.target.dataset.url).then(d => console.log(d));
-          e.target.textContent = '已复制';
-          setTimeout(() => (e.target.textContent = '复制'), 1000);
+          e.target.textContent = translate('Copied');
+          setTimeout(() => (e.target.textContent = translate('Copy')), 1000);
         } else if (e.target.classList.contains('fav-btn')) {
           const url = e.target.dataset.url;
           let fav = getFromStorage('m3u8_fav');
@@ -226,8 +227,8 @@
             fav.unshift({ url, time: Date.now() });
             saveToStorage('m3u8_fav', fav);
             MP.renderList('fav');
-            h5Utils.toast('收藏成功');
-          } else h5Utils.toast('已收藏');
+            h5Utils.toast(translate('Successfully added to favorites'));
+          } else h5Utils.toast(translate('Collected'));
         } else if (e.target.classList.contains('del-btn')) {
           const idx = +e.target.dataset.idx;
           const type = e.target.closest('#history-list') ? 'm3u8_history' : 'm3u8_fav';
@@ -260,7 +261,7 @@
       const container = document.getElementById(type === 'history' ? 'history-list' : 'fav-list');
       container.innerHTML = '';
       if (!list.length) {
-        container.innerHTML = `<div class="text-gray-400 text-sm">暂无${type === 'history' ? '历史记录' : '收藏'}</div>`;
+        container.innerHTML = `<div class="text-gray-400 text-sm">${type === 'history' ? translate('nohrec'): translate('nofav')}</div>`;
         return;
       }
       list.forEach((item, idx) => {
@@ -271,14 +272,20 @@
             <div class="text-xs text-gray-400 mt-1">${MP.formatTime(item.time)}</div>
           </div>
           <div class="flex-shrink-0 flex space-x-2 ml-2">
-            <button class="play-btn text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded" data-url="${item.url}">播放</button>
-            <button class="copy-btn text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded" data-url="${item.url}">复制</button>
+            <button class="play-btn text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded" data-url="${item.url}">${translate(
+          'Play'
+        )}</button>
+            <button class="copy-btn text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded" data-url="${item.url}">${translate(
+          'Copy'
+        )}</button>
             ${
               type === 'history'
-                ? `<button class="fav-btn text-xs px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded" data-url="${item.url}">收藏</button>`
+                ? `<button class="fav-btn text-xs px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded" data-url="${item.url}">${translate(
+                    'Fav'
+                  )}</button>`
                 : ''
             }
-            <button class="del-btn text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded" data-idx="${idx}">删除</button>
+            <button class="del-btn text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded" data-idx="${idx}">${translate('Delete')}</button>
           </div>
         </div>
       `;
@@ -302,7 +309,7 @@
     },
     play(url, type, player = 'artplayer') {
       if (url) url = decodeURIComponent(url);
-      else return h5Utils.alert('请输入 m3u8 的 URL 或者内容');
+      else return h5Utils.alert(translate('penterurl'));
 
       MP.el.player.classList.remove('hidden');
       MP.renderPlayList(MP.data.playList.find(d => d.url === uri) ? MP.data.playList : []);
@@ -327,7 +334,7 @@
           }
         }
       } else {
-        h5Utils.toast('开始播放编辑框内容');
+        h5Utils.toast(translate('Start playing the content of the editor box'));
       }
 
       if (!type) {
@@ -583,8 +590,8 @@
       const d = new Date(ts);
       const now = new Date();
       const diff = Math.floor((now - d) / 60000);
-      if (diff < 1) return '刚刚';
-      if (diff < 60) return `${diff}分钟前`;
+      if (diff < 1) return translate('Just Now');
+      if (diff < 60) return `${diff}${translate('minute ago')}`;
       return d.toLocaleString();
     },
   };

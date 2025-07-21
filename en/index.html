@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -13,15 +13,15 @@
   <meta name="x5-fullscreen" content="true">
   <meta name="x5-page-mode" content="app">
   <meta name="author" content="https://lzw.me">
-  <meta name="copyright" content="志文工作室">
+  <meta name="copyright" content="Zhiwen Studio">
   <meta property="og:image" content="favicon.png">
-  <link rel="apple-touch-icon" sizes="114x114" href="assets/favicon.png">
-  <link rel="shortcut icon" sizes="114x114" href="assets/favicon.png">
-  <title>M3U8视频在线播放器 - Free M3U8 Player Online</title>
-  <meta name="keywords" content="M3U8在线破解,M3U8在线播放,M3U8播放器,M3U8直播源在线播放,M3U8在线测试">
-  <meta name="description" content="一个简洁实用免费无限制的M3U8视频在线播放器，支持在线解密、在线编辑、批量播放、历史记录、本地收藏夹等实用功能。">
+  <link rel="apple-touch-icon" sizes="114x114" href="../assets/favicon.png">
+  <link rel="shortcut icon" sizes="114x114" href="../assets/favicon.png">
+  <title>Free M3U8 Video Player - Online HLS Player for PC & iOS & Android,etc</title>
+  <meta name="keywords" content="M3U8 online player, M3U8 streaming, HLS Stream player, M3U8 player, M3U8 live stream, M3U8 test">
+  <meta name="description" content="A simple and practical M3U8 online player with features like online decryption, editing, batch playback, history, and favorites.">
   <meta name="referrer" content="never">
-  <link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
     integrity="sha512-wnea99uKIC3TJF7v4eKk4Y+lMz2Mklv18+r4na2Gn1abDRPPOeef95xTzdwGD9e6zXJBteMIhZ1+68QC5byJZw=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
@@ -66,44 +66,44 @@
 </head>
 
 <body class="bg-gray-50 min-h-screen flex flex-col page-wrapper">
-  <!-- 顶部导航 -->
+  <!-- Top Navigation -->
   <header class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow">
     <div class="container mx-auto flex justify-between items-center py-3 px-4">
-      <a href="./" class="text-xl font-bold am-topbar-logo">M3U8 播放器</a>
+      <a href="./" class="text-xl font-bold am-topbar-logo">M3U8 Player</a>
       <div class="space-x-4">
-        <a href="./download.html" class="hover:text-yellow-300">下载中心</a>
-        <a href="./feedback.html" class="hover:text-yellow-300">留言反馈</a>
-        <a href="./about.html" class="hover:text-yellow-300">关于我们</a>
+        <a href="./download.html" class="hover:text-yellow-300">Downloads</a>
+        <a href="./feedback.html" class="hover:text-yellow-300">Feedback</a>
+        <a href="./about.html" class="hover:text-yellow-300">About Us</a>
         <div class="inline-block relative ml-2">
           <select onchange="if(this.value) location.href=this.value" class="text-gray-800 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <option value="./" selected>中文</option>
-            <option value="./en/">English</option>
-            <option value="./ja-jp/">日本語</option>
+            <option value="../">中文</option>
+            <option value="../en/" selected>English</option>
+            <option value="../ja-jp/">日本語</option>
           </select>
         </div>
       </div>
     </div>
   </header>
   <main class="container mx-auto py-6 px-0.5 md\:px-4 flex-1 w-full">
-    <!-- 输入卡片 -->
+    <!-- Input Card -->
     <div class="bg-white rounded-lg shadow p-4 mb-4" id="inputForm">
       <form id="str-post" class="space-y-4">
         <div class="flex flex-col md:flex-row gap-4">
-          <input type="text" name="url" placeholder="输入M3U8地址" autocomplete="off" id="urlInput"
+          <input type="text" name="url" placeholder="Enter M3U8 URL" autocomplete="off" id="urlInput"
             class="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
             value="">
           <div class="flex flex-row gap-1 md:gap-4">
             <button type="button" id="playBtn"
               class="player-btn flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none"
-              title="使用 ArtPlayer 播放">
+              title="Play with ArtPlayer">
               <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M6 4l12 6-12 6V4z" />
               </svg>
-              播放
+              Play
             </button>
             <button type="button" id="dplayerBtn"
               class="player-btn flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 focus:outline-none"
-              data-player="dplayer" title="使用 DPlayper 播放">
+              data-player="dplayer" title="Play with DPlayer">
               <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M6 4l12 6-12 6V4z" />
               </svg>
@@ -111,18 +111,18 @@
             </button>
             <button type="button" id="getAndEditBtn"
               class="flex items-center px-2 sm:px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 focus:outline-none"
-              title="获取 M3U8 内容并编辑">
-              编辑
+              title="Get and Edit M3U8 Content">
+              Edit
             </button>
             <button type="button" id="rotateBtn"
               class="flex items-center px-2 sm:px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none"
-              title="旋转">
-              旋转
+              title="Rotate">
+              Rotate
             </button>
             <button type="button" id="downloadBtn"
               class="flex items-center px-2 sm:px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none"
-              title="下载">
-              下载
+              title="Download">
+              Download
             </button>
           </div>
         </div>
@@ -130,95 +130,98 @@
         <div class="flex relative">
           <button type="button" id="clearM3u8ContentBtn"
             class="flex items-center px-2 text-sm py-2 bg-red-600 text-white rounded-l hover:bg-red-700 focus:outline-none"
-            title="清空">清空</button>
+            title="Clear">Clear</button>
           <textarea name="m3u8Content" id="m3u8Content" rows="3" id="m3u8Content"
             class="w-full border border-gray-300 rounded-r px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="1. 支持粘贴M3U8内容，基于该内容播放&#10;2. 支持批量剧集，一行一个，格式：URL|标题 或 标题$URL"></textarea>
+            placeholder="1. Paste M3U8 content here for playback&#10;2. Supports batch episodes, one per line, format: URL|Title or Title$URL"></textarea>
         </div>
 
         <div class="flex flex-col md:flex-row">
           <label class="flex text-lg items-center px-2 bg-blue-500 text-gray-100 rounded-"
-            for="vedioSelect">选择本地文件播放</label>
+            for="vedioSelect">Select Local File to Play</label>
           <input class="flex-1 border border-gray-300 px-3 py-2 focus:outline-none" type="file" name="vedioSelect"
-            id="vedioSelect" title="选择本地文件播放">
+            id="vedioSelect" title="Select Local File to Play">
         </div>
       </form>
     </div>
 
-    <!-- 播放器卡片 -->
+    <!-- Player Card -->
     <div class="bg-white rounded-lg shadow mb-4 min-h-[300px] flex flex-col items-center justify-center">
       <div id="player" class="w-full user-select-none"></div>
       <div id="playList" class="w-full p-2 hidden flex flex-row flex-wrap"></div>
     </div>
 
-    <!-- 历史记录与收藏夹卡片 -->
+    <!-- History & Favorites Card -->
     <div class="bg-gray-800 rounded-lg shadow p-4 mb-6 text-gray-100" id="history-fav-list">
       <div class="flex border-b border-gray-700 mb-2">
         <button id="tab-history"
-          class="px-4 py-2 font-bold border-b-2 border-blue-400 text-blue-300 focus:outline-none">记录</button>
+          class="px-4 py-2 font-bold border-b-2 border-blue-400 text-blue-300 focus:outline-none">History</button>
         <button id="tab-fav"
-          class="px-4 py-2 ml-2 font-bold border-b-2 border-transparent hover:text-blue-200 focus:outline-none">收藏夹</button>
+          class="px-4 py-2 ml-2 font-bold border-b-2 border-transparent hover:text-blue-200 focus:outline-none">Favorites</button>
       </div>
       <div id="history-list" class="space-y-2 md:max-h-40 overflow-auto"></div>
       <div id="fav-list" class="space-y-2 md:max-h-40 overflow-auto hidden"></div>
       <div class="mt-4 flex justify-end space-x-2">
         <button id="clear-history"
-          class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm">清空记录</button>
+          class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm">Clear History</button>
       </div>
     </div>
-    <!-- 说明卡片 -->
+    <!-- Description Card -->
     <div class="bg-white rounded-lg shadow p-6 mb-4" id="hls-desc">
-      <h2 class="text-xl font-bold mb-2">HLS/M3U8 说明</h2>
-      <p class="text-base mb-2">HLS（HTTP Live Streaming）是苹果提出的流媒体协议，M3U8 是其播放列表文件格式。支持加密、分片等特性，适合在线播放和直播。</p>
+      <h2 class="text-xl font-bold mb-2">HLS/M3U8 Description</h2>
+      <p class="text-base mb-2">HLS (HTTP Live Streaming) is a streaming protocol proposed by Apple, and M3U8 is its playlist file format. It supports features like encryption and segmentation, making it suitable for online playback and live streaming.</p>
 
       <p class="text-base mb-2">
-        M3U8 文件是一个记录索引的纯文本文件，打开它时播放软件并不是播放它，而是根据它的索引找到对应的音视频文件放在服务器上的网络地址进行在线播放。
-        视频网站可以根据用户的网络带宽情况，自动为客户端匹配一个合适的码率文件进行播放，从而保证视频的流畅度。
+        An M3U8 file is a plain text file that records an index. When opened, the playback software does not play it directly but instead finds the corresponding audio or video files on the server based on the index for online playback.
+        Video websites can automatically match a suitable bitrate file for playback based on the user's network bandwidth, ensuring smooth video playback.
       </p>
-      <p class="text-base mb-2"> M3U8 的设计初衷是为了播放音频文件，比如MP3，但是越来越多的软件现在用来播放视频文件列表，M3U8也可以指定在线流媒体音频源。很多播放器和软件都支持M3U8文件格式。
+      <p class="text-base mb-2"> M3U8 was originally designed for playing audio files, such as MP3, but more and more software now uses it to play video file lists. M3U8 can also specify online streaming audio sources. Many players and software support the M3U8 file format.
       </p>
       <p class="text-base mb-2">
-        M3U8 视频内容可以设置基于 AES 加密。本站播放器支持对常见加密方式的 M3U8 文件视频进行解密和播放。
+        M3U8 video content can be encrypted using AES. This player supports decrypting and playing M3U8 files with common encryption methods.
       </p>
 
-      <h2 class="text-xl font-bold mb-2">M3U8文件适用场景与加密</h2>
+      <h2 class="text-xl font-bold mb-2">M3U8 File Use Cases and Encryption</h2>
       <p class="text-base mb-2">
-        HLS协议采用M3U8文件来告知客户端视频文件播放列表，客户端拿到M3U8文件以后就可以直接播放视频，为了避免源站的视频文件被非授权客户端访问，需要对HLS协议使用的TS视频文件做加密，对TS视频文件做了加密以后，还需要告知客户端解密方法，这里就可以通过配置M3U8标准加密改写功能，通过#EXT-X-KEY标签来告知客户端加密算法、密钥URI和鉴权key。
+        The HLS protocol uses M3U8 files to inform clients of the video file playlist. After obtaining the M3U8 file, the client can directly play the video. To prevent unauthorized clients from accessing the source video files, the TS video files used by the HLS protocol need to be encrypted. After encrypting the TS video files, the client must be informed of the decryption method. This can be achieved by configuring the M3U8 standard encryption rewrite function, using the #EXT-X-KEY tag to inform the client of the encryption algorithm, key URI, and authentication key.
       </p>
 
       <div class="mb-2">
-        <div class="font-semibold p-2">嵌入网站：</div>
+        <div class="font-semibold p-2">Embed in Website:</div>
         <pre
           class="bg-gray-300 rounded p-2 text-sm overflow-x-auto">&lt;iframe src="https://m3u8-player.lzw.me/?url=https://****.com/****/index.m3u8"&gt;&lt;/iframe&gt;</pre>
       </div>
 
       <ul class="list-disc pl-5 text-sm text-gray-600 space-y-1">
-        <li>支持常见加密方式的 M3U8 文件视频解密和播放</li>
-        <li>当前页面仅提供在线播放服务。如需下载视频，请使用 <a href="https://lzw.me/x/m3u8-downloader" target="_blank" rel="noopener"
-            class="text-blue-600 underline">M3U8视频在线下载工具</a></li>
-        <li>参考：<a href="https://help.aliyun.com/document_detail/179287.html" target="_blank" rel="noopener"
-            class="text-blue-600 underline">配置M3U8标准加密改写</a></li>
+        <li>Supports decrypting and playing M3U8 files with common encryption methods</li>
+        <li>This page only provides online playback services. To download videos, please use <a href="https://lzw.me/x/m3u8-downloader" target="_blank" rel="noopener"
+            class="text-blue-600 underline">M3U8 Video Online Download Tool</a></li>
+        <li>Reference: <a href="https://help.aliyun.com/document_detail/179287.html" target="_blank" rel="noopener"
+            class="text-blue-600 underline">Configure M3U8 Standard Encryption Rewrite</a></li>
       </ul>
     </div>
 
   </main>
   <footer class="bg-gray-100 text-center py-4 text-sm text-gray-500">
-    资源来源于网络，如有侵权，请联系本人予以删除！<br>
-    <a href="https://lzw.me" target="_blank" rel="noopener" class="underline">Copyright © 志文工作室; 2008-<span
+    Resources are sourced from the internet. If there is any infringement, please contact me for removal!<br>
+    <a href="https://lzw.me" target="_blank" rel="noopener" class="underline">Copyright © Zhiwen Studio; 2008-<span
         id="currentYear">2023</span>, All Rights Reserved.</a>
   </footer>
 
-  <script src="https://s4.zstatic.net/ajax/libs/flv.js/1.6.2/flv.min.js"
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flv.js/1.6.2/flv.min.js"
     integrity="sha512-49OFf+8jaHx4Vb7iFNb46Loq1pIxXlEYeVOQRIx0KLBRF4KSV6E7QK2Vw5r416TQDyBJW+DFh2CyTV7+gCWd6g=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://s4.zstatic.net/ajax/libs/hls.js/1.5.18/hls.min.js"
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.18/hls.min.js"
     integrity="sha512-hARxLWym80kd0Bzl5/93OuW1ujaKfvmJ90yTKak/RB67JuNIjtErU2H7H3bteyfzMuqiSK0tXarT7eK6lEWBBA=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://s4.zstatic.net/ajax/libs/webtorrent/1.9.7/webtorrent.min.js"
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/webtorrent/1.9.7/webtorrent.min.js"
     integrity="sha512-La7GYF21hnnHJqijQVifXPVV6pvZNYVOWoKX5FJAsJhokKfvlOib6Buh5LvX1vtbj85ZQEDQF5k8nQDCU6A4nQ=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="https://lzw.me/x/lib/utils/h5-common.js"></script>
-  <script src="assets/main.js"></script>
+  <script src="../assets/main.js"></script>
+  <script>
+    if (navigator.language && !navigator.language.includes('zh-')) location.href = './en/';
+  </script>
 </body>
 
 </html>

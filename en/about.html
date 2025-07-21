@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>About - M3U8 Online Player</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"/>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+  <!-- Top Navigation -->
+  <header class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow">
+    <div class="container mx-auto flex justify-between items-center py-3 px-4">
+      <a href="./" class="text-xl font-bold">M3U8 Player</a>
+      <div class="space-x-4">
+        <a href="./download.html" class="hover:text-yellow-300">Download</a>
+        <a href="./feedback.html" class="hover:text-yellow-300">Feedback</a>
+        <a href="./about.html" class="hover:text-yellow-300 font-semibold underline">About</a>
+        <a href="https://lzw.me/x/m3u8-downloader/en/" target="_blank" class="hover:text-yellow-300 hidden md:inline-block">M3U8 to MP4</a>
+        <a href="https://lzw.me/tools" target="_blank" class="hover:underline hidden md:inline-block">Toolbox</a>
+        <div class="inline-block relative ml-2">
+          <select onchange="if(this.value) location.href=this.value" class="text-gray-800 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <option value="../about.html">中文</option>
+            <option value="./about.html" selected>English</option>
+            <option value="../ja-jp/about.html">日本語</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="container mx-auto py-8 px-2 flex-1 w-full">
+    <h1 class="text-2xl font-bold mb-4 text-center">About M3U8 Online Player</h1>
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-2">Project Introduction</h2>
+      <p class="mb-4 text-base">
+        <b>M3U8 Online Player</b> is a simple and practical HLS/M3U8 streaming media playback and download tool. It supports online playback, decryption, editing, batch episode playback, history, favorites, and more. Suitable for testing, previewing, learning, and daily use.
+      </p>
+      <h2 class="text-xl font-semibold mb-2">Main Features</h2>
+      <ul class="list-disc pl-6 mb-4 text-base text-gray-700 space-y-1">
+        <li>Supports playing videos online by entering M3U8 URLs, compatible with various encryption methods</li>
+        <li>Supports pasting M3U8 content or batch episode lists for playback</li>
+        <li>Supports local file selection for playback</li>
+        <li>Supports switching between players such as ArtPlayer, DPlayer, etc.</li>
+        <li>Supports history and favorites management for quick access</li>
+        <li>Supports one-click download, editing, rotation, and other practical operations</li>
+        <li>Supports embedding the online player into other websites (iframe)</li>
+        <li>Provides download and usage instructions for the M3U8-DL client and command-line tool</li>
+      </ul>
+      <h2 class="text-xl font-semibold mb-2">Application Scenarios</h2>
+      <ul class="list-disc pl-6 mb-4 text-base text-gray-700 space-y-1">
+        <li>Online playback and testing of M3U8/HLS video streams</li>
+        <li>Batch episode playback and management</li>
+        <li>Decryption and playback of encrypted video streams</li>
+        <li>Video download, format conversion, and local saving</li>
+        <li>Developer debugging and learning streaming protocols</li>
+      </ul>
+      <h2 class="text-xl font-semibold mb-2">Open Source & Feedback</h2>
+      <p class="mb-2 text-base">
+        This project is open source. Suggestions and feedback are welcome.<br>
+        GitHub: <a href="https://github.com/lzwme/m3u8-player" target="_blank" class="text-blue-600 underline">https://github.com/lzwme/m3u8-player</a>
+      </p>
+      <p class="text-base">
+        For infringement or suggestions, please contact the author via <a href="https://lzw.me" target="_blank" class="text-blue-600 underline">lzw.me</a>.
+      </p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-2">M3U8 Online Download & Conversion Tool</h2>
+      <p class="mb-2">
+        If you want to download a single video easily, you can try our online tool:
+        <a href="https://lzw.me/x/m3u8-downloader/en/" target="_blank" class="text-blue-500 hover:text-blue-600">M3U8 Online Video to MP4 Converter & Downloader.</a>
+      </p>
+      <p class="mb-2">
+        For batch downloading M3U8 videos, try the <a href="../download.html" class="text-blue-500 hover:text-blue-600">M3U8-DL Downloader Client</a>, which provides powerful batch download features.
+      </p>
+    </div>
+  </main>
+  <footer class="bg-gray-100 text-center py-4 text-sm text-gray-500">
+    <a href="https://lzw.me" target="_blank" rel="noopener" class="underline">Copyright © Zhiwen Studio</a>
+  </footer>
+  <script src="https://lzw.me/x/lib/utils/h5-common.js"></script>
+</body>
+</html>
