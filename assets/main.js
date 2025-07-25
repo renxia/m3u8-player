@@ -10,12 +10,21 @@
     }
   }
 
-  function saveToStorage(key, arr) {
-    if (!key) return;
-    localStorage.setItem(`mp_${key}`, JSON.stringify(arr));
-  }
-  function getFromStorage(key) {
-    return JSON.parse(localStorage.getItem(`mp_${key}`) || localStorage.getItem(key) || '[]');
+  const storage = {
+    save(key, data) {
+      if (!key) return;
+      localStorage.setItem(`mp_${key}`, JSON.stringify(data));
+    },
+    get(key) {
+      try {
+        return JSON.parse(localStorage.getItem(`mp_${key}`) || localStorage.getItem(key) || '[]');
+      } catch(e) {
+        return [];
+      }
+    },
+    remove(key) {
+      localStorage.removeItem(`mp_${key}`);
+    }
   }
 
   const MP = {
@@ -35,7 +44,7 @@
       wtClient: null,
     },
     data: {
-      playList: getFromStorage('playlist') || [],
+      playList: storage.get('playlist') || [],
     },
     el: {
       urlInput: document.querySelector('input#urlInput'),
@@ -46,8 +55,12 @@
       downloadBtn: document.querySelector('#downloadBtn'),
       inputForm: document.querySelector('#inputForm'),
       player: document.querySelector('#player'),
-      historyFavList: document.querySelector('#history-fav-list'),
       playList: document.querySelector('#playList'),
+
+      tabFav: document.getElementById('tab-fav'),
+      favList: document.getElementById('fav-list'),
+      tabHistory: document.getElementById('tab-history'),
+      historyList: document.getElementById('history-list'),
     },
     getUrl(alertOnFail = false) {
       let url = MP.el.urlInput.value.trim() || MP.cdn.m3u8Demo;
@@ -129,7 +142,7 @@
 
             if (list.length) {
               this.data.playList = list;
-              saveToStorage('playlist', list);
+              storage.save('playlist', list);
               url = list[0].url;
             }
           }
@@ -169,7 +182,7 @@
         let url = MP.getUrl(true);
         if (!url) return;
         if (!url.includes('.m3u8')) return h5Utils.alert(translate('osdv'));
-        window.open('https://lzw.me/x/m3u8-downloader?source=' + encodeURIComponent(url));
+        window.open('https://m3u8-downloader.lzw.me?source=' + encodeURIComponent(url));
       });
 
       MP.el.vedioSelect.addEventListener('change', ev => {
@@ -202,17 +215,17 @@
       );
 
       // tab 切换
-      document.getElementById('tab-history').onclick = function () {
-        this.classList.add('border-blue-400', 'text-blue-300');
-        document.getElementById('tab-fav').classList.remove('border-blue-400', 'text-blue-300');
-        document.getElementById('history-list').classList.remove('hidden');
-        document.getElementById('fav-list').classList.add('hidden');
+      MP.el.tabHistory.onclick = function () {
+        MP.el.tabHistory.classList.add('border-blue-400', 'text-blue-300');
+        MP.el.tabFav.classList.remove('border-blue-400', 'text-blue-300');
+        MP.el.historyList.classList.remove('hidden');
+        MP.el.favList.classList.add('hidden');
       };
-      document.getElementById('tab-fav').onclick = function () {
-        this.classList.add('border-blue-400', 'text-blue-300');
-        document.getElementById('tab-history').classList.remove('border-blue-400', 'text-blue-300');
-        document.getElementById('fav-list').classList.remove('hidden');
-        document.getElementById('history-list').classList.add('hidden');
+      MP.el.tabFav.onclick = function () {
+        MP.el.tabFav.classList.add('border-blue-400', 'text-blue-300');
+        MP.el.tabHistory.classList.remove('border-blue-400', 'text-blue-300');
+        MP.el.favList.classList.remove('hidden');
+        MP.el.historyList.classList.add('hidden');
       };
       // 复制、收藏、删除、清空
       document.addEventListener('click', function (e) {
@@ -222,23 +235,24 @@
           setTimeout(() => (e.target.textContent = translate('Copy')), 1000);
         } else if (e.target.classList.contains('fav-btn')) {
           const url = e.target.dataset.url;
-          let fav = getFromStorage('m3u8_fav');
+          let fav = storage.get('m3u8_fav');
           if (!fav.find(i => i.url === url)) {
             fav.unshift({ url, time: Date.now() });
-            saveToStorage('m3u8_fav', fav);
+            storage.save('m3u8_fav', fav);
             MP.renderList('fav');
             h5Utils.toast(translate('Successfully added to favorites'));
           } else h5Utils.toast(translate('Collected'));
         } else if (e.target.classList.contains('del-btn')) {
           const idx = +e.target.dataset.idx;
           const type = e.target.closest('#history-list') ? 'm3u8_history' : 'm3u8_fav';
-          let arr = getFromStorage(type);
+          let arr = storage.get(type);
           arr.splice(idx, 1);
-          saveToStorage(type, arr);
+          storage.save(type, arr);
           MP.renderList(type === 'm3u8_history' ? 'history' : 'fav');
         } else if (e.target.id === 'clear-history') {
-          localStorage.removeItem('m3u8_history');
-          MP.renderList('history');
+          const type = MP.el.historyList.classList.contains('hidden') ? 'fav' : 'history';
+          storage.remove(type === 'history' ? 'm3u8_history' : 'm3u8_fav');
+          MP.renderList(type);
         } else if (e.target.classList.contains('play-btn')) {
           const url = e.target.dataset.url;
           MP.el.urlInput.value = url;
@@ -257,8 +271,8 @@
     },
     // 渲染列表
     renderList(type) {
-      const list = getFromStorage(type === 'history' ? 'm3u8_history' : 'm3u8_fav');
-      const container = document.getElementById(type === 'history' ? 'history-list' : 'fav-list');
+      const list = storage.get(type === 'history' ? 'm3u8_history' : 'm3u8_fav');
+      const container = type === 'history' ? MP.el.historyList : MP.el.favList;
       container.innerHTML = '';
       if (!list.length) {
         container.innerHTML = `<div class="text-gray-400 text-sm">${type === 'history' ? translate('nohrec'): translate('nofav')}</div>`;
@@ -293,10 +307,10 @@
     },
     addHistory(url, updateURI = true) {
       if (!url) return;
-      let list = (getFromStorage('m3u8_history') || []).filter(i => i.url !== url).slice(0, 199);
+      let list = (storage.get('m3u8_history') || []).filter(i => i.url !== url).slice(0, 199);
 
       list.unshift({ url, time: Date.now() });
-      saveToStorage('m3u8_history', list);
+      storage.save('m3u8_history', list);
       MP.renderList('history');
 
       if (updateURI) {
