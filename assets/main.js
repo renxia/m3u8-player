@@ -1,4 +1,8 @@
 (function () {
+  if (location.host === 'lzw.me') {
+    location.href = location.href.replace('https://lzw.me/x/m3u8-player', 'https://m3u8-player.lzw.me');
+    return;
+  }
   const urlParams = h5Utils.getUrlParams();
   const uri = urlParams.url ? decodeURIComponent(urlParams.url) : '';
 
