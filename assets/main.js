@@ -5,6 +5,7 @@
   }
   const urlParams = h5Utils.getUrlParams();
   const uri = urlParams.url ? decodeURIComponent(urlParams.url) : '';
+  const lang = (['/en/', '/ja-jp/'].find(d => location.href.includes(d)) || 'zh').replaceAll('/', '');
 
   if (uri.startsWith('http:') && location.protocol === 'https:') {
     if (!uri.startsWith('http://localhost')) {
@@ -22,22 +23,23 @@
     get(key) {
       try {
         return JSON.parse(localStorage.getItem(`mp_${key}`) || localStorage.getItem(key) || '[]');
-      } catch(e) {
+      } catch (e) {
         return [];
       }
     },
     remove(key) {
       localStorage.removeItem(`mp_${key}`);
-    }
-  }
+    },
+  };
 
   const MP = {
     cdn: {
       m3u8Demo: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
       dplayer: 'https://s4.zstatic.net/ajax/libs/dplayer/1.26.0/DPlayer.min.js',
       artplayer: [
-        'https://s4.zstatic.net/ajax/libs/artplayer/5.2.2/artplayer.min.js',
-        'https://cdn.jsdelivr.net/npm/artplayer-plugin-hls-control/dist/artplayer-plugin-hls-control.min.js',
+        `https://${lang === 'zh' ? 's4.zstatic.net' : 'cdnjs.cloudflare.com'}/ajax/libs/artplayer/5.3.0/artplayer.min.js`,
+        'https://fastly.jsdelivr.net/npm/artplayer-plugin-hls-control/dist/artplayer-plugin-hls-control.min.js',
+        'https://fastly.jsdelivr.net/npm/artplayer-plugin-auto-thumbnail/dist/artplayer-plugin-auto-thumbnail.min.js',
       ],
     },
     inc: {
@@ -186,7 +188,7 @@
         let url = MP.getUrl(true);
         if (!url) return;
         if (!url.includes('.m3u8')) return h5Utils.alert(translate('osdv'));
-        window.open('https://m3u8-downloader.lzw.me?source=' + encodeURIComponent(url));
+        window.open('https://m3u8-downloader.lzw.me?url=' + encodeURIComponent(url));
       });
 
       MP.el.vedioSelect.addEventListener('change', ev => {
@@ -279,7 +281,7 @@
       const container = type === 'history' ? MP.el.historyList : MP.el.favList;
       container.innerHTML = '';
       if (!list.length) {
-        container.innerHTML = `<div class="text-gray-400 text-sm">${type === 'history' ? translate('nohrec'): translate('nofav')}</div>`;
+        container.innerHTML = `<div class="text-gray-400 text-sm">${type === 'history' ? translate('nohrec') : translate('nofav')}</div>`;
         return;
       }
       list.forEach((item, idx) => {
@@ -378,14 +380,29 @@
     },
     // see https://artplayer.org/document/start/option.html
     async artplayer(url, type = '') {
+      let art = MP.inc.art;
+      type = type === 'hls' ? 'm3u8' : type;
+
+      // if (art) {
+      //   art.url = url;
+      //   art.type = type;
+      //   art.playbackRate = +art.storage.get('playbackRate') || 1;
+      //   return art;
+      // }
+
       await h5Utils.loadJsOrCss(MP.cdn.artplayer);
 
-      MP.inc.art = new Artplayer({
+      Artplayer.PLAYBACK_RATE = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 8, 16];
+      Artplayer.SEEK_STEP = 10; // 快进步长，单位秒
+      Artplayer.FAST_FORWARD_VALUE = 3; // 快进倍速
+
+      art = new Artplayer({
         container: MP.el.player,
         url, // 'https://playertest.longtailvideo.com/adaptive/elephants_dream_v4/index.m3u8',
         // airplay: true,
         aspectRatio: true, // 是否显示视频长宽比功能
         autoplay: true,
+        autoOrientation: true,
         // autoMini: true, // 当播放器滚动到浏览器视口以外时，自动进入 迷你播放 模式
         autoPlayback: true,
         // autoSize: true, // 自动调整播放器尺寸
@@ -397,36 +414,44 @@
         miniProgressBar: true,
         pip: true, // 是否在底部控制栏里显示 画中画 的开关按钮
         playbackRate: true, // 是否显示视频播放速度功能
+        playsInline: true, // 在移动端是否使用 playsInline 模式
         screenshot: true,
         setting: true,
         theme: '#39f',
-        type: type === 'hls' ? 'm3u8' : type,
+        type,
         plugins: [
-          artplayerPluginHlsControl({
-            quality: {
-              // Show qualitys in control
-              control: false,
-              // Show qualitys in setting
-              setting: true,
-              // Get the quality name from level
-              getName: level => level.height + 'P',
-              // I18n
-              title: 'Quality',
-              auto: 'Auto',
-            },
-            audio: {
-              // Show audios in control
-              control: false,
-              // Show audios in setting
-              setting: true,
-              // Get the audio name from track
-              getName: track => track.name,
-              // I18n
-              title: 'Audio',
-              auto: 'Auto',
-            },
-          }),
-        ],
+          window.artplayerPluginHlsControl &&
+            artplayerPluginHlsControl({
+              quality: {
+                // Show qualitys in control
+                control: document.body.clientWidth > 768,
+                // Show qualitys in setting
+                setting: true,
+                // Get the quality name from level
+                getName: level => level.height + 'P',
+                // I18n
+                title: 'Quality',
+                auto: 'Auto',
+              },
+              audio: {
+                // Show audios in control
+                control: false,
+                // Show audios in setting
+                setting: true,
+                // Get the audio name from track
+                getName: track => track.name,
+                // I18n
+                title: 'Audio',
+                auto: 'Auto',
+              },
+            }),
+          window.artplayerPluginAutoThumbnail &&
+            artplayerPluginAutoThumbnail({
+              width: 160,
+              number: 100,
+              scale: 1,
+            }),
+        ].filter(Boolean),
         customType: {
           m3u8: function playM3u8(video, url, art) {
             if (Hls.isSupported()) {
@@ -473,11 +498,24 @@
             }
           },
         },
+        contextmenu: [
+          { index: 80, html: 'M3U8下载器客户端', click: () => window.open(`https://m3u8-downloader.lzw.me/portal/`, '_blank') },
+          { index: 99, html: 'M3U8在线下载器', click: () => window.open(`https://m3u8-downloader.lzw.me`, '_blank') },
+        ],
       });
+      MP.inc.art = art;
 
-      MP.inc.art.on('video:ended', () => {
+      art.on('video:ended', () => {
         console.log('[artplayer]播放完毕', url);
         MP.playNext(url, 'artplayer');
+      });
+      art.on('video:ratechange', () => {
+        // console.log('[artplayer]播放进度', art.playbackRate);
+        art.storage.set('playbackRate', art.playbackRate);
+      });
+      art.on('ready', () => {
+        art.playbackRate = +art.storage.get('playbackRate') || 1;
+        art.contextmenu.remove('version');
       });
     },
     // see https://dplayer.diygod.dev/zh/guide.html
