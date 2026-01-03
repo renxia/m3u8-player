@@ -286,26 +286,26 @@
       }
       list.forEach((item, idx) => {
         container.innerHTML += `
-        <div class="flex items-center justify-between bg-gray-900 rounded px-3 py-2">
+        <div class="flex flex-col md:flex-row md:items-center justify-between bg-gray-900 rounded px-2 md:px-3 py-2 gap-2">
           <div class="flex-1 min-w-0">
-            <a href="#" class="text-blue-300 break-all hover:underline" title="${item.url}">${item.url}</a>
+            <a href="#" class="text-blue-300 break-all hover:underline text-sm md:text-base" title="${item.url}">${item.url}</a>
             <div class="text-xs text-gray-400 mt-1">${MP.formatTime(item.time)}</div>
           </div>
-          <div class="flex-shrink-0 flex space-x-2 ml-2">
-            <button class="play-btn text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded" data-url="${item.url}">${translate(
+          <div class="flex-shrink-0 flex flex-wrap justify-end gap-1 md:gap-2">
+            <button class="del-btn text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded whitespace-nowrap" data-idx="${idx}">${translate('Delete')}</button>
+            <button class="play-btn text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded whitespace-nowrap" data-url="${item.url}">${translate(
           'Play'
         )}</button>
-            <button class="copy-btn text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded" data-url="${item.url}">${translate(
+            <button class="copy-btn text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded whitespace-nowrap" data-url="${item.url}">${translate(
           'Copy'
         )}</button>
             ${
               type === 'history'
-                ? `<button class="fav-btn text-xs px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded" data-url="${item.url}">${translate(
+                ? `<button class="fav-btn text-xs px-2 py-1 bg-yellow-600 hover:bg-yellow-700 rounded whitespace-nowrap" data-url="${item.url}">${translate(
                     'Fav'
                   )}</button>`
                 : ''
             }
-            <button class="del-btn text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded" data-idx="${idx}">${translate('Delete')}</button>
           </div>
         </div>
       `;
