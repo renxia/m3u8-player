@@ -24,6 +24,9 @@
   <link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
     integrity="sha512-wnea99uKIC3TJF7v4eKk4Y+lMz2Mklv18+r4na2Gn1abDRPPOeef95xTzdwGD9e6zXJBteMIhZ1+68QC5byJZw=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     html {
       transition: all 1s linear;
@@ -67,21 +70,45 @@
 
 <body class="bg-gray-50 min-h-screen flex flex-col page-wrapper">
   <!-- 顶部导航 -->
-  <header class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow">
-    <div class="container mx-auto flex justify-between items-center py-3 px-4">
-      <a href="./" class="text-xl font-bold am-topbar-logo">M3U8 播放器</a>
-      <div class="space-x-4">
-        <a href="./download.html" class="hover:text-yellow-300">下载中心</a>
-        <a href="./feedback.html" class="hover:text-yellow-300">留言反馈</a>
-        <a href="./about.html" class="hover:text-yellow-300">关于我们</a>
-        <div class="inline-block relative ml-2">
-          <select onchange="if(this.value) location.href=this.value" class="text-gray-800 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <option value="./" selected>中文</option>
-            <option value="./en/">English</option>
-            <option value="./ja-jp/">日本語</option>
-          </select>
+  <header class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white">
+    <div class="container mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between">
+      <a href="./" class="text-xl font-bold mb-3 md:mb-0 flex items-center gap-2">
+        <i class="fas fa-play-circle"></i>
+        <span>M3U8 播放器</span>
+      </a>
+      <nav>
+        <div class="flex flex-wrap justify-center gap-2 text-sm">
+          <a href="./download.html" class="flex items-center gap-1 px-3 py-2 rounded hover:bg-white/20 transition">
+            <i class="fas fa-download"></i>
+            <span class="hidden md:inline">下载中心</span>
+          </a>
+          <a href="./feedback.html" class="flex items-center gap-1 px-3 py-2 rounded hover:bg-white/20 transition">
+            <i class="fas fa-comment"></i>
+            <span class="hidden md:inline">留言反馈</span>
+          </a>
+          <a href="./about.html" class="flex items-center gap-1 px-3 py-2 rounded hover:bg-white/20 transition">
+            <i class="fas fa-info-circle"></i>
+            <span class="hidden md:inline">关于我们</span>
+          </a>
+          <div class="relative inline-block">
+            <button id="langBtn" class="flex items-center gap-1 px-3 py-2 rounded hover:bg-white/20 transition">
+              <i class="fas fa-globe"></i>
+              <span class="hidden md:inline">语言</span>
+            </button>
+            <div id="langDropdown" class="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg hidden z-50">
+              <a href="./" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition">
+                <span>🇨🇳 中文</span>
+              </a>
+              <a href="./en/" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition">
+                <span>🇺🇸 English</span>
+              </a>
+              <a href="./ja-jp/" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition">
+                <span>🇯🇵 日本語</span>
+              </a>
+            </div>
+          </div>
         </div>
-      </div>
+      </nav>
     </div>
   </header>
   <main class="container mx-auto py-6 px-0.5 md\:px-4 flex-1 w-full">
