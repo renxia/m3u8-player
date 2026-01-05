@@ -1,4 +1,6 @@
-const i18n = {
+import type { I18nData, Lang } from './i18n.types'
+
+const i18n: I18nData = {
   en: {
     sopebap: 'Successfully obtained, please edit below and play',
     petc: 'Please enter the correct m3u8 video address',
@@ -61,18 +63,53 @@ const i18n = {
     noversions: 'お使いのシステムに適したバージョンは見つかりません。下にある手動ダウンロードを選択してください。',
     Size: 'サイズ',
   },
-};
+}
 
-const initLang = () => {
-  let lang = navigator.language || navigator.userLanguage;
-  if (lang.includes('zh')) lang = 'zh';
-  if (lang.startsWith('ja')) lang = 'ja';
-  if (location.pathname.includes('/ja-')) lang = 'ja';
-  if (location.pathname.includes('/en')) lang = 'en';
-  console.log('lang', lang);
-  return lang;
-};
-const LANG = initLang();
-window.translate = str => {
-  return (i18n[LANG] || i18n['en'])[str] || i18n['en'][str] || str;
-};
+/** 多语言切换 */
+const initLangSwitcher = (): void => {
+  const langBtn = document.getElementById('langBtn')
+  const langDropdown = document.getElementById('langDropdown')
+
+  if (langBtn && langDropdown) {
+    langBtn.addEventListener('click', (e: Event) => {
+      e.stopPropagation()
+      langDropdown.classList.toggle('hidden')
+    })
+
+    document.addEventListener('click', () => {
+      langDropdown.classList.add('hidden')
+    })
+
+    // 点击切换语言
+    langDropdown.querySelectorAll('a').forEach((el) => {
+      el.addEventListener('click', (e: Event) => {
+        e.preventDefault()
+        e.stopPropagation()
+        const lang = (el as HTMLAnchorElement).dataset.lang
+        if (lang && !location.pathname.includes(`/${lang}`)) {
+          const clearPath = location.pathname.replace(/\/(ja-JP|en|zh)\//, '/')
+          location.pathname = `/${lang === 'zh' ? '' : lang}/${clearPath.slice(1)}`.replace('//', '/')
+        }
+      })
+    })
+  }
+}
+const getInitLang = (): Lang => {
+  let lang: Lang = 'en'
+  const navLang = navigator.language || (navigator as unknown as { userLanguage: string }).userLanguage
+
+  if (navLang.includes('zh')) lang = 'zh'
+  if (navLang.startsWith('ja')) lang = 'ja'
+  if (location.pathname.includes('/ja-')) lang = 'ja'
+  if (location.pathname.includes('/en')) lang = 'en'
+
+  console.log('lang', lang)
+  return lang
+}
+
+const LANG: Lang = getInitLang()
+initLangSwitcher()
+
+;(window as any).translate = (str: string): string => {
+  return (i18n[LANG] || i18n.en)[str] || i18n.en[str] || str
+}

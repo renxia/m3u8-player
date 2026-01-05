@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "title": "Free M3U8 Video Player - Online HLS Player for PC & iOS & Android,etc",
+    "keywords": "M3U8 online player, M3U8 streaming, HLS Stream player, M3U8 player, M3U8 live stream, M3U8 test",
+    "description": "A simple and practical M3U8 online player with features like online decryption, editing, batch playback, history, and favorites.",
+    "author": "Zhiwen Studio"
+  },
+  "nav": {
+    "home": "M3U8 Player",
+    "downloads": "Downloads",
+    "feedback": "Feedback",
+    "about": "About Us",
+    "language": "Language"
+  },
+  "languages": {
+    "zh-CN": "中文",
+    "en": "English",
+    "ja-JP": "日本語"
+  },
+  "index": {
+    "inputPlaceholder": "Enter M3U8 URL",
+    "play": "Play",
+    "dplayer": "DPlayer",
+    "edit": "Edit",
+    "rotate": "Rotate",
+    "download": "Download",
+    "clear": "Clear",
+    "m3u8Placeholder": "1. Paste M3U8 content to play\n2. Support batch episodes, one per line, format: URL|title or title$URL",
+    "selectFile": "Select local file to play",
+    "history": "History",
+    "favorites": "Favorites",
+    "clearHistory": "Clear History",
+    "hlsDesc": {
+      "title": "HLS/M3U8 Description",
+      "content1": "HLS (HTTP Live Streaming) is a streaming protocol proposed by Apple. M3U8 is its playlist file format. It supports encryption, slicing and other features, suitable for online playback and live streaming.",
+      "content2": "An M3U8 file is a plain text file that records indexes. When opening it, the player software does not play it directly, but finds the corresponding audio and video files on the server based on its indexes for online playback. Video websites can automatically match an appropriate bitrate file for the client based on the user's network bandwidth, thereby ensuring video fluency.",
+      "content3": "M3U8 was originally designed for playing audio files, such as MP3, but more and more software is now using it to play video file lists. M3U8 can also specify online streaming audio sources. Many players and software support the M3U8 file format.",
+      "content4": "M3U8 video content can be encrypted based on AES. This player supports decryption and playback of M3U8 file videos with common encryption methods.",
+      "encryptionTitle": "M3U8 File Usage Scenarios and Encryption",
+      "encryptionContent": "The HLS protocol uses M3U8 files to inform the client of the video file playlist. After the client obtains the M3U8 file, it can directly play the video. To prevent the TS video files used by the HLS protocol from being accessed by unauthorized clients, the TS video files used by the HLS protocol need to be encrypted. After encrypting the TS video files, the decryption method needs to be informed to the client. This can be done by configuring the M3U8 standard encryption rewriting function, and informing the client of the encryption algorithm, key URI and authentication key through the #EXT-X-KEY tag.",
+      "embedTitle": "Embed in website:",
+      "features": [
+        "Support decryption and playback of M3U8 file videos with common encryption methods",
+        "This page only provides online playback service. If you need to download videos, please use M3U8 Video Online Download Tool",
+        "Reference: Configure M3U8 standard encryption rewriting"
+      ]
+    }
+  },
+  "footer": {
+    "disclaimer": "Resources come from the Internet. If there is any infringement, please contact me to delete!"
+  },
+  "common": {
+    "title": "title"
+  }
+}

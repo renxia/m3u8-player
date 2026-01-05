@@ -1,0 +1,11 @@
+{
+  "files.associations": {
+    "*.hbs": "handlebars"
+  },
+  "emmet.includeLanguages": {
+    "handlebars": "html"
+  },
+  "[handlebars]": {
+    "editor.defaultFormatter": "andrejunges.handlebars"
+  }
+}
