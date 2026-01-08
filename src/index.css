@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+/* Tailwind v4: 配置 dark mode 使用 class 策略 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 自定义主题变量 */
+:root {
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-secondary: #06b6d4;
+  --color-accent: #f59e0b;
+  --color-bg-dark: #0f172a;
+  --color-bg-card: #1e293b;
+}
+
+/* Dark mode 变量 */
+.dark {
+  color-scheme: dark;
+}
+
+/* Layout 渐变背景 */
+.layout-bg {
+  background: linear-gradient(to bottom right, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+}
+
+.dark .layout-bg {
+  background: linear-gradient(to bottom right, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+/* 基础样式 */
+html {
+  transition: all 0.3s ease;
+}
+
+body {
+  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* 全屏模式 */
+.fullscreen header,
+.fullscreen footer,
+.tk-footer {
+  display: none !important;
+}
+
+.fullscreen #player {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  margin: 0;
+  padding: 0;
+}
+
+/* 播放器样式 */
+#player > .art-video-player {
+  min-height: 65vh;
+  aspect-ratio: 16 / 9;
+}
+
+/* 下载高亮样式 */
+.highlight-download {
+  border: 2px solid #6366f1;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.dark .highlight-download {
+  background: linear-gradient(135deg, #0c0a1e 0%, #1a1744 100%);
+  border-color: #4f46e5;
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.4);
+}
+
+/* 历史记录和收藏夹滚动 */
+#history-list,
+#fav-list {
+  max-height: 90vh;
+  overflow: auto;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 渐变背景动画 */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* 玻璃态效果 */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 按钮悬浮效果 */
+.btn-glow:hover {
+  box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
+}
+
+/* 卡片悬浮效果 */
+.card-hover {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .am-topbar-logo > span {
+    display: none;
+  }
+
+  /* 移动端更紧凑的布局 */
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* 移动端卡片圆角稍小 */
+  .rounded-2xl {
+    border-radius: 1rem;
+  }
+
+  /* 移动端标题字体稍小 */
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+  }
+}

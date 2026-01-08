@@ -1,12 +1,16 @@
 # M3U8 在线播放器
 
-一个简单的 M3U8 视频在线播放器，支持多语言。
+[在线预览：https://m3u8-player.lzw.me](https://m3u8-player.lzw.me)
+
+一个简单的 M3U8 视频在线播放器，支持多语言，拥有极佳的在线观影体验。
 
 ## 特性
 
+- 支持 4/8/16倍速播放、长按倍速等 VIP 级观影体验
 - 支持 HLS 协议的 M3U8 资源，支持播放本地文件和在线视频
-- 支持 mp4、flv以及磁力链格式的视频播放
+- M3U8 视频 URL 参数识别播放
 - 支持输入批量剧集播放
+- 支持 mp4、flv以及磁力链格式的视频播放
 - 支持简易的历史记录、收藏夹功能
 - 支持中文、英文、日文多语言界面
 - 组件化架构，易于维护和扩展
@@ -20,7 +24,7 @@
 ```bash
 bun install
 # 或
-npm install
+pnpm install
 ```
 
 ### 开发模式
@@ -28,7 +32,7 @@ npm install
 ```bash
 bun run dev
 # 或
-npm run dev
+pnpm run dev
 ```
 
 ### 构建生产版本
@@ -36,7 +40,7 @@ npm run dev
 ```bash
 bun run build
 # 或
-npm run build
+pnpm run build
 ```
 
 构建完成后会生成:

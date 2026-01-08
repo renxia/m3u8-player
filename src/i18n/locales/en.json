@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "title": "Free M3U8 Video Player - Online HLS Player for PC & iOS & Android",
+    "keywords": "M3U8 online player, M3U8 streaming, HLS Stream player, M3U8 player, M3U8 live stream, M3U8 test",
+    "description": "A simple and practical M3U8 online player with features like online decryption, editing, batch playback, history, and favorites.",
+    "author": "Zhiwen Studio"
+  },
+  "nav": {
+    "home": "M3U8 Player",
+    "downloads": "Downloads",
+    "feedback": "Feedback",
+    "about": "About Us",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "languages": {
+    "zh-CN": "中文",
+    "en": "English",
+    "ja-JP": "日本語"
+  },
+  "index": {
+    "inputPlaceholder": "Enter M3U8 URL",
+    "play": "Play",
+    "dplayer": "DPlayer",
+    "edit": "Edit",
+    "rotate": "Rotate",
+    "download": "Download",
+    "clear": "Clear",
+    "m3u8Placeholder": "1. Paste M3U8 content to play\n2. Support batch episodes, one per line, format: URL|title or title$URL",
+    "selectFile": "Select local file to play",
+    "history": "History",
+    "favorites": "Favorites",
+    "clearHistory": "Clear History",
+    "hlsDesc": {
+      "title": "HLS/M3U8 Description",
+      "content1": "HLS (HTTP Live Streaming) is a streaming protocol proposed by Apple. M3U8 is its playlist file format. It supports encryption, slicing and other features, suitable for online playback and live streaming.",
+      "content2": "An M3U8 file is a plain text file that records indexes. When opening it, the player software does not play it directly, but finds the corresponding audio and video files on the server based on its indexes for online playback. Video websites can automatically match an appropriate bitrate file for the client based on the user's network bandwidth, thereby ensuring video fluency.",
+      "content3": "M3U8 was originally designed for playing audio files, such as MP3, but more and more software is now using it to play video file lists. M3U8 can also specify online streaming audio sources. Many players and software support the M3U8 file format.",
+      "content4": "M3U8 video content can be encrypted based on AES. This player supports decryption and playback of M3U8 file videos with common encryption methods.",
+      "encryptionTitle": "M3U8 File Usage Scenarios and Encryption",
+      "encryptionContent": "The HLS protocol uses M3U8 files to inform the client of the video file playlist. After the client obtains the M3U8 file, it can directly play the video. To prevent the TS video files used by the HLS protocol from being accessed by unauthorized clients, the TS video files used by the HLS protocol need to be encrypted. After encrypting the TS video files, the decryption method needs to be informed to the client. This can be done by configuring the M3U8 standard encryption rewriting function, and informing the client of the encryption algorithm, key URI and authentication key through the #EXT-X-KEY tag.",
+      "embedTitle": "Embed in website:",
+      "features": [
+        "Support decryption and playback of M3U8 file videos with common encryption methods",
+        "This page only provides online playback service. If you need to download videos, please use M3U8 Video Online Download Tool",
+        "Reference: Configure M3U8 standard encryption rewriting"
+      ]
+    }
+  },
+  "footer": {
+    "disclaimer": "Resources come from the Internet. If there is any infringement, please contact me to delete!"
+  },
+  "common": {
+    "copied": "Copied",
+    "copy": "Copy",
+    "play": "Play",
+    "delete": "Delete",
+    "fav": "Favorite",
+    "collected": "Collected",
+    "favSuccess": "Successfully added to favorites",
+    "startPlaying": "Start playing the content of the editor box",
+    "sopebap": "Successfully obtained, please edit below and play",
+    "petc": "Please enter the correct m3u8 video address",
+    "osdv": "Only supports downloading videos in m3u8 format",
+    "justNow": "Just Now",
+    "minuteAgo": "minute ago",
+    "tmcy": "The M3U8 content you entered is an encrypted resource. If playback fails, please also enter the URL address of the source page to try to obtain decryption information",
+    "noHistory": "No historical records available",
+    "noFav": "No favorites",
+    "enterUrl": "Please enter the URL or content of m3u8",
+    "recdl": "Recommend downloads for your system",
+    "releaseDate": "Release Date",
+    "version": "Version",
+    "noVersions": "No version suitable for your system was detected, please select manual download below.",
+    "size": "Size"
+  },
+  "about": {
+    "title": "About M3U8 Online Player",
+    "intro": "M3U8 Online Player is a simple and practical HLS/M3U8 streaming playback and download tool. It supports online playback, decryption, editing, batch episode playback, history, favorites and other features. Suitable for testing, preview, learning and daily use.",
+    "featuresTitle": "Main Features",
+    "features": [
+      "Support online video playback by entering M3U8 address, compatible with various encryption methods",
+      "Support pasting M3U8 content or batch episode list for playback",
+      "Support local file selection for playback",
+      "Support switching between multiple players such as ArtPlayer and DPlayer",
+      "Support history and favorites management for quick access",
+      "Support one-click download, edit, rotate and other practical operations",
+      "Support embedding the online player into other websites (iframe)",
+      "Provide M3U8-DL client and command line tool download and usage instructions"
+    ],
+    "scenariosTitle": "Use Cases",
+    "scenarios": [
+      "Online playback and testing of M3U8/HLS video streams",
+      "Batch episode playback and management",
+      "Decryption and playback of encrypted video streams",
+      "Video download, format conversion and local storage",
+      "Developer debugging and learning streaming protocols"
+    ],
+    "openSourceTitle": "Open Source & Feedback",
+    "openSourceDesc": "This project is open source. Suggestions and feedback are welcome.",
+    "githubUrl": "GitHub URL",
+    "contactDesc": "If there is any infringement or suggestion, please contact the author via",
+    "contactLink": "Contact",
+    "toolsTitle": "M3U8 Online Download and Conversion Tools",
+    "toolsDesc1": "If you want to simply download a single video, you can try using this online tool we provide:",
+    "toolsLink1": "M3U8 Video Online MP4 Conversion Download Tool",
+    "toolsDesc2": "If you need to batch download M3U8 videos, you can try using",
+    "toolsLink2": "M3U8-DL Downloader Client",
+    "toolsDesc3": ", which provides powerful batch download functionality."
+  },
+  "download": {
+    "title": "Download List",
+    "clientTitle": "M3U8-DL Downloader Client Features and Usage Instructions",
+    "clientDesc": "@lzwme/m3u8-dl is a powerful m3u8 file video batch download tool that supports multi-threaded download, play while downloading, cache resume and other features. It supports installation and use in various forms, here is a brief introduction.",
+    "featuresTitle": "Main Features",
+    "features": [
+      "Support docker deployment, PC client, CLI command line tool and other installation methods",
+      "Multi-threaded download: thread pool mode multi-threaded download",
+      "Play while downloading: support using downloaded ts cache files for online playback",
+      "Batch download: support batch download by specifying multiple m3u8 addresses",
+      "Cache resume: cache will be retained when download fails, only failed segments will be downloaded on retry",
+      "Encryption support: support common AES encrypted video stream decryption",
+      "Format conversion: support automatic conversion to mp4 (requires ffmpeg installation)",
+      "Search function: support specifying collection site standard API for command line interactive search and download",
+      "WebUI: provide download center, support launching as webui service for download management"
+    ],
+    "method1Title": "Method 1: Download and Install PC Client",
+    "method1Desc": "Client installation software supporting Windows, macOS and Linux operating systems is currently provided. You can download the latest installation package from the download file list above, and then install it to use.",
+    "method2Title": "Method 2: CLI Command Line Tool Installation and Usage",
+    "globalInstall": "Global installation:",
+    "useNpx": "Use npx:",
+    "method3Title": "Method 3: Docker Deployment",
+    "dockerRun": "Run with Docker command:",
+    "dockerCompose": "Run with docker-compose:",
+    "dockerComplete": "After deployment is complete, visit",
+    "dockerWebUI": "to use the WebUI interface.",
+    "method4Title": "Method 4: Browser-based M3U8 Online Download Website",
+    "method4Desc": "The M3U8-DL downloader tool provides powerful batch download functionality. However, if you just want to quickly download a single video, you can try using the following online tool websites we provide:",
+    "onlineTools": [
+      "M3U8 Video Online MP4 Conversion Download Tool",
+      "M3U8 Online Download Tool (UI Optimized)",
+      "M3U8 Video Online Player"
+    ]
+  },
+  "feedback": {
+    "title": "Feedback",
+    "desc": "Welcome to make suggestions, report issues or share your experience. Your feedback will help us continuously improve our products!"
+  }
+}

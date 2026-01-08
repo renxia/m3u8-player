@@ -1,11 +1,12 @@
 {
   "name": "m3u8-player",
-  "version": "1.0.0",
-  "description": "M3U8 在线播放器",
+  "version": "2.0.0",
+  "description": "体验极佳的免费 M3U8 视频在线播放器",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "bun run scripts/build.js",
+    "build": "bun scripts/build.ts",
+    "build:vite": "tsc -b && vite build",
     "format": "biome format --fix",
     "fix": "biome check --fix",
     "lint": "npm run fix",
@@ -13,13 +14,35 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
-    "@types/node": "^20.10.0",
+    "@lzwme/fe-utils": "^1.9.2",
+    "@react-router/dev": "^7.11.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.23",
+    "class-variance-authority": "^0.7.1",
     "handlebars": "^4.7.8",
-    "typescript": "^5.3.0",
-    "vite": "^5.0.0",
-    "vite-plugin-dts": "^3.7.0"
+    "postcss": "^8.5.6",
+    "tailwind-merge": "^3.4.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-bundle-analyzer": "^1.3.2",
+    "vite-plugin-dts": "^4.5.4",
+    "vite-plugin-seo-prerender": "^1.1.0"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16"
+    "clsx": "^2.1.1",
+    "i18next": "^25.2.1",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-i18next": "^16.5.1",
+    "react-image-crop": "^11.0.10",
+    "react-router": "^7.11.0",
+    "sonner": "^2.0.7",
+    "tailwindcss": "^4.1.18"
   }
 }
