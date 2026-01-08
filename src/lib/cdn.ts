@@ -2,7 +2,7 @@ const CDN_CONFIG = {
   artplayer: [
     'artplayer/5.3.0/artplayer.min.js',
     'https://fastly.jsdelivr.net/npm/artplayer-plugin-hls-control/dist/artplayer-plugin-hls-control.min.js',
-    'https://fastly.jsdelivr.net/npm/artplayer-plugin-auto-thumbnail/dist/artplayer-plugin-auto-thumbnail.min.js',
+    // 'https://fastly.jsdelivr.net/npm/artplayer-plugin-auto-thumbnail/dist/artplayer-plugin-auto-thumbnail.min.js',
   ],
   dplayer: 'dplayer/1.26.0/DPlayer.min.js',
   'hls.js': 'hls.js/1.5.18/hls.min.js',
@@ -36,14 +36,3 @@ export function getCdnUrls(urls: string | string[], lang = navigator.language): 
 
   return fixedUrls
 }
-
-function initCdn() {
-  if (navigator.webdriver) return
-
-  // init load hls.js, flv.js, webtorrent
-  window.h5Utils?.loadJsOrCss(getCdnUrls(['hls.js', 'flv.js', 'webtorrent']), {
-    attr: { crossOrigin: 'anonymous', referrerpolicy: 'no-referrer' },
-  })
-}
-
-initCdn()

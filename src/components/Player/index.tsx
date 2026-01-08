@@ -2,6 +2,7 @@ import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, useState } fr
 import { usePlayer } from '@/hooks/usePlayer'
 import { cn } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
+import { CacheIndicator } from './CacheIndicator'
 
 interface PlayerProps {
   className?: string
@@ -25,10 +26,31 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
   const isPlayingRef = useRef(false)
   const pendingFrameRef = useRef<number | null>(null)
 
-  const { play, rotate, destroyAll, demoUrl } = usePlayer(containerRef, onEnded)
+  const { play, rotate, destroyAll, demoUrl, getCurrentUrl } = usePlayer(containerRef, onEnded)
+  const [currentM3U8Url, setCurrentM3U8Url] = useState('')
 
   // 保存 play 函数引用
   playFnRef.current = play
+
+  // 定期更新当前 M3U8 URL（从 usePlayer hook 获取）
+  useLayoutEffect(() => {
+    const updateUrl = () => {
+      const url = getCurrentUrl()
+      if (url && (url.includes('.m3u8') || url.includes('m3u8'))) {
+        setCurrentM3U8Url(url)
+      }
+    }
+
+    // 立即更新一次
+    updateUrl()
+
+    // 定期更新（每 500ms）
+    const interval = setInterval(updateUrl, 500)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [getCurrentUrl])
 
   // 当占位符隐藏后执行待播放任务
   useLayoutEffect(() => {
@@ -72,7 +94,11 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
 
     isPlayingRef.current = true
     try {
-      return await play(url, type, player)
+      const result = await play(url, type, player)
+      if (result && url.includes('.m3u8')) {
+        setCurrentM3U8Url(url)
+      }
+      return result
     } finally {
       isPlayingRef.current = false
     }
@@ -104,6 +130,9 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
             </button>
           </div>
         )}
+
+        {/* 缓存状态指示器 */}
+        {!showPlaceholder && <CacheIndicator m3u8Url={currentM3U8Url} className="absolute top-2 right-2 z-20" />}
 
         {/* 播放器实际容器 - 始终存在且可见 */}
         <div ref={containerRef} id="player" className="w-full min-h-[300px] md:min-h-[450px]" />

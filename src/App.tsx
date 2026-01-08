@@ -6,6 +6,7 @@ import AboutPage from './pages/AboutPage'
 import DownloadPage from './pages/DownloadPage'
 import FeedbackPage from './pages/FeedbackPage'
 import HomePage from './pages/HomePage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   const { resolvedTheme } = useTheme()
@@ -30,6 +31,7 @@ function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="download" element={<DownloadPage />} />
           <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* 英文路由 */}
@@ -38,6 +40,7 @@ function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="download" element={<DownloadPage />} />
           <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* 日文路由 */}
@@ -46,6 +49,7 @@ function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="download" element={<DownloadPage />} />
           <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* 兼容旧的 .html 路由 */}

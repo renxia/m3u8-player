@@ -1,4 +1,4 @@
-import { ChevronDown, Download, Globe, Home, Info, MessageSquare, Moon, Sun } from 'lucide-react'
+import { ChevronDown, Download, Globe, Home, Info, MessageSquare, Moon, Settings, Sun } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
@@ -39,6 +39,7 @@ export default function Header() {
     { path: `${langPrefix}/download`, icon: Download, label: t('nav.downloads') },
     { path: `${langPrefix}/feedback`, icon: MessageSquare, label: t('nav.feedback') },
     { path: `${langPrefix}/about`, icon: Info, label: t('nav.about') },
+    { path: `${langPrefix}/settings`, icon: Settings, label: t('nav.settings') },
   ]
 
   const handleLanguageChange = (langPath: string, langCode: string) => {
