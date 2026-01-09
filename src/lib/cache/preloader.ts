@@ -4,6 +4,7 @@
  */
 
 import { cacheManager } from './cacheManager'
+import { getCurrentCacheAdapter } from './cacheAdapter'
 import { fetchAndParseM3U8, getSegmentsInRange, type TSSegment } from './m3u8Parser'
 
 /** 预加载进度回调 */
@@ -79,8 +80,15 @@ class Preloader {
    * 手动预加载所有片段
    */
   async preloadAll(m3u8Url: string, options: PreloadOptions = {}): Promise<void> {
-    if (!cacheManager.isEnabled()) {
+    const adapter = getCurrentCacheAdapter()
+    if (!adapter.isEnabled()) {
       console.log('[Preloader] Cache is disabled, skipping preload')
+      return
+    }
+
+    // 检查是否已有预加载任务在运行
+    if (!this.acquirePreloadLock()) {
+      console.log('[Preloader] Another preload task is running, skipping')
       return
     }
 
@@ -108,6 +116,8 @@ class Preloader {
         this.status = 'error'
         options.onError?.(error as Error)
       }
+    } finally {
+      this.releasePreloadLock()
     }
   }
 
@@ -115,7 +125,8 @@ class Preloader {
    * 预加载指定范围的片段
    */
   async preloadRange(m3u8Url: string, startIndex: number, count: number, options: PreloadOptions = {}): Promise<void> {
-    if (!cacheManager.isEnabled()) return
+    const adapter = getCurrentCacheAdapter()
+    if (!adapter.isEnabled()) return
 
     // 解析 M3U8 获取片段列表
     if (m3u8Url !== this.currentM3U8Url || this.segments.length === 0) {
@@ -128,9 +139,11 @@ class Preloader {
 
   /**
    * 自动预加载（播放时预缓存后续片段）
+   * 使用较低的并发数，避免与播放器竞争资源
    */
   startAutoPreload(m3u8Url: string, currentIndex: number): void {
-    if (!cacheManager.isEnabled()) return
+    const adapter = getCurrentCacheAdapter()
+    if (!adapter.isEnabled()) return
 
     const config = cacheManager.getConfig()
     const { preloadCount } = config
@@ -141,9 +154,11 @@ class Preloader {
     }
 
     // 延迟 500ms 开始预加载，避免影响当前播放
+    // 使用较低的并发数（1-2），避免与播放器竞争网络和存储资源
     this.autoPreloadTimer = setTimeout(() => {
+      const reducedConcurrency = Math.max(1, Math.floor(config.preloadConcurrency / 2))
       this.preloadRange(m3u8Url, currentIndex + 1, preloadCount, {
-        concurrency: config.preloadConcurrency,
+        concurrency: reducedConcurrency,
       }).catch((err) => {
         console.warn('[Preloader] Auto preload error:', err)
       })
@@ -181,38 +196,70 @@ class Preloader {
   async resume(options: PreloadOptions = {}): Promise<void> {
     if (this.status !== 'paused' || !this.currentM3U8Url) return
 
-    // 找到第一个未缓存的片段
-    let startIndex = 0
-    for (let i = 0; i < this.segments.length; i++) {
-      const cached = await cacheManager.has(this.segments[i].url)
-      if (!cached) {
-        startIndex = i
-        break
-      }
+    // 检查是否已有预加载任务在运行
+    if (!this.acquirePreloadLock()) {
+      console.log('[Preloader] Another preload task is running, cannot resume')
+      return
     }
 
-    // 从该位置继续预加载
-    const remainingSegments = this.segments.slice(startIndex)
-    if (remainingSegments.length > 0) {
-      this.abortController = new AbortController()
-      this.status = 'loading'
-
-      try {
-        await this.preloadSegments(remainingSegments, this.currentM3U8Url, {
-          ...options,
-          signal: this.abortController.signal,
-        })
-        this.status = 'completed'
-        options.onComplete?.()
-      } catch (error) {
-        if ((error as Error).name === 'AbortError') {
-          this.status = 'paused'
-        } else {
-          this.status = 'error'
-          options.onError?.(error as Error)
+    try {
+      const adapter = getCurrentCacheAdapter()
+      // 找到第一个未缓存的片段
+      let startIndex = 0
+      for (let i = 0; i < this.segments.length; i++) {
+        const cached = await adapter.has(this.segments[i].url)
+        if (!cached) {
+          startIndex = i
+          break
         }
       }
+
+      // 从该位置继续预加载
+      const remainingSegments = this.segments.slice(startIndex)
+      if (remainingSegments.length > 0) {
+        this.abortController = new AbortController()
+        this.status = 'loading'
+
+        try {
+          await this.preloadSegments(remainingSegments, this.currentM3U8Url, {
+            ...options,
+            signal: this.abortController.signal,
+          })
+          this.status = 'completed'
+          options.onComplete?.()
+        } catch (error) {
+          if ((error as Error).name === 'AbortError') {
+            this.status = 'paused'
+          } else {
+            this.status = 'error'
+            options.onError?.(error as Error)
+          }
+        }
+      }
+    } finally {
+      this.releasePreloadLock()
     }
+  }
+
+  /** 预加载任务锁 */
+  private preloadTaskLock = false
+
+  /**
+   * 获取预加载任务锁
+   */
+  private acquirePreloadLock(): boolean {
+    if (this.preloadTaskLock) {
+      return false
+    }
+    this.preloadTaskLock = true
+    return true
+  }
+
+  /**
+   * 释放预加载任务锁
+   */
+  private releasePreloadLock(): void {
+    this.preloadTaskLock = false
   }
 
   /**
@@ -220,6 +267,7 @@ class Preloader {
    */
   private async preloadSegments(segments: TSSegment[], m3u8Url: string, options: PreloadOptions = {}): Promise<void> {
     const { concurrency = cacheManager.getConfig().preloadConcurrency, onProgress, signal } = options
+    const adapter = getCurrentCacheAdapter()
 
     let loaded = 0
     let loadedBytes = 0
@@ -227,7 +275,7 @@ class Preloader {
 
     // 批量过滤已缓存的片段（优化性能）
     const segmentUrls = segments.map((s) => s.url)
-    const cachedUrls = await cacheManager.hasMany(segmentUrls)
+    const cachedUrls = await adapter.hasMany(segmentUrls)
 
     const uncachedSegments: TSSegment[] = []
     for (const segment of segments) {
@@ -270,7 +318,7 @@ class Preloader {
           }
 
           const data = await response.arrayBuffer()
-          await cacheManager.set(segment.url, data, m3u8Url)
+          await adapter.set(segment.url, data, m3u8Url)
 
           loaded++
           loadedBytes += data.byteLength
@@ -308,9 +356,10 @@ class Preloader {
       return { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 }
     }
 
+    const adapter = getCurrentCacheAdapter()
     let loaded = 0
     for (const segment of this.segments) {
-      const cached = await cacheManager.has(segment.url)
+      const cached = await adapter.has(segment.url)
       if (cached) loaded++
     }
 

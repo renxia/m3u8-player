@@ -71,6 +71,8 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
     if (config.preloadCount > 0) {
       // 跟踪实际使用的 level（用于自动模式）
       let actualLevelIndex = -1
+      // 预加载任务去重：防止多个预加载任务同时运行
+      let preloadTaskTimer: ReturnType<typeof setTimeout> | null = null
 
       // 获取当前实际的 M3U8 URL（可能是子播放列表 URL）
       const getCurrentPlaylistUrl = (): string => {
@@ -91,10 +93,45 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
         return url
       }
 
+      // 启动预加载任务（带去重和延迟）
+      const startPreloadTask = async (playlistUrl: string, delay = 500) => {
+        // 如果已有任务定时器，取消
+        if (preloadTaskTimer) {
+          clearTimeout(preloadTaskTimer)
+          preloadTaskTimer = null
+        }
+
+        preloadTaskTimer = setTimeout(async () => {
+          const currentStatus = preloader.getStatus()
+          const currentM3U8Url = preloader.getCurrentM3U8Url()
+
+          // 如果当前没有预加载任务，或者 URL 不匹配，开始预加载
+          // 注意：preloadAll 内部已通过 acquirePreloadLock() 防止并发
+          if (currentStatus === 'idle' || currentM3U8Url !== playlistUrl) {
+            try {
+              // 更新当前 M3U8 URL
+              setCurrentM3U8Url(playlistUrl)
+              // 预加载所有剩余片段（会自动跳过已缓存的）
+              // 降低并发数，避免与播放器竞争资源
+              const reducedConcurrency = Math.max(1, Math.floor(config.preloadConcurrency / 2))
+              await preloader.preloadAll(playlistUrl, {
+                concurrency: reducedConcurrency,
+                onError: (error) => {
+                  onPreloadError?.(error)
+                },
+              })
+            } catch (error) {
+              onPreloadError?.(error instanceof Error ? error : new Error(String(error)))
+            }
+          }
+        }, delay)
+      }
+
       const fragLoadedHandler = (_event: string, data: { frag: { sn: number } }) => {
         const currentIndex = data.frag.sn
         if (typeof currentIndex === 'number') {
           const currentPlaylistUrl = getCurrentPlaylistUrl()
+          // 使用自动预加载（只预加载少量后续片段）
           preloader.startAutoPreload(currentPlaylistUrl, currentIndex)
         }
       }
@@ -103,34 +140,11 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
         hls.off(Hls.Events.FRAG_LOADED, fragLoadedHandler)
       })
 
-      // 当 HLS 准备好后，自动开始预加载剩余片段
+      // 当 HLS 准备好后，延迟开始预加载剩余片段（避免影响播放）
       const manifestParsedHandler = async () => {
-        // 延迟一下，确保播放器已经开始播放
-        setTimeout(async () => {
-          try {
-            const currentPlaylistUrl = getCurrentPlaylistUrl()
-            const currentStatus = preloader.getStatus()
-            const currentM3U8Url = preloader.getCurrentM3U8Url()
-
-            // 如果当前没有预加载任务，或者 URL 不匹配，开始预加载
-            if (currentStatus === 'idle' || currentM3U8Url !== currentPlaylistUrl) {
-              // 更新当前 M3U8 URL
-              setCurrentM3U8Url(currentPlaylistUrl)
-              // 预加载所有剩余片段（会自动跳过已缓存的）
-              await preloader.preloadAll(currentPlaylistUrl, {
-                concurrency: config.preloadConcurrency,
-                onComplete: () => {
-                  // 完成回调
-                },
-                onError: (error) => {
-                  onPreloadError?.(error)
-                },
-              })
-            }
-          } catch (error) {
-            onPreloadError?.(error instanceof Error ? error : new Error(String(error)))
-          }
-        }, 1000)
+        // 延迟更长时间，确保播放器已经开始播放并稳定
+        const currentPlaylistUrl = getCurrentPlaylistUrl()
+        await startPreloadTask(currentPlaylistUrl, 2000)
       }
       hls.on(Hls.Events.MANIFEST_PARSED, manifestParsedHandler)
       cleanupFunctions.push(() => {
@@ -148,37 +162,16 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
             const newPlaylistUrl = currentLevel.url
             console.log('[HLS] Level switched to', data.level, ', new playlist URL:', newPlaylistUrl)
 
-            // 更新当前 M3U8 URL
-            setCurrentM3U8Url(newPlaylistUrl)
-
             // 停止之前的预加载
             preloader.stop()
+            if (preloadTaskTimer) {
+              clearTimeout(preloadTaskTimer)
+              preloadTaskTimer = null
+            }
 
-            // 延迟一下，确保新的播放列表已经加载
-            setTimeout(async () => {
-              try {
-                const currentStatus = preloader.getStatus()
-                const currentM3U8Url = preloader.getCurrentM3U8Url()
-
-                // 如果当前没有预加载任务，或者 URL 不匹配，开始预加载新画质的片段
-                if (currentStatus === 'idle' || currentM3U8Url !== newPlaylistUrl) {
-                  // 预加载所有剩余片段（会自动跳过已缓存的）
-                  await preloader.preloadAll(newPlaylistUrl, {
-                    concurrency: config.preloadConcurrency,
-                    onComplete: () => {
-                      console.log('[HLS] Preload completed for new quality')
-                    },
-                    onError: (error) => {
-                      console.warn('[HLS] Preload error for new quality:', error)
-                      onPreloadError?.(error)
-                    },
-                  })
-                }
-              } catch (error) {
-                console.warn('[HLS] Failed to preload new quality:', error)
-                onPreloadError?.(error instanceof Error ? error : new Error(String(error)))
-              }
-            }, 500)
+            // 延迟更长时间，确保新的播放列表已经加载并开始播放
+            const newPlaylistUrlCopy = newPlaylistUrl
+            await startPreloadTask(newPlaylistUrlCopy, 1000)
           }
         } catch (error) {
           console.warn('[HLS] Level switched handler error:', error)

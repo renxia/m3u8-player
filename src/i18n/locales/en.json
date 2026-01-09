@@ -96,6 +96,7 @@
     "totalStorage": "Total Storage",
     "statistics": "Cache Statistics",
     "configuration": "Cache Configuration",
+    "cacheType": "Cache Type",
     "maxCount": "Maximum Cache Items",
     "preloadCount": "Auto Preload Segments",
     "concurrency": "Preload Concurrency",
@@ -119,7 +120,7 @@
     "resumePreload": "Resume Preload",
     "stopPreload": "Stop Preload",
     "preloadComplete": "Preload Complete",
-    "info1": "The cache system uses IndexedDB to store video segments, significantly improving load times for repeated playback.",
+    "info1": "The cache system uses IndexedDB or PWA Cache to store video segments, significantly improving load times for repeated playback.",
     "info2": "When the cache limit is reached, the system automatically clears the least recently accessed entries (LRU policy)."
   },
   "about": {

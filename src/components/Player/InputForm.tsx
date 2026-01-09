@@ -1,5 +1,5 @@
 import { Download, Edit, Play, RotateCw, Upload } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -7,16 +7,45 @@ import type { PlayerType, PlayListItem } from '@/types'
 
 interface InputFormProps {
   demoUrl: string
+  currentPlayingUrl?: string
   onPlay: (url: string, type?: string, player?: PlayerType) => void
   onRotate: () => void
   onPlaylistParsed?: (list: PlayListItem[]) => void
 }
 
-export default function InputForm({ demoUrl, onPlay, onRotate, onPlaylistParsed }: InputFormProps) {
+export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate, onPlaylistParsed }: InputFormProps) {
   const { t } = useTranslation()
   const [urlInput, setUrlInput] = useState('')
   const [m3u8Content, setM3u8Content] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const isUserEditingRef = useRef(false)
+
+  // 当外部传入当前播放的 URL 时，更新输入框
+  useEffect(() => {
+    if (currentPlayingUrl) {
+      // 只有当不是 blob URL 时才更新
+      if (!currentPlayingUrl.startsWith('blob:')) {
+        // 如果用户正在编辑（1秒内），且输入框内容与当前播放 URL 不同，则不更新
+        // 这样可以避免在用户输入时被打断，但如果用户输入的内容与播放的 URL 相同，则允许更新
+        if (isUserEditingRef.current && urlInput !== currentPlayingUrl) {
+          return
+        }
+        // 更新输入框并重置编辑标记（因为这是从外部触发的播放）
+        setUrlInput(currentPlayingUrl)
+        isUserEditingRef.current = false
+      }
+    }
+  }, [currentPlayingUrl, urlInput])
+
+  // 监听用户输入，标记为正在编辑
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    isUserEditingRef.current = true
+    setUrlInput(e.target.value)
+    // 延迟重置编辑标记，避免频繁更新
+    setTimeout(() => {
+      isUserEditingRef.current = false
+    }, 1000)
+  }, [])
 
   // 获取有效的 URL
   const getValidUrl = useCallback((): string => {
@@ -172,7 +201,7 @@ export default function InputForm({ demoUrl, onPlay, onRotate, onPlaylistParsed 
           <input
             type="text"
             value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
+            onChange={handleInputChange}
             placeholder={demoUrl}
             className={cn(
               'flex-1 px-3 md:px-4 py-2 md:py-3 rounded-xl text-sm md:text-base',

@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
 import { usePlayer } from '@/hooks/usePlayer'
+import { cacheManager } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
 import { CacheIndicator } from './CacheIndicator'
@@ -28,6 +29,8 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
 
   const { play, rotate, destroyAll, demoUrl, getCurrentUrl } = usePlayer(containerRef, onEnded)
   const [currentM3U8Url, setCurrentM3U8Url] = useState('')
+  const previousEnabledRef = useRef<boolean | null>(null)
+  const currentM3U8UrlRef = useRef('')
 
   // 保存 play 函数引用
   playFnRef.current = play
@@ -38,6 +41,9 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
       const url = getCurrentUrl()
       if (url && (url.includes('.m3u8') || url.includes('m3u8'))) {
         setCurrentM3U8Url(url)
+        currentM3U8UrlRef.current = url
+      } else {
+        currentM3U8UrlRef.current = ''
       }
     }
 
@@ -49,6 +55,45 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
 
     return () => {
       clearInterval(interval)
+    }
+  }, [getCurrentUrl])
+
+  // 监听缓存配置变化，当缓存开关切换时重新初始化 HLS 播放器
+  useLayoutEffect(() => {
+    // 初始化当前缓存状态
+    const config = cacheManager.getConfig()
+    previousEnabledRef.current = config.enabled
+
+    // 监听缓存配置变化
+    const unsubscribe = cacheManager.addEventListener((event, data) => {
+      if (event === 'config') {
+        const newConfig = data as typeof config
+        const wasEnabled = previousEnabledRef.current
+        const nowEnabled = newConfig.enabled
+
+        // 如果缓存开关状态发生变化，且当前正在播放 M3U8 视频，重新播放
+        if (wasEnabled !== null && wasEnabled !== nowEnabled) {
+          const url = currentM3U8UrlRef.current || getCurrentUrl()
+          if (url && (url.includes('.m3u8') || url.includes('m3u8')) && playFnRef.current && !isPlayingRef.current) {
+            console.log(`[Player] Cache enabled changed from ${wasEnabled} to ${nowEnabled}, reloading HLS player`)
+            // 延迟一下，确保状态更新完成
+            setTimeout(() => {
+              const currentUrl = getCurrentUrl()
+              if (playFnRef.current && currentUrl === url) {
+                playFnRef.current(url).catch((error) => {
+                  console.error('[Player] Failed to reload after cache toggle:', error)
+                })
+              }
+            }, 100)
+          }
+        }
+
+        previousEnabledRef.current = nowEnabled
+      }
+    })
+
+    return () => {
+      unsubscribe()
     }
   }, [getCurrentUrl])
 

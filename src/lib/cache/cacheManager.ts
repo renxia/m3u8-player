@@ -15,6 +15,8 @@ export interface CacheConfig {
   preloadCount: number
   /** 预加载并发数 */
   preloadConcurrency: number
+  /** 缓存类型：indexeddb | pwa | auto */
+  cacheType?: 'indexeddb' | 'pwa' | 'auto'
 }
 
 /** 默认配置 */
@@ -23,6 +25,7 @@ const DEFAULT_CONFIG: CacheConfig = {
   maxCount: 5000,
   preloadCount: 5,
   preloadConcurrency: 3,
+  cacheType: 'auto'
 }
 
 /** 缓存配置存储键 */

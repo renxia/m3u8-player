@@ -15,6 +15,7 @@ export default function HomePage() {
   const { t } = useTranslation()
   const playerRef = useRef<PlayerRef>(null)
   const [currentIndex, setCurrentIndex] = useState(-1)
+  const [currentPlayingUrl, setCurrentPlayingUrl] = useState('')
 
   const { history, addHistory, removeHistory, clearHistory } = useHistory()
   const { favorites, addFavorite, removeFavorite, clearFavorites } = useFavorites()
@@ -25,6 +26,9 @@ export default function HomePage() {
     async (url: string, type?: string, player: PlayerType = 'artplayer', name?: string) => {
       const success = await playerRef.current?.play(url, type, player)
       if (success && !url.startsWith('blob:')) {
+        // 更新当前播放的 URL（用于更新输入框）
+        setCurrentPlayingUrl(url)
+
         // 使用 startTransition 延迟非紧急的状态更新，避免阻塞播放器初始化
         startTransition(() => {
           addHistory(url, name)
@@ -111,6 +115,7 @@ export default function HomePage() {
       {/* 输入表单 */}
       <InputForm
         demoUrl={DEMO_URL}
+        currentPlayingUrl={currentPlayingUrl}
         onPlay={handlePlay}
         onRotate={() => playerRef.current?.rotate()}
         onPlaylistParsed={handlePlaylistParsed}

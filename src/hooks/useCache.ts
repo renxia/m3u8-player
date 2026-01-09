@@ -4,7 +4,15 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { type CacheConfig, type CacheStats, cacheManager, type PreloadProgress, type PreloadStatus, preloader } from '@/lib/cache'
+import {
+  type CacheConfig,
+  type CacheStats,
+  cacheManager,
+  getCurrentCacheAdapter,
+  type PreloadProgress,
+  type PreloadStatus,
+  preloader,
+} from '@/lib/cache'
 
 /** 缓存状态 */
 export interface CacheState {
@@ -42,14 +50,20 @@ export function useCache() {
   const refreshStats = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true }))
     try {
-      const stats = await cacheManager.getStats()
+      // 根据缓存类型从正确的适配器获取统计
+      const adapter = getCurrentCacheAdapter()
+      const dbStats = await adapter.getStats()
+
+      const totalRequests = cacheManager.getRuntimeStats().hits + cacheManager.getRuntimeStats().misses
+      const hitRate = totalRequests > 0 ? cacheManager.getRuntimeStats().hits / totalRequests : 0
+
       const currentM3U8Url = preloader.getCurrentM3U8Url()
       const progress = currentM3U8Url
         ? await preloader.getProgress(currentM3U8Url)
         : { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 }
       setState((prev) => ({
         ...prev,
-        stats,
+        stats: { ...dbStats, hitRate },
         preloadProgress: progress,
         preloadStatus: preloader.getStatus(),
         loading: false,
@@ -148,7 +162,8 @@ export function useCache() {
 
   // 清空缓存
   const clearCache = useCallback(async () => {
-    await cacheManager.clear()
+    const adapter = getCurrentCacheAdapter()
+    await adapter.clear()
     await refreshStats()
   }, [refreshStats])
 
@@ -238,16 +253,27 @@ export function useCacheStatus() {
 
   useEffect(() => {
     // 初始加载
-    setEnabled(cacheManager.isEnabled())
-    cacheManager.getStats().then(setStats)
+    const config = cacheManager.getConfig()
+    setEnabled(config.enabled)
+
+    const loadStats = async () => {
+      const adapter = getCurrentCacheAdapter()
+      const dbStats = await adapter.getStats()
+      const totalRequests = cacheManager.getRuntimeStats().hits + cacheManager.getRuntimeStats().misses
+      const hitRate = totalRequests > 0 ? cacheManager.getRuntimeStats().hits / totalRequests : 0
+      setStats({ ...dbStats, hitRate })
+    }
+
+    loadStats()
 
     // 监听变化
     const unsubscribe = cacheManager.addEventListener(async (event) => {
       if (event === 'config') {
-        setEnabled(cacheManager.isEnabled())
+        const newConfig = cacheManager.getConfig()
+        setEnabled(newConfig.enabled)
       }
-      const newStats = await cacheManager.getStats()
-      setStats(newStats)
+      // 重新获取统计
+      await loadStats()
     })
 
     return unsubscribe

@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useCache } from '@/hooks/useCache'
+import type { CacheType } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 
 export default function SettingsPage() {
@@ -18,6 +19,7 @@ export default function SettingsPage() {
   const [localMaxCount, setLocalMaxCount] = useState(config.maxCount)
   const [localPreloadCount, setLocalPreloadCount] = useState(config.preloadCount)
   const [localConcurrency, setLocalConcurrency] = useState(config.preloadConcurrency)
+  const [localCacheType, setLocalCacheType] = useState<CacheType>(config.cacheType || 'indexeddb')
 
   // 处理清除缓存
   const handleClearCache = async () => {
@@ -32,6 +34,7 @@ export default function SettingsPage() {
       maxCount: localMaxCount,
       preloadCount: localPreloadCount,
       preloadConcurrency: localConcurrency,
+      cacheType: localCacheType,
     })
     toast.success(t('cache.configSaved'))
   }
@@ -41,10 +44,12 @@ export default function SettingsPage() {
     setLocalMaxCount(5000)
     setLocalPreloadCount(5)
     setLocalConcurrency(3)
+    setLocalCacheType('indexeddb')
     updateConfig({
       maxCount: 5000,
       preloadCount: 5,
       preloadConcurrency: 3,
+      cacheType: 'indexeddb',
     })
     toast.success(t('cache.configReset'))
   }
@@ -155,6 +160,33 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-4">
+              {/* 缓存类型选择 */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-3">{t('cache.cacheType')}</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'indexeddb' as const, label: 'IndexedDB', desc: '兼容性好' },
+                    { value: 'pwa' as const, label: 'PWA Cache', desc: '性能更优' },
+                    { value: 'auto' as const, label: '自动', desc: '智能选择' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setLocalCacheType(option.value)}
+                      className={cn(
+                        'p-3 rounded-xl border-2 transition-all text-left',
+                        localCacheType === option.value
+                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                          : 'border-transparent bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700',
+                      )}
+                    >
+                      <div className="text-sm font-medium text-slate-800 dark:text-white">{option.label}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{option.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* 最大缓存数量 */}
               <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
                 <div className="flex items-center justify-between mb-2">

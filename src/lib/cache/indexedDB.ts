@@ -190,6 +190,8 @@ class IndexedDBStore {
 
   /**
    * 获取缓存条目
+   * 使用 readonly 事务以提升性能，避免与写入操作竞争
+   * 访问时间更新改为异步批量更新，不阻塞读取
    */
   async get(url: string): Promise<CacheEntry | undefined> {
     try {
@@ -197,7 +199,8 @@ class IndexedDBStore {
       const hash = await this.getUrlHash(url)
 
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction([METADATA_STORE_NAME, DATA_STORE_NAME], 'readwrite')
+        // 使用 readonly 事务，避免与写入操作竞争
+        const transaction = db.transaction([METADATA_STORE_NAME, DATA_STORE_NAME], 'readonly')
         const metadataStore = transaction.objectStore(METADATA_STORE_NAME)
         const dataStore = transaction.objectStore(DATA_STORE_NAME)
 
@@ -211,37 +214,69 @@ class IndexedDBStore {
             return
           }
 
-          // 更新访问时间
-          metadata.accessTime = Date.now()
-          const updateRequest = metadataStore.put(metadata)
-          updateRequest.onerror = () => reject(updateRequest.error)
-          updateRequest.onsuccess = () => {
-            // 获取 data
-            const dataRequest = dataStore.get(hash)
-            dataRequest.onerror = () => reject(dataRequest.error)
-            dataRequest.onsuccess = () => {
-              const cacheData = dataRequest.result as CacheData | undefined
-              if (!cacheData) {
-                resolve(undefined)
-                return
-              }
+          // 异步更新访问时间（不阻塞读取）
+          // 使用 setTimeout 确保在读取完成后更新，避免事务冲突
+          setTimeout(() => {
+            this.updateAccessTime(hash).catch((err) => {
+              console.warn('[IndexedDB] Failed to update access time:', err)
+            })
+          }, 0)
 
-              // 组合返回
-              resolve({
-                hash: metadata.hash,
-                originalUrl: metadata.originalUrl,
-                data: cacheData.data,
-                size: metadata.size,
-                accessTime: metadata.accessTime,
-                m3u8Url: metadata.m3u8Url,
-              })
+          // 获取 data
+          const dataRequest = dataStore.get(hash)
+          dataRequest.onerror = () => reject(dataRequest.error)
+          dataRequest.onsuccess = () => {
+            const cacheData = dataRequest.result as CacheData | undefined
+            if (!cacheData) {
+              resolve(undefined)
+              return
             }
+
+            // 组合返回
+            resolve({
+              hash: metadata.hash,
+              originalUrl: metadata.originalUrl,
+              data: cacheData.data,
+              size: metadata.size,
+              accessTime: metadata.accessTime,
+              m3u8Url: metadata.m3u8Url,
+            })
           }
         }
       })
     } catch (error) {
       console.error('IndexedDB get error:', error)
       return undefined
+    }
+  }
+
+  /**
+   * 更新访问时间（异步，不阻塞读取）
+   */
+  private async updateAccessTime(hash: string): Promise<void> {
+    try {
+      const db = await this.getDB()
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(METADATA_STORE_NAME, 'readwrite')
+        const store = transaction.objectStore(METADATA_STORE_NAME)
+        const getRequest = store.get(hash)
+
+        getRequest.onerror = () => reject(getRequest.error)
+        getRequest.onsuccess = () => {
+          const metadata = getRequest.result as CacheMetadata | undefined
+          if (!metadata) {
+            resolve()
+            return
+          }
+
+          metadata.accessTime = Date.now()
+          const updateRequest = store.put(metadata)
+          updateRequest.onerror = () => reject(updateRequest.error)
+          updateRequest.onsuccess = () => resolve()
+        }
+      })
+    } catch (error) {
+      console.warn('[IndexedDB] updateAccessTime error:', error)
     }
   }
 
