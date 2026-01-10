@@ -4,7 +4,7 @@
  */
 
 import { indexedDBStore, type CacheStats } from './indexedDB'
-import type { IndexedDBCacheConfig } from './cacheConfigManager'
+import { cacheConfigManager, type IndexedDBCacheConfig } from './cacheConfigManager'
 import { logger } from '@/utils/logger'
 
 /** IndexedDB 缓存统计（运行时） */
@@ -229,6 +229,9 @@ class IdbCacheManager {
 
 /** 导出单例实例 */
 export const idbCacheManager = new IdbCacheManager(
-  { maxCount: 5000, lruEvictionRatio: 0.1 },
+  {
+    maxCount: cacheConfigManager.getIndexedDBConfig().maxCount,
+    lruEvictionRatio: cacheConfigManager.getIndexedDBConfig().lruEvictionRatio,
+  },
   true,
 )

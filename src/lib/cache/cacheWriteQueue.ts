@@ -3,6 +3,10 @@
  * 控制并发写入数，避免 IndexedDB/Cache API 压力过大
  */
 
+interface CacheWriteQueueOptions {
+  maxConcurrency?: number
+}
+
 type WriteTask = () => Promise<unknown>
 
 class CacheWriteQueue {
@@ -10,8 +14,15 @@ class CacheWriteQueue {
   private queue: Array<() => void> = []
   /** 当前活跃写入数 */
   private activeWrites = 0
-  /** 最大并发写入数 */
-  private readonly MAX_CONCURRENCY = 3
+  /** 最大并发写入数（默认 3，可根据设备硬件并发数动态调整） */
+  private readonly MAX_CONCURRENCY: number
+
+  constructor(options: CacheWriteQueueOptions = {}) {
+    // 默认为 3，但允许通过配置覆盖
+    // 也可以根据 navigator.hardwareConcurrency 自动调整
+    const hardwareConcurrency = navigator.hardwareConcurrency || 4
+    this.MAX_CONCURRENCY = options.maxConcurrency ?? Math.min(3, Math.max(1, Math.floor(hardwareConcurrency / 2)))
+  }
 
   /**
    * 将写入任务加入队列

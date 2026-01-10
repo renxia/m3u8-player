@@ -128,10 +128,45 @@ class CacheConfigManager {
   }
 
   /**
+   * 验证配置
+   */
+  private validateConfig(config: Partial<CacheConfig>): void {
+    if (config.maxCount !== undefined) {
+      if (!Number.isFinite(config.maxCount) || config.maxCount < 100 || config.maxCount > 100000) {
+        logger.warn(`[CacheConfigManager] Invalid maxCount: ${config.maxCount}, using default 5000`)
+        config.maxCount = DEFAULT_CONFIG.maxCount
+      }
+    }
+
+    if (config.preloadCount !== undefined) {
+      if (!Number.isInteger(config.preloadCount) || config.preloadCount < 0 || config.preloadCount > 50) {
+        logger.warn(`[CacheConfigManager] Invalid preloadCount: ${config.preloadCount}, using default 5`)
+        config.preloadCount = DEFAULT_CONFIG.preloadCount
+      }
+    }
+
+    if (config.preloadConcurrency !== undefined) {
+      if (!Number.isInteger(config.preloadConcurrency) || config.preloadConcurrency < 1 || config.preloadConcurrency > 10) {
+        logger.warn(`[CacheConfigManager] Invalid preloadConcurrency: ${config.preloadConcurrency}, using default 3`)
+        config.preloadConcurrency = DEFAULT_CONFIG.preloadConcurrency
+      }
+    }
+
+    if (config.lruEvictionRatio !== undefined) {
+      if (!Number.isFinite(config.lruEvictionRatio) || config.lruEvictionRatio < 0.01 || config.lruEvictionRatio > 1) {
+        logger.warn(`[CacheConfigManager] Invalid lruEvictionRatio: ${config.lruEvictionRatio}, using default 0.1`)
+        config.lruEvictionRatio = DEFAULT_CONFIG.lruEvictionRatio
+      }
+    }
+  }
+
+  /**
    * 更新完整配置
    */
   setConfig(updates: Partial<CacheConfig>): void {
-    this.config = { ...this.config, ...updates }
+    const validatedUpdates = { ...updates }
+    this.validateConfig(validatedUpdates)
+    this.config = { ...this.config, ...validatedUpdates }
     this.saveConfig()
     this.emit('config', this.config)
   }

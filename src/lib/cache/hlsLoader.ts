@@ -5,7 +5,7 @@
 
 import { logger } from '@/utils/logger'
 import { sleep } from '@/utils/common'
-import { getCurrentCacheAdapter } from './cacheAdapter'
+import { getCurrentCacheAdapter, type UnifiedCacheAdapter } from './cacheAdapter'
 import { cacheWriteQueue } from './cacheWriteQueue'
 import { downloadManager, DownloadPriority } from './downloadManager'
 import { cacheConfigManager } from './cacheConfigManager'
@@ -104,6 +104,36 @@ export class HlsCachedFragmentLoader {
  private stats: LoaderStats = createLoaderStats()
  private aborted = false
  private destroyed = false
+
+ /**
+  * 调度缓存写入（统一入口）
+  */
+ private scheduleCacheWrite(url: string, data: ArrayBuffer, adapter: UnifiedCacheAdapter, m3u8Url: string): void {
+   const bufferCopy = data.slice(0);
+   const segmentUrl = url;
+
+   const writeCache = () => {
+     cacheWriteQueue
+       .enqueue(() => adapter.set(segmentUrl, bufferCopy, m3u8Url))
+       .then(() => {
+         logger.debug(
+           "[CachedFragmentLoader] Cache SAVED:",
+           segmentUrl.substring(segmentUrl.lastIndexOf("/") + 1),
+           `(${(bufferCopy.byteLength / 1024).toFixed(2)}KB)`,
+         );
+       })
+       .catch((err: unknown) => {
+         logger.warn("[CachedFragmentLoader] Cache write error:", err);
+       });
+   };
+
+   // 优先使用 requestIdleCallback，否则使用 setTimeout
+   if (typeof requestIdleCallback !== "undefined") {
+     requestIdleCallback(writeCache, { timeout: 1000 });
+   } else {
+     setTimeout(writeCache, 0);
+   }
+ }
 
  constructor(config: LoaderConfig) {
    const Hls = window.Hls
@@ -211,47 +241,23 @@ const DefaultLoader = Hls.DefaultConfig.FetchLoader || Hls.DefaultConfig.loader
        // 清除超时定时器
        if (timeoutId) clearTimeout(timeoutId);
 
-       // 更新统计信息
-       this.stats.loading.first = performance.now();
-       this.stats.loading.end = performance.now();
-       this.stats.loaded = data.byteLength;
-       this.stats.total = data.byteLength;
+      // 更新统计信息
+      this.stats.loading.first = performance.now();
+      this.stats.loading.end = performance.now();
+      this.stats.loaded = data.byteLength;
+      this.stats.total = data.byteLength;
 
-       // 构建响应对象
-       const response: LoaderResponse = {
-         url,
-         data,
-       };
+      // 构建响应对象
+      const response: LoaderResponse = {
+        url,
+        data,
+      };
 
-       // 异步写入缓存（不阻塞播放）
-       const bufferCopy = data.slice(0);
-       const m3u8Url = getCurrentM3U8Url();
-       const segmentUrl = url;
+      // 异步写入缓存（不阻塞播放）
+      this.scheduleCacheWrite(url, data, adapter, getCurrentM3U8Url())
 
-       const writeCache = () => {
-         cacheWriteQueue
-           .enqueue(() => adapter.set(segmentUrl, bufferCopy, m3u8Url))
-           .then(() => {
-             logger.debug(
-               "[CachedFragmentLoader] Cache SAVED:",
-               segmentUrl.substring(segmentUrl.lastIndexOf("/") + 1),
-               `(${(bufferCopy.byteLength / 1024).toFixed(2)}KB)`,
-             );
-           })
-           .catch((err: unknown) => {
-             logger.warn("[CachedFragmentLoader] Cache write error:", err);
-           });
-       };
-
-       // 优先使用 requestIdleCallback，否则使用 setTimeout
-       if (typeof requestIdleCallback !== "undefined") {
-         requestIdleCallback(writeCache, { timeout: 1000 });
-       } else {
-         setTimeout(writeCache, 0);
-       }
-
-       // 调用成功回调
-       callbacks.onSuccess(response, this.stats, context);
+      // 调用成功回调
+      callbacks.onSuccess(response, this.stats, context);
      } catch (error) {
        // 清除超时定时器
        if (timeoutId) clearTimeout(timeoutId);
@@ -282,42 +288,15 @@ const DefaultLoader = Hls.DefaultConfig.FetchLoader || Hls.DefaultConfig.loader
      // 非片段或缓存禁用，使用原始加载器
      // 包装 onAbort 回调，避免在 destroy 过程中触发循环
      const wrappedCallbacks: LoaderCallbacks = {
-       onSuccess: (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails?: unknown) => {
-         if (this.destroyed) return;
-         // 异步写入缓存（不阻塞播放）
-         // 使用请求队列控制并发写入数，避免 IndexedDB 压力过大
-         if (isSegment && cacheEnabled && adapter.isEnabled() && response.data instanceof ArrayBuffer) {
-           // 创建 ArrayBuffer 副本，避免存储已分离的 ArrayBuffer
-           const bufferCopy = response.data.slice(0);
-           const m3u8Url = getCurrentM3U8Url();
-           const segmentUrl = url;
-
-           // 延迟写入，避免与播放器读取竞争
-           const writeCache = () => {
-             // 通过队列控制并发写入数
-             cacheWriteQueue
-               .enqueue(() => adapter.set(segmentUrl, bufferCopy, m3u8Url))
-               .then(() => {
-                 logger.debug(
-                   "[CachedFragmentLoader] Cache SAVED:",
-                   segmentUrl.substring(segmentUrl.lastIndexOf("/") + 1),
-                   `(${(bufferCopy.byteLength / 1024).toFixed(2)}KB)`,
-                 );
-               })
-               .catch((err: unknown) => {
-                 logger.warn("[CachedFragmentLoader] Cache write error:", err);
-               });
-           };
-
-           // 优先使用 requestIdleCallback，否则使用 setTimeout
-           if (typeof requestIdleCallback !== "undefined") {
-             requestIdleCallback(writeCache, { timeout: 1000 });
-           } else {
-             setTimeout(writeCache, 0);
-           }
-         }
-         callbacks.onSuccess(response, stats, ctx, networkDetails);
-       },
+      onSuccess: (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails?: unknown) => {
+        if (this.destroyed) return;
+        // 异步写入缓存（不阻塞播放）
+        // 使用请求队列控制并发写入数，避免 IndexedDB 压力过大
+        if (isSegment && cacheEnabled && adapter.isEnabled() && response.data instanceof ArrayBuffer) {
+          this.scheduleCacheWrite(url, response.data as ArrayBuffer, adapter, getCurrentM3U8Url())
+        }
+        callbacks.onSuccess(response, stats, ctx, networkDetails);
+      },
        onError: (error, ctx, networkDetails) => {
          if (this.destroyed) return;
          callbacks.onError(error, ctx, networkDetails);

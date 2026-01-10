@@ -84,8 +84,10 @@ async function hashUrl(url: string): Promise<string> {
 class IndexedDBStore {
   private db: IDBDatabase | null = null
   private dbPromise: Promise<IDBDatabase> | null = null
-  // URL -> Hash 的映射缓存（避免重复计算）
+  // URL -> Hash 的映射缓存（避免重复计算），带 LRU 淘汰
   private urlHashCache = new Map<string, string>()
+  private readonly URL_HASH_CACHE_SIZE = 1000
+  private urlHashAccessOrder: string[] = []
 
   /**
    * 获取数据库实例
@@ -149,11 +151,13 @@ class IndexedDBStore {
   private async getUrlHash(url: string): Promise<string> {
     // 检查缓存
     if (this.urlHashCache.has(url)) {
+      // 更新访问顺序（LRU）
+      this.updateAccessOrder(url)
       return this.urlHashCache.get(url)!
     }
 
     const hash = await hashUrl(url)
-    this.urlHashCache.set(url, hash)
+    this.addToUrlHashCache(url, hash)
     return hash
   }
 
@@ -168,6 +172,7 @@ class IndexedDBStore {
     for (const url of urls) {
       if (this.urlHashCache.has(url)) {
         urlHashMap.set(url, this.urlHashCache.get(url)!)
+        this.updateAccessOrder(url)
       } else {
         uncachedUrls.push(url)
       }
@@ -177,7 +182,7 @@ class IndexedDBStore {
     if (uncachedUrls.length > 0) {
       const hashPromises = uncachedUrls.map(async (url) => {
         const hash = await hashUrl(url)
-        this.urlHashCache.set(url, hash)
+        this.addToUrlHashCache(url, hash)
         return { url, hash }
       })
 
@@ -191,12 +196,79 @@ class IndexedDBStore {
   }
 
   /**
+   * 添加到 URL hash 缓存（带 LRU 淘汰）
+   */
+  private addToUrlHashCache(url: string, hash: string): void {
+    // 如果已存在，先删除旧的
+    if (this.urlHashCache.has(url)) {
+      const index = this.urlHashAccessOrder.indexOf(url)
+      if (index > -1) {
+        this.urlHashAccessOrder.splice(index, 1)
+      }
+    }
+
+    // 添加新的
+    this.urlHashCache.set(url, hash)
+    this.urlHashAccessOrder.push(url)
+
+    // 检查是否超过缓存大小，淘汰最旧的
+    if (this.urlHashCache.size > this.URL_HASH_CACHE_SIZE) {
+      const oldestUrl = this.urlHashAccessOrder.shift()
+      if (oldestUrl) {
+        this.urlHashCache.delete(oldestUrl)
+      }
+    }
+  }
+
+  /**
+   * 更新访问顺序
+   */
+  private updateAccessOrder(url: string): void {
+    const index = this.urlHashAccessOrder.indexOf(url)
+    if (index > -1) {
+      this.urlHashAccessOrder.splice(index, 1)
+      this.urlHashAccessOrder.push(url)
+    }
+  }
+
+  /**
+   * 带重试的辅助方法
+   */
+  private async withRetry<T>(
+    fn: () => Promise<T>,
+    operation: string,
+    maxRetries = 2,
+    delayMs = 100
+  ): Promise<T> {
+    let lastError: unknown
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn()
+      } catch (error) {
+        lastError = error
+        const isQuotaError = (error as DOMException)?.name === 'QuotaExceededError'
+        const isRetryable = isQuotaError || (error as Error)?.name === 'TransactionInactiveError'
+
+        if (attempt < maxRetries && isRetryable) {
+          const backoffDelay = delayMs * Math.pow(2, attempt)
+          logger.warn(`[IndexedDB] ${operation} failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${backoffDelay}ms:`, error)
+          await new Promise((resolve) => setTimeout(resolve, backoffDelay))
+        } else {
+          logger.error(`[IndexedDB] ${operation} failed after ${attempt + 1} attempts:`, error)
+          throw error
+        }
+      }
+    }
+    throw lastError
+  }
+
+  /**
    * 获取缓存条目
    * 使用 readonly 事务以提升性能，避免与写入操作竞争
    * 访问时间更新改为异步批量更新，不阻塞读取
    */
   async get(url: string): Promise<CacheEntry | undefined> {
-    try {
+    return this.withRetry(async () => {
       const db = await this.getDB()
       const hash = await this.getUrlHash(url)
 
@@ -246,10 +318,7 @@ class IndexedDBStore {
           }
         }
       })
-    } catch (error) {
-      logger.error('IndexedDB get error:', error)
-      return undefined
-    }
+    }, 'IndexedDB get')
   }
 
   /**

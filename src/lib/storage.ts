@@ -187,11 +187,19 @@ class StorageManager {
   }
 
   /**
-   * 清空所有存储（谨慎使用）
+   * 清空应用相关的存储数据（谨慎使用）
+   * 只删除带有前缀的键，不影响其他应用的数据
    */
   clear(): boolean {
     try {
-      localStorage.clear()
+      // 遍历所有 localStorage 键
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key?.startsWith(STORAGE_PREFIX)) {
+          localStorage.removeItem(key)
+        }
+      }
+
       return true
     } catch (error) {
       console.error('Failed to clear storage:', error)

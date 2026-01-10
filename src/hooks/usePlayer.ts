@@ -78,7 +78,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
           currentUrlRef,
         })
 
-        instances.current.art?.destroy()
+        // 直接赋值，无需再次销毁（play() 函数已调用 destroyAll()）
         instances.current.art = art
         isPlayingRef.current = true
         logger.log('[initArtPlayer] Success', url)

@@ -25,32 +25,15 @@ function App() {
         }}
       />
       <Routes>
-        {/* 默认语言路由 */}
-        <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="about" element={<AboutPage />} />
-          <Route path="download" element={<DownloadPage />} />
-          <Route path="feedback" element={<FeedbackPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
-
-        {/* 英文路由 */}
-        <Route path="/en" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="about" element={<AboutPage />} />
-          <Route path="download" element={<DownloadPage />} />
-          <Route path="feedback" element={<FeedbackPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
-
-        {/* 日文路由 */}
-        <Route path="/ja-JP" element={<Layout />}>
-          <Route index element={<HomePage />} />
-          <Route path="about" element={<AboutPage />} />
-          <Route path="download" element={<DownloadPage />} />
-          <Route path="feedback" element={<FeedbackPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
+        {['/', '/en', '/ja-JP'].map((langPath) => (
+          <Route key={langPath} path={langPath} element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="download" element={<DownloadPage />} />
+            <Route path="feedback" element={<FeedbackPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+        ))}
 
         {/* 兼容旧的 .html 路由 */}
         <Route path="/index.html" element={<Navigate to="/" replace />} />

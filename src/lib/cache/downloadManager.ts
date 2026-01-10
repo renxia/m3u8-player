@@ -4,6 +4,10 @@
  * HLS 播放器的请求优先级总是最高
  */
 
+interface DownloadManagerOptions {
+  maxConcurrency?: number
+}
+
 /** 下载优先级 */
 export enum DownloadPriority {
   /** HLS 播放器请求（最高优先级） */
@@ -35,33 +39,37 @@ const RESULT_CACHE_TIME = 5000
  */
 class DownloadManager {
   /** 等待队列（按优先级排序） */
-  private queue: DownloadTask[] = []
+  private queue: DownloadTask[] = [];
   /** 正在下载的 URL 集合 */
-  private downloading = new Set<string>()
+  private downloading = new Set<string>();
   /** 下载结果缓存（URL -> 结果） */
-  private resultCache = new Map<string, DownloadResult>()
+  private resultCache = new Map<string, DownloadResult>();
   /** 当前活跃下载数 */
-  private activeDownloads = 0
-  /** 最大并发下载数 */
-  private readonly MAX_CONCURRENCY = 6
+  private activeDownloads = 0;
   /** 清理结果缓存的定时器 */
-  private cleanupTimer: ReturnType<typeof setInterval> | null = null
+  private cleanupTimer: ReturnType<typeof setInterval> | null = null;
+  /** 最大并发下载数（默认 6，可根据设备网络条件动态调整） */
+  private readonly MAX_CONCURRENCY: number;
 
-  constructor() {
+  constructor(options: DownloadManagerOptions = {}) {
+    // 默认为 6，但允许通过配置覆盖
+    const hardwareConcurrency = navigator.hardwareConcurrency || 4;
+    this.MAX_CONCURRENCY = options.maxConcurrency ?? Math.min(6, Math.max(2, hardwareConcurrency + 2));
+
     // 定期清理过期的结果缓存
     this.cleanupTimer = setInterval(() => {
-      this.cleanupResultCache()
-    }, 10000) // 每 10 秒清理一次
+      this.cleanupResultCache();
+    }, 10000); // 每 10 秒清理一次
   }
 
   /**
    * 清理过期的结果缓存
    */
   private cleanupResultCache(): void {
-    const now = Date.now()
+    const now = Date.now();
     for (const [url, result] of this.resultCache.entries()) {
       if (now - result.timestamp > RESULT_CACHE_TIME) {
-        this.resultCache.delete(url)
+        this.resultCache.delete(url);
       }
     }
   }
@@ -75,9 +83,9 @@ class DownloadManager {
    */
   async download(url: string, priority: DownloadPriority = DownloadPriority.PRELOAD, signal?: AbortSignal): Promise<ArrayBuffer> {
     // 检查结果缓存
-    const cached = this.resultCache.get(url)
+    const cached = this.resultCache.get(url);
     if (cached && Date.now() - cached.timestamp < RESULT_CACHE_TIME) {
-      return cached.data.slice(0) // 返回副本
+      return cached.data.slice(0); // 返回副本
     }
 
     // 如果正在下载，等待该下载完成
@@ -90,13 +98,13 @@ class DownloadManager {
           signal,
           resolve,
           reject,
-        }
-        this.enqueue(task)
-      })
+        };
+        this.enqueue(task);
+      });
     }
 
     // 立即开始下载
-    return this.startDownload(url, priority, signal)
+    return this.startDownload(url, priority, signal);
   }
 
   /**
@@ -104,15 +112,15 @@ class DownloadManager {
    */
   private enqueue(task: DownloadTask): void {
     // 按优先级插入：PLAYBACK (0) 优先级最高，插入到前面
-    let insertIndex = this.queue.length
+    let insertIndex = this.queue.length;
     for (let i = 0; i < this.queue.length; i++) {
       if (task.priority < this.queue[i].priority) {
-        insertIndex = i
-        break
+        insertIndex = i;
+        break;
       }
     }
-    this.queue.splice(insertIndex, 0, task)
-    this.processQueue()
+    this.queue.splice(insertIndex, 0, task);
+    this.processQueue();
   }
 
   /**
@@ -120,26 +128,24 @@ class DownloadManager {
    */
   private processQueue(): void {
     while (this.activeDownloads < this.MAX_CONCURRENCY && this.queue.length > 0) {
-      const task = this.queue.shift()
-      if (!task) break
+      const task = this.queue.shift();
+      if (!task) break;
 
       // 检查是否已中止
       if (task.signal?.aborted) {
-        task.reject(new DOMException('Download aborted', 'AbortError'))
-        continue
+        task.reject(new DOMException("Download aborted", "AbortError"));
+        continue;
       }
 
       // 检查是否正在下载（去重）
       if (this.downloading.has(task.url)) {
         // URL 正在下载中，等待完成（notifyWaitingTasks 会通知所有等待的任务）
         // 不需要做任何操作，等待 startDownload 完成后的 notifyWaitingTasks 通知
-        continue
+        continue;
       }
 
       // 开始下载
-      this.startDownload(task.url, task.priority, task.signal)
-        .then(task.resolve)
-        .catch(task.reject)
+      this.startDownload(task.url, task.priority, task.signal).then(task.resolve).catch(task.reject);
     }
   }
 
@@ -148,38 +154,38 @@ class DownloadManager {
    */
   private async startDownload(url: string, priority: DownloadPriority, signal?: AbortSignal): Promise<ArrayBuffer> {
     // 标记为正在下载
-    this.downloading.add(url)
-    this.activeDownloads++
+    this.downloading.add(url);
+    this.activeDownloads++;
 
     try {
-      const response = await fetch(url, { signal })
+      const response = await fetch(url, { signal });
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.arrayBuffer()
+      const data = await response.arrayBuffer();
 
       // 缓存结果（仅缓存播放器请求的结果，避免内存占用过大）
       if (priority === DownloadPriority.PLAYBACK) {
         this.resultCache.set(url, {
           data: data.slice(0), // 存储副本
           timestamp: Date.now(),
-        })
+        });
       }
 
       // 通知所有等待该 URL 的任务
-      this.notifyWaitingTasks(url, data)
+      this.notifyWaitingTasks(url, data);
 
-      return data
+      return data;
     } catch (error) {
       // 通知所有等待该 URL 的任务（失败）
-      this.notifyWaitingTasksError(url, error as Error)
-      throw error
+      this.notifyWaitingTasksError(url, error as Error);
+      throw error;
     } finally {
-      this.downloading.delete(url)
-      this.activeDownloads--
+      this.downloading.delete(url);
+      this.activeDownloads--;
       // 继续处理队列
-      this.processQueue()
+      this.processQueue();
     }
   }
 
@@ -187,15 +193,15 @@ class DownloadManager {
    * 通知所有等待该 URL 的任务
    */
   private notifyWaitingTasks(url: string, data: ArrayBuffer): void {
-    const waitingTasks = this.queue.filter((task) => task.url === url)
+    const waitingTasks = this.queue.filter((task) => task.url === url);
     for (const task of waitingTasks) {
       // 从队列中移除
-      const index = this.queue.indexOf(task)
+      const index = this.queue.indexOf(task);
       if (index >= 0) {
-        this.queue.splice(index, 1)
+        this.queue.splice(index, 1);
       }
       // 返回结果
-      task.resolve(data.slice(0)) // 返回副本
+      task.resolve(data.slice(0)); // 返回副本
     }
   }
 
@@ -203,15 +209,15 @@ class DownloadManager {
    * 通知所有等待该 URL 的任务（错误）
    */
   private notifyWaitingTasksError(url: string, error: Error): void {
-    const waitingTasks = this.queue.filter((task) => task.url === url)
+    const waitingTasks = this.queue.filter((task) => task.url === url);
     for (const task of waitingTasks) {
       // 从队列中移除
-      const index = this.queue.indexOf(task)
+      const index = this.queue.indexOf(task);
       if (index >= 0) {
-        this.queue.splice(index, 1)
+        this.queue.splice(index, 1);
       }
       // 返回错误
-      task.reject(error)
+      task.reject(error);
     }
   }
 
@@ -219,14 +225,14 @@ class DownloadManager {
    * 获取当前活跃下载数
    */
   getActiveCount(): number {
-    return this.activeDownloads
+    return this.activeDownloads;
   }
 
   /**
    * 获取等待队列长度
    */
   getQueueLength(): number {
-    return this.queue.length
+    return this.queue.length;
   }
 
   /**
@@ -234,9 +240,9 @@ class DownloadManager {
    */
   cancelAll(): void {
     for (const task of this.queue) {
-      task.reject(new DOMException('Download cancelled', 'AbortError'))
+      task.reject(new DOMException("Download cancelled", "AbortError"));
     }
-    this.queue = []
+    this.queue = [];
   }
 
   /**
@@ -244,12 +250,12 @@ class DownloadManager {
    */
   destroy(): void {
     if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer)
-      this.cleanupTimer = null
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
     }
-    this.cancelAll()
-    this.resultCache.clear()
-    this.downloading.clear()
+    this.cancelAll();
+    this.resultCache.clear();
+    this.downloading.clear();
   }
 }
 
