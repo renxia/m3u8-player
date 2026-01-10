@@ -1,37 +1,13 @@
 /**
- * 缓存管理器
- * 提供 LRU 淘汰策略、统计信息、配置管理
+ * IndexedDB 缓存管理器
+ * 基于 IndexedDB 实现的缓存管理，提供 LRU 淘汰策略和统计信息
  */
 
 import { indexedDBStore, type CacheStats } from './indexedDB'
+import type { IndexedDBCacheConfig } from './cacheConfigManager'
+import { logger } from '@/utils/logger'
 
-/** 缓存配置 */
-export interface CacheConfig {
-  /** 是否启用缓存 */
-  enabled: boolean
-  /** 最大缓存数量 */
-  maxCount: number
-  /** 自动预加载片段数 */
-  preloadCount: number
-  /** 预加载并发数 */
-  preloadConcurrency: number
-  /** 缓存类型：indexeddb | pwa | auto */
-  cacheType?: 'indexeddb' | 'pwa' | 'auto'
-}
-
-/** 默认配置 */
-const DEFAULT_CONFIG: CacheConfig = {
-  enabled: true,
-  maxCount: 5000,
-  preloadCount: 5,
-  preloadConcurrency: 3,
-  cacheType: 'auto'
-}
-
-/** 缓存配置存储键 */
-const CONFIG_STORAGE_KEY = 'mp_cache_config'
-
-/** 缓存统计（运行时） */
+/** IndexedDB 缓存统计（运行时） */
 interface RuntimeStats {
   /** 命中次数 */
   hits: number
@@ -39,74 +15,52 @@ interface RuntimeStats {
   misses: number
 }
 
-/** 缓存变化事件类型 */
-export type CacheEventType = 'hit' | 'miss' | 'add' | 'remove' | 'clear' | 'config'
+/** IndexedDB 缓存变化事件类型 */
+export type IDBCacheEventType = 'hit' | 'miss' | 'add' | 'remove' | 'clear'
 
-/** 缓存事件监听器 */
-export type CacheEventListener = (event: CacheEventType, data?: unknown) => void
+/** IndexedDB 缓存事件监听器 */
+export type IDBCacheEventListener = (event: IDBCacheEventType, data?: unknown) => void
 
-class CacheManager {
-  private config: CacheConfig = { ...DEFAULT_CONFIG }
+/**
+ * IndexedDB 缓存管理器类
+ * 负责基于 IndexedDB 的缓存存储、LRU 淘汰策略和统计信息
+ */
+class IdbCacheManager {
+  private config: IndexedDBCacheConfig
+  private enabled: boolean
   private runtimeStats: RuntimeStats = { hits: 0, misses: 0 }
-  private listeners: Set<CacheEventListener> = new Set()
+  private listeners: Set<IDBCacheEventListener> = new Set()
 
-  constructor() {
-    this.loadConfig()
-  }
-
-  /**
-   * 从 localStorage 加载配置
-   */
-  private loadConfig(): void {
-    try {
-      const stored = localStorage.getItem(CONFIG_STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        this.config = { ...DEFAULT_CONFIG, ...parsed }
-      }
-    } catch (error) {
-      console.error('Failed to load cache config:', error)
-    }
-  }
-
-  /**
-   * 保存配置到 localStorage
-   */
-  private saveConfig(): void {
-    try {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(this.config))
-    } catch (error) {
-      console.error('Failed to save cache config:', error)
-    }
-  }
-
-  /**
-   * 获取当前配置
-   */
-  getConfig(): CacheConfig {
-    return { ...this.config }
+  constructor(config: IndexedDBCacheConfig, enabled: boolean) {
+    this.config = config
+    this.enabled = enabled
   }
 
   /**
    * 更新配置
    */
-  setConfig(updates: Partial<CacheConfig>): void {
-    this.config = { ...this.config, ...updates }
-    this.saveConfig()
-    this.emit('config', this.config)
+  updateConfig(config: IndexedDBCacheConfig): void {
+    this.config = config
+  }
+
+  /**
+   * 更新启用状态
+   */
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled
   }
 
   /**
    * 检查缓存是否启用
    */
   isEnabled(): boolean {
-    return this.config.enabled
+    return this.enabled
   }
 
   /**
    * 添加事件监听器
    */
-  addEventListener(listener: CacheEventListener): () => void {
+  addEventListener(listener: IDBCacheEventListener): () => void {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
   }
@@ -114,12 +68,12 @@ class CacheManager {
   /**
    * 触发事件
    */
-  private emit(event: CacheEventType, data?: unknown): void {
+  private emit(event: IDBCacheEventType, data?: unknown): void {
     for (const listener of this.listeners) {
       try {
         listener(event, data)
       } catch (error) {
-        console.error('Cache event listener error:', error)
+        logger.error('[idbCacheManager] Event listener error:', error)
       }
     }
   }
@@ -128,7 +82,7 @@ class CacheManager {
    * 获取缓存
    */
   async get(url: string): Promise<ArrayBuffer | undefined> {
-    if (!this.config.enabled) return undefined
+    if (!this.enabled) return undefined
 
     const entry = await indexedDBStore.get(url)
     if (entry) {
@@ -146,7 +100,7 @@ class CacheManager {
    * 检查缓存是否存在
    */
   async has(url: string): Promise<boolean> {
-    if (!this.config.enabled) return false
+    if (!this.enabled) return false
     return indexedDBStore.has(url)
   }
 
@@ -154,7 +108,7 @@ class CacheManager {
    * 批量检查多个 URL 是否存在（优化性能）
    */
   async hasMany(urls: string[]): Promise<Set<string>> {
-    if (!this.config.enabled || urls.length === 0) return new Set()
+    if (!this.enabled || urls.length === 0) return new Set()
     return indexedDBStore.hasMany(urls)
   }
 
@@ -162,7 +116,7 @@ class CacheManager {
    * 添加缓存
    */
   async set(url: string, data: ArrayBuffer, m3u8Url: string): Promise<boolean> {
-    if (!this.config.enabled) return false
+    if (!this.enabled) return false
 
     // 检查是否需要淘汰
     await this.ensureCapacity()
@@ -210,14 +164,14 @@ class CacheManager {
     const stats = await indexedDBStore.getStats()
     if (stats.count < this.config.maxCount) return
 
-    // 计算需要删除的数量（删除 10% 以避免频繁淘汰）
-    const deleteCount = Math.max(1, Math.floor(this.config.maxCount * 0.1))
+    // 计算需要删除的数量（使用配置的淘汰比例）
+    const deleteCount = Math.max(1, Math.floor(this.config.maxCount * this.config.lruEvictionRatio))
     const oldestEntries = await indexedDBStore.getOldestEntries(deleteCount)
     const urlsToDelete = oldestEntries.map((entry) => entry.originalUrl)
 
     if (urlsToDelete.length > 0) {
       await indexedDBStore.deleteMany(urlsToDelete)
-      console.log(`[CacheManager] LRU evicted ${urlsToDelete.length} entries`)
+      logger.warn(`[idbCacheManager] LRU evicted ${urlsToDelete.length} entries`)
     }
   }
 
@@ -274,4 +228,7 @@ class CacheManager {
 }
 
 /** 导出单例实例 */
-export const cacheManager = new CacheManager()
+export const idbCacheManager = new IdbCacheManager(
+  { maxCount: 5000, lruEvictionRatio: 0.1 },
+  true,
+)

@@ -3,7 +3,7 @@
  */
 
 import type React from 'react'
-import { cacheManager, preloader } from '@/lib/cache'
+import { cacheConfigManager, preloader } from '@/lib/cache'
 import type { VideoType } from '@/types'
 import { createHlsInstance, preloadSegmentForTime } from './hlsInstance'
 import { loadArtPlayerDependencies } from './playerUtils'
@@ -225,7 +225,7 @@ function setupHoverPreload(art: any, url: string): void {
   let hoverTimer: ReturnType<typeof setTimeout> | null = null
 
   progressElement.addEventListener('mousemove', (e: MouseEvent) => {
-    if (!cacheManager.isEnabled()) return
+    if (!cacheConfigManager.isEnabled()) return
 
     // 清除之前的定时器
     if (hoverTimer) {

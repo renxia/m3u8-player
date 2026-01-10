@@ -4,7 +4,11 @@
  */
 
 import { logger } from '@/utils/logger'
+import { sleep } from '@/utils/common'
 import { getCurrentCacheAdapter } from './cacheAdapter'
+import { cacheWriteQueue } from './cacheWriteQueue'
+import { downloadManager, DownloadPriority } from './downloadManager'
+import { cacheConfigManager } from './cacheConfigManager'
 
 /** Loader 上下文类型 */
 interface LoaderContext {
@@ -92,223 +96,319 @@ export function getCurrentM3U8Url(): string {
 /**
  * 创建缓存感知的 Fragment Loader 类
  */
-// biome-ignore lint/suspicious/noExplicitAny: hls.js types
-export function createCachedFragmentLoader(Hls: any): any {
-  const DefaultLoader = Hls.DefaultConfig.FetchLoader
+export class HlsCachedFragmentLoader {
+ // biome-ignore lint/suspicious/noExplicitAny: hls.js loader
+ private loader: any
+ private abortController: AbortController | null = null
+ private context: LoaderContext | null = null
+ private stats: LoaderStats = createLoaderStats()
+ private aborted = false
+ private destroyed = false
 
-  return class CachedFragmentLoader {
-    // biome-ignore lint/suspicious/noExplicitAny: hls.js loader
-    private loader: any
-    private context: LoaderContext | null = null
-    private stats: LoaderStats = createLoaderStats()
-    private aborted = false
-    private destroyed = false
+ constructor(config: LoaderConfig) {
+   const Hls = window.Hls
+// 支持不同 hls.js 构建，优先使用 FetchLoader，回退到默认的 loader
+const DefaultLoader = Hls.DefaultConfig.FetchLoader || Hls.DefaultConfig.loader
+   this.loader = new DefaultLoader(config)
+ }
 
-    constructor(config: LoaderConfig) {
-      this.loader = new DefaultLoader(config)
-    }
+ /**
+  * 加载资源
+  */
+ async load(context: LoaderContext, config: LoaderConfig, callbacks: LoaderCallbacks): Promise<void> {
+   // 如果已经销毁，直接返回
+   if (this.destroyed) {
+     logger.warn('loader has been destroyed')
+     return
+   }
 
-    /**
-     * 加载资源
-     */
-    async load(context: LoaderContext, config: LoaderConfig, callbacks: LoaderCallbacks): Promise<void> {
-      // 如果已经销毁，直接返回
-      if (this.destroyed) {
-        return
-      }
+   this.context = context
+   this.stats = createLoaderStats()
+   this.stats.loading.start = performance.now()
+   this.aborted = false
 
-      this.context = context
-      this.stats = createLoaderStats()
-      this.stats.loading.start = performance.now()
-      this.aborted = false
+   const url = context.url
 
-      const url = context.url
+   // 只对 TS 片段启用缓存
+   const isSegment = /\.(ts|m4s|mp4|fmp4)(\?|$)/i.test(url) || context.frag !== undefined
+   const adapter = getCurrentCacheAdapter()
+   const cacheEnabled = cacheConfigManager.isEnabled()
 
-      // 只对 TS 片段启用缓存
-      const isSegment = /\.(ts|m4s|mp4|fmp4)(\?|$)/i.test(url) || context.frag !== undefined
-      const adapter = getCurrentCacheAdapter()
+   if (isSegment && cacheEnabled && adapter.isEnabled()) {
+     try {
+       // 添加超时机制，避免缓存读取阻塞播放
+       // 如果缓存读取超过 3s，直接使用网络请求
+       const cacheStartTime = performance.now()
+       const cachePromise = adapter.get(url)
 
-      if (isSegment && adapter.isEnabled()) {
-        try {
-          // 添加超时机制，避免缓存读取阻塞播放
-          // 如果缓存读取超过 100ms，直接使用网络请求
-          const cacheStartTime = performance.now()
-          const cachePromise = adapter.get(url)
-          const timeoutPromise = new Promise<undefined>((resolve) => {
-            setTimeout(() => resolve(undefined), 100)
-          })
+       const timeoutMS = 3000
+       const cachedData = await Promise.race([cachePromise, sleep(timeoutMS)]);
+       const cacheDuration = performance.now() - cacheStartTime
 
-          const cachedData = await Promise.race([cachePromise, timeoutPromise])
-          const cacheDuration = performance.now() - cacheStartTime
+       if (cachedData && !this.aborted && !this.destroyed) {
+         // 缓存命中，直接返回
+         logger.debug('[CachedFragmentLoader] Cache HIT:', url.substring(url.lastIndexOf('/') + 1), `(${(cachedData.byteLength / 1024).toFixed(2)}KB, ${cacheDuration.toFixed(2)}ms)`)
+         this.stats.loading.first = performance.now()
+         this.stats.loading.end = performance.now()
+         this.stats.loaded = cachedData.byteLength
+         this.stats.total = cachedData.byteLength
 
-          if (cachedData && !this.aborted && !this.destroyed) {
-            // 缓存命中，直接返回
-            logger.debug('[CachedFragmentLoader] Cache HIT:', url.substring(url.lastIndexOf('/') + 1), `(${(cachedData.byteLength / 1024).toFixed(2)}KB, ${cacheDuration.toFixed(2)}ms)`)
-            this.stats.loading.first = performance.now()
-            this.stats.loading.end = performance.now()
-            this.stats.loaded = cachedData.byteLength
-            this.stats.total = cachedData.byteLength
+         const response: LoaderResponse = {
+           url,
+           data: cachedData,
+         }
 
-            const response: LoaderResponse = {
-              url,
-              data: cachedData,
-            }
+         // 异步调用回调，避免同步回调导致播放器内部状态问题
+         if (typeof queueMicrotask === 'function') {
+           queueMicrotask(() => callbacks.onSuccess(response, this.stats, context))
+         } else {
+           setTimeout(() => callbacks.onSuccess(response, this.stats, context), 0)
+         }
+         return
+       } else if (isSegment) {
+         // 如果超时，记录但不阻塞
+         if (!cachedData) {
+           if (cacheDuration >= timeoutMS) {
+             logger.warn(`[CachedFragmentLoader] Cache TIMEOUT (>${timeoutMS}ms):`, cacheDuration, url.substring(url.lastIndexOf('/') + 1))
+           } else {
+             logger.debug('[CachedFragmentLoader] Cache MISS:', url.substring(url.lastIndexOf('/') + 1))
+           }
+         } else {
+           logger.debug('[CachedFragmentLoader] Cache check skipped (aborted/destroyed):', url.substring(url.lastIndexOf('/') + 1))
+         }
+       }
+     } catch (error) {
+       logger.warn('[CachedFragmentLoader] Cache read error:', error, url.substring(url.lastIndexOf('/') + 1))
+       // 缓存读取失败，继续使用网络请求
+     }
+   }
 
-            callbacks.onSuccess(response, this.stats, context)
-            return
-          } else if (isSegment) {
-            // 如果超时，记录但不阻塞
-            if (!cachedData) {
-              if (cacheDuration >= 100) {
-                console.log('[CachedFragmentLoader] Cache TIMEOUT (>100ms):', url.substring(url.lastIndexOf('/') + 1))
-              } else {
-                console.log('[CachedFragmentLoader] Cache MISS:', url.substring(url.lastIndexOf('/') + 1))
-              }
-            } else {
-              console.log('[CachedFragmentLoader] Cache check skipped (aborted/destroyed):', url.substring(url.lastIndexOf('/') + 1))
-            }
-          }
-        } catch (error) {
-          console.warn('[CachedFragmentLoader] Cache read error:', error, url.substring(url.lastIndexOf('/') + 1))
-          // 缓存读取失败，继续使用网络请求
-        }
-      }
+   // 如果已经销毁或中止，不再继续加载
+   if (this.destroyed || this.aborted) {
+     logger.warn('[CachedFragmentLoader] Aborted or destroyed:', url.substring(url.lastIndexOf('/') + 1))
+     return
+   }
 
-      // 如果已经销毁或中止，不再继续加载
-      if (this.destroyed || this.aborted) {
-        return
-      }
+   // 如果是 TS 片段且缓存启用，使用统一的下载管理器
+   if (isSegment && cacheEnabled && adapter.isEnabled()) {
+     // 创建新的 AbortController
+     this.abortController = new AbortController();
+     const signal = this.abortController.signal;
 
-      // 缓存未命中或缓存禁用，使用原始加载器
-      // 包装 onAbort 回调，避免在 destroy 过程中触发循环
-      const wrappedCallbacks: LoaderCallbacks = {
-        onSuccess: (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails?: unknown) => {
-          if (this.destroyed) return
-          // 异步写入缓存（不阻塞播放）
-          // 使用请求队列控制并发写入数，避免 IndexedDB 压力过大
-          if (isSegment && adapter.isEnabled() && response.data instanceof ArrayBuffer) {
-            // 导入缓存写入队列
-            const { cacheWriteQueue } = require('./cacheWriteQueue')
+     // 设置超时（如果配置了 timeout）
+     let timeoutId: ReturnType<typeof setTimeout> | undefined;
+     if (config.timeout > 0) {
+       timeoutId = setTimeout(() => {
+         this.abortController?.abort();
+         callbacks.onTimeout(this.stats, context);
+       }, config.timeout);
+     }
 
-            // 创建 ArrayBuffer 副本，避免存储已分离的 ArrayBuffer
-            const bufferCopy = response.data.slice(0)
-            const m3u8Url = getCurrentM3U8Url()
-            const segmentUrl = url
+     try {
+       // 使用下载管理器下载（最高优先级）
+       const data = await downloadManager.download(url, DownloadPriority.PLAYBACK, signal);
 
-            // 延迟写入，避免与播放器读取竞争
-            const writeCache = () => {
-              // 通过队列控制并发写入数
-              cacheWriteQueue
-                .enqueue(() => adapter.set(segmentUrl, bufferCopy, m3u8Url))
-                .then(() => {
-                  console.log('[CachedFragmentLoader] Cache SAVED:', segmentUrl.substring(segmentUrl.lastIndexOf('/') + 1), `(${(bufferCopy.byteLength / 1024).toFixed(2)}KB)`)
-                })
-                .catch((err: unknown) => {
-                  console.warn('[CachedFragmentLoader] Cache write error:', err)
-                })
-            }
+       // 清除超时定时器
+       if (timeoutId) clearTimeout(timeoutId);
 
-            // 优先使用 requestIdleCallback，否则使用 setTimeout
-            if (typeof requestIdleCallback !== 'undefined') {
-              requestIdleCallback(writeCache, { timeout: 1000 })
-            } else {
-              setTimeout(writeCache, 0)
-            }
-          }
-          callbacks.onSuccess(response, stats, ctx, networkDetails)
-        },
-        onError: (error, ctx, networkDetails) => {
-          if (this.destroyed) return
-          callbacks.onError(error, ctx, networkDetails)
-        },
-        onTimeout: (stats, ctx) => {
-          if (this.destroyed) return
-          callbacks.onTimeout(stats, ctx)
-        },
-        onProgress: callbacks.onProgress
-          ? (stats, ctx, data, networkDetails) => {
-              if (this.destroyed) return
-              callbacks.onProgress?.(stats, ctx, data, networkDetails)
-            }
-          : undefined,
-        onAbort: callbacks.onAbort
-          ? (stats, ctx, networkDetails) => {
-              // 如果已经销毁，不再触发 onAbort，避免循环
-              if (this.destroyed) return
-              callbacks.onAbort?.(stats, ctx, networkDetails)
-            }
-          : undefined,
-      }
+       // 更新统计信息
+       this.stats.loading.first = performance.now();
+       this.stats.loading.end = performance.now();
+       this.stats.loaded = data.byteLength;
+       this.stats.total = data.byteLength;
 
-      this.loader.load(context, config, wrappedCallbacks)
-    }
+       // 构建响应对象
+       const response: LoaderResponse = {
+         url,
+         data,
+       };
 
-    /**
-     * 中止加载
-     */
-    abort(): void {
-      if (this.destroyed) {
-        return
-      }
-      this.aborted = true
-      if (this.loader) {
-        try {
-          this.loader.abort()
-        } catch (error) {
-          // 忽略 abort 时的错误，可能 loader 已经被销毁
-          console.warn('[CachedFragmentLoader] Abort error:', error)
-        }
-      }
-    }
+       // 异步写入缓存（不阻塞播放）
+       const bufferCopy = data.slice(0);
+       const m3u8Url = getCurrentM3U8Url();
+       const segmentUrl = url;
 
-    /**
-     * 销毁加载器
-     */
-    destroy(): void {
-      // 防止重复销毁
-      if (this.destroyed) {
-        return
-      }
-      this.destroyed = true
-      this.aborted = true
+       const writeCache = () => {
+         cacheWriteQueue
+           .enqueue(() => adapter.set(segmentUrl, bufferCopy, m3u8Url))
+           .then(() => {
+             logger.debug(
+               "[CachedFragmentLoader] Cache SAVED:",
+               segmentUrl.substring(segmentUrl.lastIndexOf("/") + 1),
+               `(${(bufferCopy.byteLength / 1024).toFixed(2)}KB)`,
+             );
+           })
+           .catch((err: unknown) => {
+             logger.warn("[CachedFragmentLoader] Cache write error:", err);
+           });
+       };
 
-      if (this.loader) {
-        try {
-          // 先销毁 loader，避免 abort 触发回调
-          this.loader.destroy()
-        } catch (error) {
-          // 忽略销毁时的错误
-          console.warn('[CachedFragmentLoader] Destroy error:', error)
-        }
-        this.loader = null
-      }
-      this.context = null
-    }
+       // 优先使用 requestIdleCallback，否则使用 setTimeout
+       if (typeof requestIdleCallback !== "undefined") {
+         requestIdleCallback(writeCache, { timeout: 1000 });
+       } else {
+         setTimeout(writeCache, 0);
+       }
 
-    /**
-     * 获取加载统计
-     */
-    getStats(): LoaderStats {
-      return this.stats
-    }
+       // 调用成功回调
+       callbacks.onSuccess(response, this.stats, context);
+     } catch (error) {
+       // 清除超时定时器
+       if (timeoutId) clearTimeout(timeoutId);
 
-    /**
-     * 获取上下文
-     */
-    getContext(): LoaderContext | null {
-      return this.context
-    }
-  }
-}
+       if ((error as Error).name === "AbortError") {
+         // 中止事件，由 abort() 方法或超时触发
+         if (this.aborted) {
+           // 用户主动中止
+           callbacks.onAbort?.(this.stats, context);
+         } else {
+           // 超时中止
+           callbacks.onTimeout(this.stats, context);
+         }
+       } else {
+         // 其他错误
+         callbacks.onError(
+           {
+             code: (error as any).code || -1,
+             text: (error as Error).message || "Unknown error",
+           },
+           context,
+         );
+       }
+     } finally {
+       this.abortController = null;
+     }
+   } else {
+     // 非片段或缓存禁用，使用原始加载器
+     // 包装 onAbort 回调，避免在 destroy 过程中触发循环
+     const wrappedCallbacks: LoaderCallbacks = {
+       onSuccess: (response: LoaderResponse, stats: LoaderStats, ctx: LoaderContext, networkDetails?: unknown) => {
+         if (this.destroyed) return;
+         // 异步写入缓存（不阻塞播放）
+         // 使用请求队列控制并发写入数，避免 IndexedDB 压力过大
+         if (isSegment && cacheEnabled && adapter.isEnabled() && response.data instanceof ArrayBuffer) {
+           // 创建 ArrayBuffer 副本，避免存储已分离的 ArrayBuffer
+           const bufferCopy = response.data.slice(0);
+           const m3u8Url = getCurrentM3U8Url();
+           const segmentUrl = url;
 
-/**
- * 获取 HLS 配置（包含自定义 Loader）
- */
-// biome-ignore lint/suspicious/noExplicitAny: hls.js types
-export function getHlsConfigWithCache(Hls: any): Record<string, unknown> {
-  return {
-    fLoader: createCachedFragmentLoader(Hls),
-    // 可选：也可以缓存播放列表
-    // pLoader: createCachedFragmentLoader(Hls),
-  }
+           // 延迟写入，避免与播放器读取竞争
+           const writeCache = () => {
+             // 通过队列控制并发写入数
+             cacheWriteQueue
+               .enqueue(() => adapter.set(segmentUrl, bufferCopy, m3u8Url))
+               .then(() => {
+                 logger.debug(
+                   "[CachedFragmentLoader] Cache SAVED:",
+                   segmentUrl.substring(segmentUrl.lastIndexOf("/") + 1),
+                   `(${(bufferCopy.byteLength / 1024).toFixed(2)}KB)`,
+                 );
+               })
+               .catch((err: unknown) => {
+                 logger.warn("[CachedFragmentLoader] Cache write error:", err);
+               });
+           };
+
+           // 优先使用 requestIdleCallback，否则使用 setTimeout
+           if (typeof requestIdleCallback !== "undefined") {
+             requestIdleCallback(writeCache, { timeout: 1000 });
+           } else {
+             setTimeout(writeCache, 0);
+           }
+         }
+         callbacks.onSuccess(response, stats, ctx, networkDetails);
+       },
+       onError: (error, ctx, networkDetails) => {
+         if (this.destroyed) return;
+         callbacks.onError(error, ctx, networkDetails);
+       },
+       onTimeout: (stats, ctx) => {
+         if (this.destroyed) return;
+         callbacks.onTimeout(stats, ctx);
+       },
+       onProgress: callbacks.onProgress
+         ? (stats, ctx, data, networkDetails) => {
+             if (this.destroyed) return;
+             callbacks.onProgress?.(stats, ctx, data, networkDetails);
+           }
+         : undefined,
+       onAbort: callbacks.onAbort
+         ? (stats, ctx, networkDetails) => {
+             // 如果已经销毁，不再触发 onAbort，避免循环
+             if (this.destroyed) return;
+             callbacks.onAbort?.(stats, ctx, networkDetails);
+           }
+         : undefined,
+     };
+
+     this.loader.load(context, config, wrappedCallbacks);
+   }
+ }
+
+ /**
+  * 中止加载
+  */
+ abort(): void {
+   if (this.destroyed) {
+     logger.warn('[CachedFragmentLoader] Already destroyed')
+     return
+   }
+   this.aborted = true
+   // 中止当前的下载控制器（如果存在）
+   if (this.abortController) {
+     this.abortController.abort()
+   }
+   // 中止原始的 loader（如果存在）
+   if (this.loader) {
+     try {
+       this.loader.abort()
+     } catch (error) {
+       // 忽略 abort 时的错误，可能 loader 已经被销毁
+       logger.warn('[CachedFragmentLoader] Abort error:', error)
+     }
+   }
+ }
+
+ /**
+  * 销毁加载器
+  */
+ destroy(): void {
+   // 防止重复销毁
+   if (this.destroyed) {
+     logger.warn('[CachedFragmentLoader] Destroy', this.destroyed)
+     return
+   }
+   this.destroyed = true
+   this.aborted = true
+   // 中止当前的下载控制器（如果存在）
+   if (this.abortController) {
+     this.abortController.abort()
+   }
+
+   if (this.loader) {
+     try {
+       // 先销毁 loader，避免 abort 触发回调
+       this.loader.destroy()
+     } catch (error) {
+       // 忽略销毁时的错误
+       logger.warn('[CachedFragmentLoader] Destroy error:', error)
+     }
+     this.loader = null
+   }
+   this.context = null
+ }
+
+ /**
+  * 获取加载统计
+  */
+ getStats(): LoaderStats {
+   return this.stats
+ }
+
+ /**
+  * 获取上下文
+  */
+ getContext(): LoaderContext | null {
+   return this.context
+ }
 }

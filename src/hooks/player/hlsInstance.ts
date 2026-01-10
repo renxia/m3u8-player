@@ -3,8 +3,9 @@
  * 统一的 HLS 实例创建函数，支持缓存和预加载
  */
 
-import { cacheManager, createCachedFragmentLoader, preloader, setCurrentM3U8Url } from '@/lib/cache'
+import { cacheConfigManager, HlsCachedFragmentLoader, preloader, setCurrentM3U8Url } from '@/lib/cache'
 import { fetchAndParseM3U8 } from '@/lib/cache/m3u8Parser'
+import { logger } from '@/utils/logger'
 
 /**
  * HLS 实例配置选项
@@ -52,10 +53,7 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
     abrEwmaDefaultEstimate: 500000,
     maxBufferLength: 30,
     maxMaxBufferLength: 60,
-  }
-
-  if (cacheManager.isEnabled()) {
-    hlsConfig.fLoader = createCachedFragmentLoader(Hls)
+    fLoader: HlsCachedFragmentLoader,
   }
 
   // 创建 HLS 实例
@@ -66,8 +64,8 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
   const cleanupFunctions: Array<() => void> = []
 
   // 监听片段加载事件，触发自动预加载
-  if (enableAutoPreload && cacheManager.isEnabled()) {
-    const config = cacheManager.getConfig()
+  if (enableAutoPreload && cacheConfigManager.isEnabled()) {
+    const config = cacheConfigManager.getPreloadConfig()
     if (config.preloadCount > 0) {
       // 跟踪实际使用的 level（用于自动模式）
       let actualLevelIndex = -1
@@ -160,7 +158,7 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
           const currentLevel = hls.levels[data.level]
           if (currentLevel?.url) {
             const newPlaylistUrl = currentLevel.url
-            console.log('[HLS] Level switched to', data.level, ', new playlist URL:', newPlaylistUrl)
+            logger.log('[HLS] Level switched to', data.level, ', new playlist URL:', newPlaylistUrl)
 
             // 停止之前的预加载
             preloader.stop()
@@ -174,7 +172,7 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
             await startPreloadTask(newPlaylistUrlCopy, 1000)
           }
         } catch (error) {
-          console.warn('[HLS] Level switched handler error:', error)
+          logger.warn('[HLS] Level switched handler error:', error)
         }
       }
       hls.on(Hls.Events.LEVEL_SWITCHED, levelSwitchedHandler)
@@ -222,10 +220,12 @@ export function createThumbnailHlsInstance(url: string, video: HTMLVideoElement)
   setCurrentM3U8Url(url)
 
   // 创建带缓存的 HLS 配置
-  const hlsConfig: Record<string, unknown> = {}
-  if (cacheManager.isEnabled()) {
-    hlsConfig.fLoader = createCachedFragmentLoader(Hls)
+  const hlsConfig: Record<string, unknown> = {
+    fLoader: HlsCachedFragmentLoader,
   }
+  // if (cacheConfigManager.isEnabled()) {
+  //   hlsConfig.fLoader = HlsCachedFragmentLoader
+  // }
 
   // 创建 HLS 实例
   const hls = new Hls(hlsConfig)
@@ -247,7 +247,7 @@ export async function preloadSegmentForTime(
   time: number,
   options?: { concurrency?: number; onError?: (error: Error) => void },
 ): Promise<void> {
-  if (!cacheManager.isEnabled()) return
+  if (!cacheConfigManager.isEnabled()) return
 
   try {
     // 解析 M3U8 获取片段信息
@@ -266,7 +266,7 @@ export async function preloadSegmentForTime(
     }
 
     // 预加载当前片段及后续几个片段
-    const config = cacheManager.getConfig()
+    const config = cacheConfigManager.getPreloadConfig()
     if (config.preloadCount > 0) {
       await preloader.preloadRange(url, segmentIndex, config.preloadCount, {
         concurrency: options?.concurrency || config.preloadConcurrency,

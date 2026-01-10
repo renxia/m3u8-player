@@ -3,7 +3,7 @@
  * 控制并发写入数，避免 IndexedDB/Cache API 压力过大
  */
 
-type WriteTask = () => Promise<void>
+type WriteTask = () => Promise<unknown>
 
 class CacheWriteQueue {
   /** 等待队列 */
@@ -11,7 +11,7 @@ class CacheWriteQueue {
   /** 当前活跃写入数 */
   private activeWrites = 0
   /** 最大并发写入数 */
-  private readonly MAX_CONCURRENCY = 2
+  private readonly MAX_CONCURRENCY = 3
 
   /**
    * 将写入任务加入队列

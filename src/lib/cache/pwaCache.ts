@@ -4,6 +4,7 @@
  * 提供查询、删除、统计等能力，与应用逻辑解耦
  */
 
+import { logger } from '@/utils/logger'
 import type {
   PWACacheItem,
   PWACacheStats,
@@ -29,7 +30,7 @@ class PWACacheManager {
     // 启动元数据加载（异步，不阻塞构造函数）
     // 注意：getStats() 等方法会在调用时重新加载元数据以确保数据最新
     this.loadMetadata().catch((error) => {
-      console.warn('[PWACache] Initial metadata load failed:', error)
+      logger.warn('[PWACache] Initial metadata load failed:', error)
     })
   }
 
@@ -45,14 +46,14 @@ class PWACacheManager {
    */
   private async getCache(): Promise<Cache | null> {
     if (!PWACacheManager.isSupported()) {
-      console.warn('[PWACache] Cache API is not supported')
+      logger.warn('[PWACache] Cache API is not supported')
       return null
     }
 
     try {
       return await caches.open(this.cacheName)
     } catch (error) {
-      console.error('[PWACache] Failed to open cache:', error)
+      logger.error('[PWACache] Failed to open cache:', error)
       return null
     }
   }
@@ -123,17 +124,17 @@ class PWACacheManager {
               this.metadataCache.set(metadata.url, metadata)
             } else {
               // 调试：输出无法匹配的 key
-              console.debug('[PWACache] Failed to match metadata for key:', url)
+              logger.debug('[PWACache] Failed to match metadata for key:', url)
             }
           } catch (error) {
-            console.warn('[PWACache] Failed to load metadata item:', url, error)
+            logger.warn('[PWACache] Failed to load metadata item:', url, error)
           }
         })
 
       await Promise.all(metadataPromises)
-      console.log('[PWACache] Loaded metadata:', this.metadataCache.size, 'items')
+      logger.log('[PWACache] Loaded metadata:', this.metadataCache.size, 'items')
     } catch (error) {
-      console.error('[PWACache] Failed to load metadata:', error)
+      logger.error('[PWACache] Failed to load metadata:', error)
     }
   }
 
@@ -162,7 +163,7 @@ class PWACacheManager {
       // 同时更新内存中的元数据缓存
       this.metadataCache.set(item.url, item)
     } catch (error) {
-      console.error('[PWACache] Failed to save metadata:', error)
+      logger.error('[PWACache] Failed to save metadata:', error)
     }
   }
 
@@ -214,7 +215,7 @@ class PWACacheManager {
         this.metadataCache.delete(url)
       }
     } catch (error) {
-      console.error('[PWACache] Failed to delete metadata:', error)
+      logger.error('[PWACache] Failed to delete metadata:', error)
     }
   }
 
@@ -272,11 +273,11 @@ class PWACacheManager {
       }
       await this.saveMetadata(metadata)
 
-      console.log('[PWACache] Cached:', url.substring(url.lastIndexOf('/') + 1), `(${(size / 1024).toFixed(2)}KB)`)
+      logger.log('[PWACache] Cached:', url.substring(url.lastIndexOf('/') + 1), `(${(size / 1024).toFixed(2)}KB)`)
 
       return { success: true, affected: 1 }
     } catch (error) {
-      console.error('[PWACache] Failed to add cache:', error)
+      logger.error('[PWACache] Failed to add cache:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -308,13 +309,16 @@ class PWACacheManager {
    * 获取缓存的资源
    */
   async get(url: string): Promise<Response | undefined> {
+    const startTime = Date.now()
     const cache = await this.getCache()
     if (!cache) return undefined
 
     try {
-      return await cache.match(url)
+      const d =  await cache.match(url)
+      logger.debug("[PWACache][get] timecost:", Date.now() - startTime, url);
+      return d
     } catch (error) {
-      console.debug('[PWACache] Failed to get cache:', error)
+      logger.debug('[PWACache] Failed to get cache:', error)
       return undefined
     }
   }
@@ -360,7 +364,7 @@ class PWACacheManager {
       }
       return { success: deleted, affected: deleted ? 1 : 0 }
     } catch (error) {
-      console.error('[PWACache] Failed to delete cache:', error)
+      logger.error('[PWACache] Failed to delete cache:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -396,7 +400,7 @@ class PWACacheManager {
           deletedCount < urls.length ? `${urls.length - deletedCount} items failed` : undefined,
       }
     } catch (error) {
-      console.error('[PWACache] Failed to delete many cache:', error)
+      logger.error('[PWACache] Failed to delete many cache:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -423,7 +427,7 @@ class PWACacheManager {
 
       return { success: deleted, affected: deleted ? this.metadataCache.size : 0 }
     } catch (error) {
-      console.error('[PWACache] Failed to clear cache:', error)
+      logger.error('[PWACache] Failed to clear cache:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -480,7 +484,7 @@ class PWACacheManager {
       }
     })
 
-    console.log('[PWACache] Stats:', {
+    logger.log('[PWACache] Stats:', {
       count: items.length,
       totalSize: `${(totalSize / 1024 / 1024).toFixed(2)}MB`,
       byM3U8: Object.keys(byM3U8).length,

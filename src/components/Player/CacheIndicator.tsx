@@ -7,7 +7,7 @@ import { Database, Download, Pause, Play, Settings, Trash2, X, Zap } from 'lucid
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCache } from '@/hooks/useCache'
-import { cacheManager, preloader } from '@/lib/cache'
+import { idbCacheManager, preloader } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 
 interface CacheIndicatorProps {
@@ -67,7 +67,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
     const updateCurrentVideoStats = async () => {
       if (m3u8Url) {
         try {
-          const info = await cacheManager.getM3U8CacheInfo(m3u8Url)
+          const info = await idbCacheManager.getM3U8CacheInfo(m3u8Url)
           setCurrentVideoStats(info)
         } catch (error) {
           console.error('Failed to get current video cache info:', error)
@@ -81,7 +81,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
     updateCurrentVideoStats()
 
     // 监听缓存变化，更新当前视频统计
-    const unsubscribe = cacheManager.addEventListener(async (event) => {
+    const unsubscribe = idbCacheManager.addEventListener(async (event) => {
       if (event === 'add' || event === 'remove' || event === 'clear') {
         await updateCurrentVideoStats()
       }

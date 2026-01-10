@@ -3,9 +3,11 @@
  * 支持自动预加载和手动预加载 TS 片段
  */
 
-import { cacheManager } from './cacheManager'
+import { cacheConfigManager } from './cacheConfigManager'
 import { getCurrentCacheAdapter } from './cacheAdapter'
 import { fetchAndParseM3U8, getSegmentsInRange, type TSSegment } from './m3u8Parser'
+import { logger } from '@/utils/logger'
+import { downloadManager, DownloadPriority } from './downloadManager'
 
 /** 预加载进度回调 */
 export interface PreloadProgress {
@@ -82,13 +84,13 @@ class Preloader {
   async preloadAll(m3u8Url: string, options: PreloadOptions = {}): Promise<void> {
     const adapter = getCurrentCacheAdapter()
     if (!adapter.isEnabled()) {
-      console.log('[Preloader] Cache is disabled, skipping preload')
+      logger.log('[Preloader] Cache is disabled, skipping preload')
       return
     }
 
     // 检查是否已有预加载任务在运行
     if (!this.acquirePreloadLock()) {
-      console.log('[Preloader] Another preload task is running, skipping')
+      logger.log('[Preloader] Another preload task is running, skipping')
       return
     }
 
@@ -145,8 +147,8 @@ class Preloader {
     const adapter = getCurrentCacheAdapter()
     if (!adapter.isEnabled()) return
 
-    const config = cacheManager.getConfig()
-    const { preloadCount } = config
+    const preloadConfig = cacheConfigManager.getPreloadConfig()
+    const { preloadCount } = preloadConfig
 
     // 清除之前的定时器
     if (this.autoPreloadTimer) {
@@ -156,11 +158,11 @@ class Preloader {
     // 延迟 500ms 开始预加载，避免影响当前播放
     // 使用较低的并发数（1-2），避免与播放器竞争网络和存储资源
     this.autoPreloadTimer = setTimeout(() => {
-      const reducedConcurrency = Math.max(1, Math.floor(config.preloadConcurrency / 2))
+      const reducedConcurrency = Math.max(1, Math.floor(preloadConfig.preloadConcurrency / 2))
       this.preloadRange(m3u8Url, currentIndex + 1, preloadCount, {
         concurrency: reducedConcurrency,
       }).catch((err) => {
-        console.warn('[Preloader] Auto preload error:', err)
+        logger.warn('[Preloader] Auto preload error:', err)
       })
     }, 500)
   }
@@ -198,22 +200,17 @@ class Preloader {
 
     // 检查是否已有预加载任务在运行
     if (!this.acquirePreloadLock()) {
-      console.log('[Preloader] Another preload task is running, cannot resume')
+      logger.warn('[Preloader] Another preload task is running, cannot resume')
       return
     }
 
     try {
       const adapter = getCurrentCacheAdapter()
-      // 找到第一个未缓存的片段
-      let startIndex = 0
-      for (let i = 0; i < this.segments.length; i++) {
-        const cached = await adapter.has(this.segments[i].url)
-        if (!cached) {
-          startIndex = i
-          break
-        }
-      }
-
+      // 找到第一个未缓存的片段（优化性能：批量查询）
+      const segmentUrls = this.segments.map((s) => s.url)
+      const cachedUrls = await adapter.hasMany(segmentUrls)
+      const startIndex = segmentUrls.findIndex(d => !cachedUrls.has(d))
+      
       // 从该位置继续预加载
       const remainingSegments = this.segments.slice(startIndex)
       if (remainingSegments.length > 0) {
@@ -266,7 +263,7 @@ class Preloader {
    * 预加载片段列表（内部方法）
    */
   private async preloadSegments(segments: TSSegment[], m3u8Url: string, options: PreloadOptions = {}): Promise<void> {
-    const { concurrency = cacheManager.getConfig().preloadConcurrency, onProgress, signal } = options
+    const { concurrency = cacheConfigManager.getPreloadConfig().preloadConcurrency, onProgress, signal } = options
     const adapter = getCurrentCacheAdapter()
 
     let loaded = 0
@@ -311,13 +308,9 @@ class Preloader {
         if (!segment) break
 
         try {
-          const response = await fetch(segment.url, { signal })
-          if (!response.ok) {
-            console.warn(`[Preloader] Failed to fetch ${segment.url}: ${response.status}`)
-            continue
-          }
+          // 使用下载管理器下载（较低优先级）
+          const data = await downloadManager.download(segment.url, DownloadPriority.PRELOAD, signal)
 
-          const data = await response.arrayBuffer()
           await adapter.set(segment.url, data, m3u8Url)
 
           loaded++
@@ -334,7 +327,7 @@ class Preloader {
           if ((error as Error).name === 'AbortError') {
             throw error
           }
-          console.warn(`[Preloader] Error loading ${segment.url}:`, error)
+          logger.warn(`[Preloader] Error loading ${segment.url}:`, error)
         }
       }
     }
@@ -357,18 +350,19 @@ class Preloader {
     }
 
     const adapter = getCurrentCacheAdapter()
-    let loaded = 0
-    for (const segment of this.segments) {
-      const cached = await adapter.has(segment.url)
-      if (cached) loaded++
-    }
+    // 批量查询已缓存的片段（性能优化：一次查询替代多次查询）
+    const segmentUrls = this.segments.map((s) => s.url)
+    const cachedUrls = await adapter.hasMany(segmentUrls)
+
+    const total = segmentUrls.length
+    const loaded = cachedUrls.size
 
     return {
       loaded,
-      total: this.segments.length,
+      total,
       currentUrl: '',
       loadedBytes: 0,
-      percent: this.segments.length > 0 ? Math.round((loaded / this.segments.length) * 100) : 0,
+      percent: total > 0 ? Math.round((loaded / total) * 100) : 0,
     }
   }
 

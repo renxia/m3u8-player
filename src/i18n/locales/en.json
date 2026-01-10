@@ -121,7 +121,9 @@
     "stopPreload": "Stop Preload",
     "preloadComplete": "Preload Complete",
     "info1": "The cache system uses IndexedDB or PWA Cache to store video segments, significantly improving load times for repeated playback.",
-    "info2": "When the cache limit is reached, the system automatically clears the least recently accessed entries (LRU policy)."
+    "info2": "When the cache limit is reached, the system automatically clears the least recently accessed entries (LRU policy).",
+    "notSupported": "Cache Not Supported",
+    "notSupportedDescription": "Your browser does not support IndexedDB or PWA Cache, so the cache feature is not available."
   },
   "about": {
     "title": "About M3U8 Online Player",

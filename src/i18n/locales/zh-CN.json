@@ -121,7 +121,9 @@
     "stopPreload": "停止预加载",
     "preloadComplete": "预加载完成",
     "info1": "缓存系统使用 IndexedDB 或 PWA Cache 存储视频片段，可显著提升重复播放时的加载速度。",
-    "info2": "当缓存数量达到上限时，系统会自动清理最久未访问的缓存条目（LRU 策略）。"
+    "info2": "当缓存数量达到上限时，系统会自动清理最久未访问的缓存条目（LRU 策略）。",
+    "notSupported": "浏览器不支持缓存",
+    "notSupportedDescription": "您的浏览器不支持 IndexedDB 或 PWA Cache，无法使用缓存功能。"
   },
   "about": {
     "title": "关于 M3U8在线播放器",

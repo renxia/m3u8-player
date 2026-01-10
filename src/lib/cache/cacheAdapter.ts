@@ -3,11 +3,11 @@
  * 支持 IndexedDB 和 PWA Cache API 两种实现
  */
 
-import { cacheManager } from './cacheManager'
+import { logger } from '@/utils/logger'
+import { idbCacheManager } from './IDBCacheManager'
 import { pwaCacheManager, PWACacheManager } from './pwaCache'
-
-/** 缓存类型 */
-export type CacheType = 'indexeddb' | 'pwa' | 'auto'
+import { cacheConfigManager } from './cacheConfigManager'
+import type { CacheType } from './cacheConfigManager'
 
 /** 统一缓存接口 */
 export interface UnifiedCacheAdapter {
@@ -44,41 +44,41 @@ export interface UnifiedCacheAdapter {
  */
 class IndexedDBCacheAdapter implements UnifiedCacheAdapter {
   async get(url: string): Promise<ArrayBuffer | undefined> {
-    return cacheManager.get(url)
+    return idbCacheManager.get(url)
   }
 
   async set(url: string, data: ArrayBuffer, m3u8Url: string): Promise<boolean> {
-    return cacheManager.set(url, data, m3u8Url)
+    return idbCacheManager.set(url, data, m3u8Url)
   }
 
   async has(url: string): Promise<boolean> {
-    return cacheManager.has(url)
+    return idbCacheManager.has(url)
   }
 
   async hasMany(urls: string[]): Promise<Set<string>> {
-    return cacheManager.hasMany(urls)
+    return idbCacheManager.hasMany(urls)
   }
 
   async delete(url: string): Promise<boolean> {
-    const result = await cacheManager.delete(url)
+    const result = await idbCacheManager.delete(url)
     return result
   }
 
   async clear(): Promise<boolean> {
-    return cacheManager.clear()
+    return idbCacheManager.clear()
   }
 
   isEnabled(): boolean {
-    return cacheManager.isEnabled()
+    return idbCacheManager.isEnabled()
   }
 
   async getStats(): Promise<{ count: number; totalSize: number }> {
-    const stats = await cacheManager.getStats()
+    const stats = await idbCacheManager.getStats()
     return { count: stats.count, totalSize: stats.totalSize }
   }
 
   async getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }> {
-    return cacheManager.getM3U8CacheInfo(m3u8Url)
+    return idbCacheManager.getM3U8CacheInfo(m3u8Url)
   }
 }
 
@@ -95,7 +95,7 @@ class PWACacheAdapter implements UnifiedCacheAdapter {
       const arrayBuffer = await response.arrayBuffer()
       return arrayBuffer
     } catch (error) {
-      console.error('[PWACacheAdapter] Failed to convert Response to ArrayBuffer:', error)
+      logger.error('[PWACacheAdapter] Failed to convert Response to ArrayBuffer:', error)
       return undefined
     }
   }
@@ -146,69 +146,16 @@ class PWACacheAdapter implements UnifiedCacheAdapter {
 }
 
 /**
- * 自动选择缓存适配器（优先 PWA，回退 IndexedDB）
- */
-class AutoCacheAdapter implements UnifiedCacheAdapter {
-  private adapter: UnifiedCacheAdapter
-
-  constructor() {
-    // 优先使用 PWA Cache API（如果支持）
-    if (PWACacheManager.isSupported()) {
-      this.adapter = new PWACacheAdapter()
-    } else {
-      this.adapter = new IndexedDBCacheAdapter()
-    }
-  }
-
-  async get(url: string): Promise<ArrayBuffer | undefined> {
-    return this.adapter.get(url)
-  }
-
-  async set(url: string, data: ArrayBuffer, m3u8Url: string): Promise<boolean> {
-    return this.adapter.set(url, data, m3u8Url)
-  }
-
-  async has(url: string): Promise<boolean> {
-    return this.adapter.has(url)
-  }
-
-  async hasMany(urls: string[]): Promise<Set<string>> {
-    return this.adapter.hasMany(urls)
-  }
-
-  async delete(url: string): Promise<boolean> {
-    return this.adapter.delete(url)
-  }
-
-  async clear(): Promise<boolean> {
-    return this.adapter.clear()
-  }
-
-  isEnabled(): boolean {
-    return this.adapter.isEnabled()
-  }
-
-  async getStats(): Promise<{ count: number; totalSize: number }> {
-    return this.adapter.getStats()
-  }
-
-  async getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }> {
-    return this.adapter.getM3U8Stats(m3u8Url)
-  }
-}
-
-/**
  * 创建缓存适配器
  */
- function createCacheAdapter(type: CacheType = 'auto'): UnifiedCacheAdapter {
+function createCacheAdapter(type: CacheType = 'indexeddb'): UnifiedCacheAdapter {
   switch (type) {
     case 'indexeddb':
       return new IndexedDBCacheAdapter()
     case 'pwa':
       return new PWACacheAdapter()
-    case 'auto':
     default:
-      return new AutoCacheAdapter()
+      return new IndexedDBCacheAdapter()
   }
 }
 
@@ -218,11 +165,18 @@ let cachedCacheType: CacheType | null = null
 
 /**
  * 获取当前配置的缓存适配器
- * 根据缓存管理器的配置动态创建适配器（带缓存）
+ * 根据配置管理器的配置动态创建适配器（带缓存）
  */
 export function getCurrentCacheAdapter(): UnifiedCacheAdapter {
-  const config = cacheManager.getConfig()
-  const cacheType = config.cacheType || 'indexeddb'
+  const config = cacheConfigManager.getConfig()
+  const cacheType = config.cacheType
+
+  // 同步 IndexedDB 缓存管理器的启用状态
+  idbCacheManager.setEnabled(config.enabled)
+
+  // 同步 IndexedDB 缓存管理器的配置
+  const idbConfig = cacheConfigManager.getIndexedDBConfig()
+  idbCacheManager.updateConfig(idbConfig)
 
   // 如果缓存类型未改变，返回缓存的适配器
   if (cachedAdapter && cachedCacheType === cacheType) {

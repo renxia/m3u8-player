@@ -3,7 +3,7 @@
  * 完全使用 HLS.js + 缓存加载器来生成缩略图
  */
 
-import { cacheManager, setCurrentM3U8Url } from '@/lib/cache'
+import { cacheConfigManager, setCurrentM3U8Url } from '@/lib/cache'
 import { createThumbnailHlsInstance, preloadSegmentForTime } from './hlsInstance'
 
 /**
@@ -43,7 +43,7 @@ export function createCachedThumbnailPlugin(options: ThumbnailPluginOptions) {
     // 监听 video:loadedmetadata 事件
     art.on('video:loadedmetadata', () => {
       const Hls = window.Hls
-      if (!Hls?.isSupported() || !cacheManager.isEnabled()) {
+      if (!Hls?.isSupported() || !cacheConfigManager.isEnabled()) {
         return
       }
 

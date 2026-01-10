@@ -79,7 +79,7 @@ const cachedUrls = await pwaCacheManager.hasMany(urls)
 ```typescript
 const result = await pwaCacheManager.delete('https://example.com/video.ts')
 if (result.success) {
-  console.log('删除成功')
+  logger.log('删除成功')
 }
 ```
 
@@ -90,7 +90,7 @@ if (result.success) {
 ```typescript
 const urls = ['https://example.com/video1.ts', 'https://example.com/video2.ts']
 const result = await pwaCacheManager.deleteMany(urls)
-console.log(`删除了 ${result.affected} 项`)
+logger.log(`删除了 ${result.affected} 项`)
 ```
 
 #### `clear(): Promise<PWACacheOperationResult>`
@@ -100,7 +100,7 @@ console.log(`删除了 ${result.affected} 项`)
 ```typescript
 const result = await pwaCacheManager.clear()
 if (result.success) {
-  console.log('缓存已清空')
+  logger.log('缓存已清空')
 }
 ```
 
@@ -132,12 +132,12 @@ const items = await pwaCacheManager.query({
 
 ```typescript
 const stats = await pwaCacheManager.getStats()
-console.log(`总缓存数: ${stats.count}`)
-console.log(`总大小: ${(stats.totalSize / 1024 / 1024).toFixed(2)} MB`)
+logger.log(`总缓存数: ${stats.count}`)
+logger.log(`总大小: ${(stats.totalSize / 1024 / 1024).toFixed(2)} MB`)
 
 // 按 M3U8 URL 分组的统计
 Object.entries(stats.byM3U8).forEach(([m3u8Url, stat]) => {
-  console.log(`${m3u8Url}: ${stat.count} 项, ${(stat.size / 1024).toFixed(2)} KB`)
+  logger.log(`${m3u8Url}: ${stat.count} 项, ${(stat.size / 1024).toFixed(2)} KB`)
 })
 ```
 
@@ -147,8 +147,8 @@ Object.entries(stats.byM3U8).forEach(([m3u8Url, stat]) => {
 
 ```typescript
 const stats = await pwaCacheManager.getM3U8Stats('https://example.com/playlist.m3u8')
-console.log(`缓存项数: ${stats.count}`)
-console.log(`总大小: ${(stats.size / 1024).toFixed(2)} KB`)
+logger.log(`缓存项数: ${stats.count}`)
+logger.log(`总大小: ${(stats.size / 1024).toFixed(2)} KB`)
 ```
 
 #### `deleteByM3U8(m3u8Url: string): Promise<PWACacheOperationResult>`
@@ -158,7 +158,7 @@ console.log(`总大小: ${(stats.size / 1024).toFixed(2)} KB`)
 ```typescript
 const result = await pwaCacheManager.deleteByM3U8('https://example.com/playlist.m3u8')
 if (result.success) {
-  console.log(`删除了 ${result.affected} 项缓存`)
+  logger.log(`删除了 ${result.affected} 项缓存`)
 }
 ```
 
@@ -179,7 +179,7 @@ async function loadVideoSegment(url: string, m3u8Url: string) {
   response = await fetch(url)
   
   // 异步缓存（不阻塞播放）
-  pwaCacheManager.add(url, response.clone(), m3u8Url).catch(console.error)
+  pwaCacheManager.add(url, response.clone(), m3u8Url).catch(logger.error)
   
   return response
 }
@@ -231,7 +231,7 @@ import { pwaCacheManager } from '@/lib/cache'
 async function clearAllCache() {
   const result = await pwaCacheManager.clear()
   if (result.success) {
-    console.log('缓存已清空')
+    logger.log('缓存已清空')
   }
 }
 
@@ -239,7 +239,7 @@ async function clearAllCache() {
 async function clearVideoCache(m3u8Url: string) {
   const result = await pwaCacheManager.deleteByM3U8(m3u8Url)
   if (result.success) {
-    console.log(`已删除 ${result.affected} 项缓存`)
+    logger.log(`已删除 ${result.affected} 项缓存`)
   }
 }
 ```

@@ -5,6 +5,8 @@
  * 分离 metadata 和 data 以提升查询性能
  */
 
+import { logger } from '@/utils/logger'
+
 const DB_NAME = 'm3u8-cache'
 const DB_VERSION = 3 // 升级版本以分离 metadata 和 data
 const METADATA_STORE_NAME = 'metadata'
@@ -67,7 +69,7 @@ async function hashUrl(url: string): Promise<string> {
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
   } catch (error) {
-    console.error('Hash calculation error:', error)
+    logger.error('Hash calculation error:', error)
     // 如果 crypto API 不可用，使用简单 hash
     let hash = 0
     for (let i = 0; i < url.length; i++) {
@@ -97,7 +99,7 @@ class IndexedDBStore {
       const request = indexedDB.open(DB_NAME, DB_VERSION)
 
       request.onerror = () => {
-        console.error('IndexedDB open error:', request.error)
+        logger.error('IndexedDB open error:', request.error)
         reject(request.error)
       }
 
@@ -218,7 +220,7 @@ class IndexedDBStore {
           // 使用 setTimeout 确保在读取完成后更新，避免事务冲突
           setTimeout(() => {
             this.updateAccessTime(hash).catch((err) => {
-              console.warn('[IndexedDB] Failed to update access time:', err)
+              logger.warn('[IndexedDB] Failed to update access time:', err)
             })
           }, 0)
 
@@ -245,7 +247,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB get error:', error)
+      logger.error('IndexedDB get error:', error)
       return undefined
     }
   }
@@ -276,7 +278,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.warn('[IndexedDB] updateAccessTime error:', error)
+      logger.warn('[IndexedDB] updateAccessTime error:', error)
     }
   }
 
@@ -309,21 +311,21 @@ class IndexedDBStore {
         // 存储 metadata
         const metadataRequest = metadataStore.put(metadata)
         metadataRequest.onerror = () => {
-          console.error('IndexedDB set metadata error:', metadataRequest.error)
+          logger.error('IndexedDB set metadata error:', metadataRequest.error)
           reject(metadataRequest.error)
         }
         metadataRequest.onsuccess = () => {
           // 存储 data
           const dataRequest = dataStore.put(cacheData)
           dataRequest.onerror = () => {
-            console.error('IndexedDB set data error:', dataRequest.error)
+            logger.error('IndexedDB set data error:', dataRequest.error)
             reject(dataRequest.error)
           }
           dataRequest.onsuccess = () => resolve(true)
         }
       })
     } catch (error) {
-      console.error('IndexedDB set error:', error)
+      logger.error('IndexedDB set error:', error)
       return false
     }
   }
@@ -374,7 +376,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB delete error:', error)
+      logger.error('IndexedDB delete error:', error)
       return false
     }
   }
@@ -435,7 +437,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB deleteMany error:', error)
+      logger.error('IndexedDB deleteMany error:', error)
       return false
     }
   }
@@ -487,7 +489,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB clear error:', error)
+      logger.error('IndexedDB clear error:', error)
       return false
     }
   }
@@ -520,7 +522,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB getAllKeys error:', error)
+      logger.error('IndexedDB getAllKeys error:', error)
       return []
     }
   }
@@ -543,7 +545,7 @@ class IndexedDBStore {
         request.onsuccess = () => resolve(request.result !== undefined)
       })
     } catch (error) {
-      console.error('IndexedDB has error:', error)
+      logger.error('IndexedDB has error:', error)
       return false
     }
   }
@@ -604,7 +606,7 @@ class IndexedDBStore {
         return cachedUrls
       }
     } catch (error) {
-      console.error('IndexedDB hasMany error:', error)
+      logger.error('IndexedDB hasMany error:', error)
       return new Set()
     }
   }
@@ -638,7 +640,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB getStats error:', error)
+      logger.error('IndexedDB getStats error:', error)
       return { count: 0, totalSize: 0 }
     }
   }
@@ -676,7 +678,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB getOldestEntries error:', error)
+      logger.error('IndexedDB getOldestEntries error:', error)
       return []
     }
   }
@@ -701,7 +703,7 @@ class IndexedDBStore {
         }
       })
     } catch (error) {
-      console.error('IndexedDB getByM3U8 error:', error)
+      logger.error('IndexedDB getByM3U8 error:', error)
       return []
     }
   }

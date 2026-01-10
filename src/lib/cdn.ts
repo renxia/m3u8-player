@@ -1,11 +1,11 @@
 const CDN_CONFIG = {
   artplayer: [
-    'artplayer/5.3.0/artplayer.min.js',
+    'artplayer/5.3.0/artplayer.js',
     'https://fastly.jsdelivr.net/npm/artplayer-plugin-hls-control/dist/artplayer-plugin-hls-control.min.js',
     // 'https://fastly.jsdelivr.net/npm/artplayer-plugin-auto-thumbnail/dist/artplayer-plugin-auto-thumbnail.min.js',
   ],
   dplayer: 'dplayer/1.26.0/DPlayer.min.js',
-  'hls.js': 'hls.js/1.5.18/hls.min.js',
+  'hls.js': 'hls.js/1.6.13/hls.js',
   'flv.js': 'flv.js/1.6.2/flv.min.js',
   webtorrent: 'webtorrent/1.9.7/webtorrent.min.js',
   twikoo: 'twikoo/1.6.44/twikoo.all.min.js',

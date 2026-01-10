@@ -7,12 +7,14 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   type CacheConfig,
   type CacheStats,
-  cacheManager,
+  cacheConfigManager,
   getCurrentCacheAdapter,
+  idbCacheManager,
   type PreloadProgress,
   type PreloadStatus,
   preloader,
 } from '@/lib/cache'
+import { logger } from '@/utils/logger'
 
 /** 缓存状态 */
 export interface CacheState {
@@ -28,16 +30,18 @@ export interface CacheState {
   preloadProgress: PreloadProgress
   /** 是否正在加载统计信息 */
   loading: boolean
+  currentM3U8Url: string
 }
 
 /** 初始状态 */
 const initialState: CacheState = {
   enabled: true,
-  config: cacheManager.getConfig(),
+  config: cacheConfigManager.getConfig(),
   stats: { count: 0, totalSize: 0, hitRate: 0 },
   preloadStatus: 'idle',
   preloadProgress: { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 },
   loading: true,
+  currentM3U8Url: '',
 }
 
 /**
@@ -54,8 +58,8 @@ export function useCache() {
       const adapter = getCurrentCacheAdapter()
       const dbStats = await adapter.getStats()
 
-      const totalRequests = cacheManager.getRuntimeStats().hits + cacheManager.getRuntimeStats().misses
-      const hitRate = totalRequests > 0 ? cacheManager.getRuntimeStats().hits / totalRequests : 0
+      const totalRequests = idbCacheManager.getRuntimeStats().hits + idbCacheManager.getRuntimeStats().misses
+      const hitRate = totalRequests > 0 ? idbCacheManager.getRuntimeStats().hits / totalRequests : 0
 
       const currentM3U8Url = preloader.getCurrentM3U8Url()
       const progress = currentM3U8Url
@@ -66,10 +70,11 @@ export function useCache() {
         stats: { ...dbStats, hitRate },
         preloadProgress: progress,
         preloadStatus: preloader.getStatus(),
+        currentM3U8Url,
         loading: false,
       }))
     } catch (error) {
-      console.error('Failed to refresh cache stats:', error)
+      logger.error('Failed to refresh cache stats:', error)
       setState((prev) => ({ ...prev, loading: false }))
     }
   }, [])
@@ -77,7 +82,7 @@ export function useCache() {
   // 初始化和监听缓存事件
   useEffect(() => {
     // 加载初始配置和统计
-    const config = cacheManager.getConfig()
+    const config = cacheConfigManager.getConfig()
     setState((prev) => ({
       ...prev,
       enabled: config.enabled,
@@ -85,28 +90,31 @@ export function useCache() {
     }))
     refreshStats()
 
-    // 监听缓存事件
-    const unsubscribe = cacheManager.addEventListener((event) => {
-      if (event === 'config') {
-        const newConfig = cacheManager.getConfig()
-        setState((prev) => ({
-          ...prev,
-          enabled: newConfig.enabled,
-          config: newConfig,
-        }))
-      } else {
-        // 其他事件刷新统计（节流）
-        refreshStats()
-      }
+    // 监听配置事件
+    const unsubscribeConfig = cacheConfigManager.addEventListener(() => {
+      const newConfig = cacheConfigManager.getConfig()
+      setState((prev) => ({
+        ...prev,
+        enabled: newConfig.enabled,
+        config: newConfig,
+      }))
     })
 
-    // 定期更新预加载状态（每 500ms）
+    // 监听 IndexedDB 缓存事件
+    const unsubscribeCache = idbCacheManager.addEventListener(() => {
+      // 其他事件刷新统计（节流）
+      refreshStats()
+    })
+
+    // 定期更新预加载状态（每 1000ms）
     const progressInterval = setInterval(async () => {
       const currentStatus = preloader.getStatus()
       const currentM3U8Url = preloader.getCurrentM3U8Url()
 
       // 如果有当前 M3U8 URL，获取进度
       if (currentM3U8Url) {
+        if (currentStatus !== 'loading' && state.currentM3U8Url === currentM3U8Url) return
+
         try {
           const currentProgress = await preloader.getProgress(currentM3U8Url)
 
@@ -119,6 +127,7 @@ export function useCache() {
             ) {
               return {
                 ...prev,
+                currentM3U8Url,
                 preloadStatus: currentStatus,
                 preloadProgress: currentProgress,
               }
@@ -126,7 +135,7 @@ export function useCache() {
             return prev
           })
         } catch (error) {
-          console.warn('[useCache] Failed to get preload progress:', error)
+          logger.warn('[useCache] Failed to get preload progress:', error)
         }
       } else {
         // 如果没有当前 M3U8 URL，但状态不是 idle，重置状态
@@ -141,10 +150,11 @@ export function useCache() {
           return prev
         })
       }
-    }, 500)
+    }, 1000)
 
     return () => {
-      unsubscribe()
+      unsubscribeConfig()
+      unsubscribeCache()
       clearInterval(progressInterval)
     }
   }, [refreshStats])
@@ -152,12 +162,12 @@ export function useCache() {
   // 切换缓存启用状态
   const toggleEnabled = useCallback(() => {
     const newEnabled = !state.enabled
-    cacheManager.setConfig({ enabled: newEnabled })
+    cacheConfigManager.setConfig({ enabled: newEnabled })
   }, [state.enabled])
 
   // 更新配置
   const updateConfig = useCallback((updates: Partial<CacheConfig>) => {
-    cacheManager.setConfig(updates)
+    cacheConfigManager.setConfig(updates)
   }, [])
 
   // 清空缓存
@@ -182,7 +192,7 @@ export function useCache() {
           refreshStats()
         },
         onError: (error) => {
-          console.error('Preload error:', error)
+          logger.error('Preload error:', error)
           setState((prev) => ({ ...prev, preloadStatus: 'error' }))
         },
       })
@@ -215,7 +225,7 @@ export function useCache() {
         refreshStats()
       },
       onError: (error) => {
-        console.error('Preload resume error:', error)
+        logger.error('Preload resume error:', error)
         setState((prev) => ({ ...prev, preloadStatus: 'error' }))
       },
     })
@@ -253,30 +263,35 @@ export function useCacheStatus() {
 
   useEffect(() => {
     // 初始加载
-    const config = cacheManager.getConfig()
+    const config = cacheConfigManager.getConfig()
     setEnabled(config.enabled)
 
     const loadStats = async () => {
       const adapter = getCurrentCacheAdapter()
       const dbStats = await adapter.getStats()
-      const totalRequests = cacheManager.getRuntimeStats().hits + cacheManager.getRuntimeStats().misses
-      const hitRate = totalRequests > 0 ? cacheManager.getRuntimeStats().hits / totalRequests : 0
+      const totalRequests = idbCacheManager.getRuntimeStats().hits + idbCacheManager.getRuntimeStats().misses
+      const hitRate = totalRequests > 0 ? idbCacheManager.getRuntimeStats().hits / totalRequests : 0
       setStats({ ...dbStats, hitRate })
     }
 
     loadStats()
 
-    // 监听变化
-    const unsubscribe = cacheManager.addEventListener(async (event) => {
-      if (event === 'config') {
-        const newConfig = cacheManager.getConfig()
-        setEnabled(newConfig.enabled)
-      }
+    // 监听配置变化
+    const unsubscribeConfig = cacheConfigManager.addEventListener(() => {
+      const newConfig = cacheConfigManager.getConfig()
+      setEnabled(newConfig.enabled)
+    })
+
+    // 监听缓存变化
+    const unsubscribeCache = idbCacheManager.addEventListener(async () => {
       // 重新获取统计
       await loadStats()
     })
 
-    return unsubscribe
+    return () => {
+      unsubscribeConfig()
+      unsubscribeCache()
+    }
   }, [])
 
   return { stats, enabled }
