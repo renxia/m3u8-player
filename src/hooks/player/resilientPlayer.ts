@@ -121,11 +121,7 @@ class ResilientPlayerManager {
   /**
    * 处理播放失败，返回下一个播放选项
    */
-  async handlePlaybackError(
-    options: PlayOptions,
-    videoType: VideoType,
-    error: Error,
-  ): Promise<PlayOptions | null> {
+  async handlePlaybackError(options: PlayOptions, videoType: VideoType, error: Error): Promise<PlayOptions | null> {
     const { url, playerType, fallbackUrls = [], maxRetries = 3, fallbackStrategy, onFallback } = options
 
     // 检查是否启用降级
@@ -138,15 +134,7 @@ class ResilientPlayerManager {
     const nextAttempt = this.currentAttempt + 1
 
     // 确定降级策略
-    const attemptResult = await this.determineFallbackStrategy(
-      nextAttempt,
-      url,
-      videoType,
-      playerType,
-      fallbackUrls,
-      error,
-      strategy,
-    )
+    const attemptResult = await this.determineFallbackStrategy(nextAttempt, url, videoType, playerType, fallbackUrls, error, strategy)
 
     if (!attemptResult) {
       return null
@@ -320,13 +308,7 @@ export class ErrorClassifier {
    */
   static isFormatError(error: Error): boolean {
     const msg = error.message.toLowerCase()
-    return (
-      msg.includes('format') ||
-      msg.includes('unsupported') ||
-      msg.includes('hls') ||
-      msg.includes('codec') ||
-      msg.includes('decode')
-    )
+    return msg.includes('format') || msg.includes('unsupported') || msg.includes('hls') || msg.includes('codec') || msg.includes('decode')
   }
 
   /**
@@ -341,20 +323,20 @@ export class ErrorClassifier {
    * 判断是否可重试
    */
   static isRetriable(error: Error): boolean {
-    return this.isNetworkError(error) || this.isFormatError(error)
+    return ErrorClassifier.isNetworkError(error) || ErrorClassifier.isFormatError(error)
   }
 
   /**
    * 获取错误友好提示
    */
   static getUserFriendlyMessage(error: Error): string {
-    if (this.isNetworkError(error)) {
+    if (ErrorClassifier.isNetworkError(error)) {
       return '网络连接失败，请检查网络设置'
     }
-    if (this.isFormatError(error)) {
+    if (ErrorClassifier.isFormatError(error)) {
       return '视频格式不支持，正在尝试其他播放方式'
     }
-    if (this.isSourceError(error)) {
+    if (ErrorClassifier.isSourceError(error)) {
       return '视频源不可用，请检查视频地址'
     }
     return '播放失败，请重试'

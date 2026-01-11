@@ -11,6 +11,20 @@
   --color-accent: #f59e0b;
   --color-bg-dark: #0f172a;
   --color-bg-card: #1e293b;
+  /* Placeholder 颜色变量 */
+  --placeholder-light: #cbd5e1;
+  --placeholder-dark: #475569;
+}
+
+/* 自定义 Placeholder 样式 */
+::placeholder {
+  color: var(--placeholder-light);
+  opacity: 0.7;
+}
+
+.dark ::placeholder {
+  color: var(--placeholder-dark);
+  opacity: 0.7;
 }
 
 /* Dark mode 变量 */

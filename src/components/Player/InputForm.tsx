@@ -203,20 +203,14 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
             value={urlInput}
             onChange={handleInputChange}
             placeholder={demoUrl}
-            className={cn(
-              'flex-1 px-3 md:px-4 py-2 md:py-3 rounded-xl text-sm md:text-base',
-              'bg-slate-100 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600/50',
-              'text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400',
-              'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
-              'transition-all',
-            )}
+            className="flex-1 px-3 md:px-4 py-2 md:py-3 rounded-xl text-sm md:text-base bg-slate-100 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600/50 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
           />
           <div className="flex flex-wrap gap-1.5 md:gap-2">
             <button
               type="button"
               onClick={() => handlePlay('artplayer')}
               className={cn(
-                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm md:text-base',
+                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-md font-medium text-sm md:text-base',
                 'bg-indigo-600 hover:bg-indigo-700 text-white',
                 'transition-all btn-glow',
               )}
@@ -228,7 +222,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
               type="button"
               onClick={() => handlePlay('dplayer')}
               className={cn(
-                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm md:text-base',
+                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-md font-medium text-sm md:text-base',
                 'bg-blue-600 hover:bg-blue-700 text-white',
                 'transition-all',
               )}
@@ -240,7 +234,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
               type="button"
               onClick={handleGetAndEdit}
               className={cn(
-                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm md:text-base',
+                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-md font-medium text-sm md:text-base',
                 'bg-pink-600 hover:bg-pink-700 text-white',
                 'transition-all',
               )}
@@ -252,7 +246,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
               type="button"
               onClick={onRotate}
               className={cn(
-                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm md:text-base',
+                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-md font-medium text-sm md:text-base',
                 'bg-emerald-600 hover:bg-emerald-700 text-white',
                 'transition-all',
               )}
@@ -264,7 +258,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
               type="button"
               onClick={handleDownload}
               className={cn(
-                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm md:text-base',
+                'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-md font-medium text-sm md:text-base',
                 'bg-violet-600 hover:bg-violet-700 text-white',
                 'transition-all',
               )}
@@ -293,13 +287,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
             onChange={(e) => setM3u8Content(e.target.value)}
             placeholder={t('index.m3u8Placeholder')}
             rows={3}
-            className={cn(
-              'w-full rounded-r px-1 md:px-3 py-2',
-              'bg-slate-100 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600/50',
-              'text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400',
-              'focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-transparent',
-              'transition-all resize-y',
-            )}
+            className="w-full rounded-r px-1 md:px-3 py-2 bg-slate-100 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600/50 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-transparent transition-all resize-y"
           />
         </div>
 
@@ -307,7 +295,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
         <div className="flex items-center gap-2 md:gap-3">
           <label
             className={cn(
-              'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium cursor-pointer text-sm md:text-base',
+              'flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-md font-medium cursor-pointer text-sm md:text-base',
               'bg-cyan-600 hover:bg-cyan-700 text-white',
               'transition-all',
             )}

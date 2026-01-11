@@ -38,6 +38,7 @@
     "hls.js": "^1.6.15",
     "i18next": "^25.2.1",
     "lucide-react": "^0.562.0",
+    "quick-lru": "^7.3.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-i18next": "^16.5.1",

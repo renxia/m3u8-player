@@ -3,7 +3,7 @@
  * 提供缓存配置、统计信息、预加载控制等功能
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   type CacheConfig,
   type CacheStats,
@@ -49,6 +49,7 @@ const initialState: CacheState = {
  */
 export function useCache() {
   const [state, setState] = useState<CacheState>(initialState)
+  const isUpdatingProgressRef = useRef(false)
 
   // 刷新统计信息
   const refreshStats = useCallback(async () => {
@@ -106,16 +107,23 @@ export function useCache() {
       refreshStats()
     })
 
-    // 定期更新预加载状态（每 1000ms）
+    // 定期更新预加载状态（每 3000ms）
     const progressInterval = setInterval(async () => {
-      const currentStatus = preloader.getStatus()
-      const currentM3U8Url = preloader.getCurrentM3U8Url()
+      // 防止并发执行，避免异步操作积压
+      if (isUpdatingProgressRef.current) {
+        return
+      }
 
-      // 如果有当前 M3U8 URL，获取进度
-      if (currentM3U8Url) {
-        if (currentStatus !== 'loading' && state.currentM3U8Url === currentM3U8Url) return
+      isUpdatingProgressRef.current = true
 
-        try {
+      try {
+        const currentStatus = preloader.getStatus()
+        const currentM3U8Url = preloader.getCurrentM3U8Url()
+
+        // 如果有当前 M3U8 URL，获取进度
+        if (currentM3U8Url) {
+          if (currentStatus !== 'loading' && state.currentM3U8Url === currentM3U8Url) return
+
           const currentProgress = await preloader.getProgress(currentM3U8Url)
 
           setState((prev) => {
@@ -134,23 +142,25 @@ export function useCache() {
             }
             return prev
           })
-        } catch (error) {
-          logger.warn('[useCache] Failed to get preload progress:', error)
-        }
-      } else {
-        // 如果没有当前 M3U8 URL，但状态不是 idle，重置状态
-        setState((prev) => {
-          if (prev.preloadStatus !== 'idle') {
-            return {
-              ...prev,
-              preloadStatus: 'idle',
-              preloadProgress: { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 },
+        } else {
+          // 如果没有当前 M3U8 URL，但状态不是 idle，重置状态
+          setState((prev) => {
+            if (prev.preloadStatus !== 'idle') {
+              return {
+                ...prev,
+                preloadStatus: 'idle',
+                preloadProgress: { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 },
+              }
             }
-          }
-          return prev
-        })
+            return prev
+          })
+        }
+      } catch (error) {
+        logger.warn('[useCache] Failed to get preload progress:', error)
+      } finally {
+        isUpdatingProgressRef.current = false
       }
-    }, 1000)
+    }, 3000)
 
     return () => {
       unsubscribeConfig()

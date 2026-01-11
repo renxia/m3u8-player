@@ -3,6 +3,7 @@
  * 监控内存和存储状态，实现资源不足时的优雅降级
  */
 
+import { getCurrentCacheAdapter } from '@/lib/cache'
 import { logger } from '@/utils/logger'
 
 /**
@@ -180,7 +181,7 @@ class MemoryMonitor {
           pressure: this.calculatePressure(usageRatio, available),
         }
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn('[MemoryMonitor] performance.memory not available, using estimation')
     }
 
@@ -354,7 +355,7 @@ class StorageMonitor {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn('[StorageMonitor] Storage API not available, using estimation')
     }
 
@@ -504,21 +505,26 @@ class DegradationManager {
    */
   private async cleanupCache(): Promise<void> {
     try {
-      const { cacheConfigManager } = await import('@/lib/cache')
-      const adapter = await import('@/lib/cache/cacheAdapter').then((m) => m.getCurrentCacheAdapter())
+      const adapter = getCurrentCacheAdapter()
 
       if (adapter.isEnabled()) {
-        // 获取所有缓存的 URL
-        const keys = await adapter.keys()
-        const cleanupCount = Math.floor(keys.length * this.strategy.cacheCleanupRatio)
+        // 获取缓存统计信息
+        const stats = await adapter.getStats()
+        const cleanupCount = Math.floor(stats.count * this.strategy.cacheCleanupRatio)
 
-        // 删除最旧的缓存
-        const keysToDelete = keys.slice(0, cleanupCount)
-        for (const key of keysToDelete) {
-          await adapter.delete(key)
+        if (cleanupCount === 0) {
+          return
         }
 
-        logger.log('[DegradationManager] Cleaned up', cleanupCount, 'cache entries')
+        // 获取最旧的缓存键
+        const urlsToDelete = await adapter.getOldestKeys(cleanupCount)
+
+        // 删除最旧的缓存
+        for (const url of urlsToDelete) {
+          await adapter.delete(url)
+        }
+
+        logger.log('[DegradationManager] Cleaned up', urlsToDelete.length, 'cache entries')
       }
     } catch (error) {
       logger.error('[DegradationManager] Error cleaning cache:', error)
@@ -643,7 +649,7 @@ export function formatBytes(bytes: number): string {
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
+  return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`
 }
 
 /**

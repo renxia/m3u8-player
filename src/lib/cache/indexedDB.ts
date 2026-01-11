@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@/utils/logger'
+import QuickLRU from 'quick-lru'
 
 const DB_NAME = 'm3u8-cache'
 const DB_VERSION = 3 // 升级版本以分离 metadata 和 data
@@ -111,6 +112,9 @@ class IndexedDBStore {
     size: 0,
     hitRate: 0,
   }
+  // LRU 缓存已存在的 URL（用于优化 has/hasMany 性能）
+  // key: url, value: true
+  private urlExistsLRU: QuickLRU<string, true> = new QuickLRU({ maxSize: 3000 })
 
   /**
    * 获取数据库实例
@@ -468,7 +472,7 @@ class IndexedDBStore {
         data: entry.data,
       }
 
-      return new Promise((resolve, reject) => {
+      const result = await new Promise<boolean>((resolve, reject) => {
         const transaction = db.transaction([METADATA_STORE_NAME, DATA_STORE_NAME], 'readwrite')
         const metadataStore = transaction.objectStore(METADATA_STORE_NAME)
         const dataStore = transaction.objectStore(DATA_STORE_NAME)
@@ -489,6 +493,13 @@ class IndexedDBStore {
           dataRequest.onsuccess = () => resolve(true)
         }
       })
+
+      // 添加到 LRU 缓存
+      if (result) {
+        this.urlExistsLRU.set(entry.url, true)
+      }
+
+      return result
     } catch (error) {
       logger.error('IndexedDB set error:', error)
       return false
@@ -503,7 +514,7 @@ class IndexedDBStore {
       const db = await this.getDB()
       const hash = await this.getUrlHash(url)
 
-      return new Promise((resolve, reject) => {
+      const result = await new Promise<boolean>((resolve, reject) => {
         const transaction = db.transaction([METADATA_STORE_NAME, DATA_STORE_NAME], 'readwrite')
         const metadataStore = transaction.objectStore(METADATA_STORE_NAME)
         const dataStore = transaction.objectStore(DATA_STORE_NAME)
@@ -540,6 +551,13 @@ class IndexedDBStore {
           checkComplete()
         }
       })
+
+      // 从 LRU 缓存中移除
+      if (result) {
+        this.urlExistsLRU.delete(url)
+      }
+
+      return result
     } catch (error) {
       logger.error('IndexedDB delete error:', error)
       return false
@@ -557,7 +575,7 @@ class IndexedDBStore {
       const urlHashMap = await this.getUrlHashes(urls)
       const hashesToDelete = Array.from(urlHashMap.values())
 
-      return new Promise((resolve, reject) => {
+      const result = await new Promise<boolean>((resolve, reject) => {
         const transaction = db.transaction([METADATA_STORE_NAME, DATA_STORE_NAME], 'readwrite')
         const metadataStore = transaction.objectStore(METADATA_STORE_NAME)
         const dataStore = transaction.objectStore(DATA_STORE_NAME)
@@ -601,6 +619,15 @@ class IndexedDBStore {
           }
         }
       })
+
+      // 从 LRU 缓存中移除
+      if (result) {
+        for (const url of urls) {
+          this.urlExistsLRU.delete(url)
+        }
+      }
+
+      return result
     } catch (error) {
       logger.error('IndexedDB deleteMany error:', error)
       return false
@@ -613,7 +640,7 @@ class IndexedDBStore {
   async clear(): Promise<boolean> {
     try {
       const db = await this.getDB()
-      return new Promise((resolve, reject) => {
+      const result = await new Promise<boolean>((resolve, reject) => {
         const transaction = db.transaction([METADATA_STORE_NAME, DATA_STORE_NAME], 'readwrite')
         const metadataStore = transaction.objectStore(METADATA_STORE_NAME)
         const dataStore = transaction.objectStore(DATA_STORE_NAME)
@@ -626,6 +653,7 @@ class IndexedDBStore {
           if (metadataCleared && dataCleared) {
             if (!hasError) {
               this.urlHashCache.clear()
+              this.urlExistsLRU.clear()
             }
             resolve(!hasError)
           }
@@ -653,6 +681,7 @@ class IndexedDBStore {
           checkComplete()
         }
       })
+      return result
     } catch (error) {
       logger.error('IndexedDB clear error:', error)
       return false
@@ -694,14 +723,21 @@ class IndexedDBStore {
 
   /**
    * 检查缓存是否存在
+   * 优化：使用 LRU 缓存已查询过的 URL，避免重复 IO
    * 只查询 metadata store
    */
   async has(url: string): Promise<boolean> {
     try {
+      // 先检查 LRU 缓存
+      if (this.urlExistsLRU.has(url)) {
+        return true
+      }
+
+      // LRU 未命中，查询 IndexedDB
       const db = await this.getDB()
       const hash = await this.getUrlHash(url)
 
-      return new Promise((resolve, reject) => {
+      const result = await new Promise<boolean>((resolve, reject) => {
         const transaction = db.transaction(METADATA_STORE_NAME, 'readonly')
         const store = transaction.objectStore(METADATA_STORE_NAME)
         const request = store.getKey(hash)
@@ -709,6 +745,13 @@ class IndexedDBStore {
         request.onerror = () => reject(request.error)
         request.onsuccess = () => resolve(request.result !== undefined)
       })
+
+      // 如果存在，缓存到 LRU
+      if (result) {
+        this.urlExistsLRU.set(url, true)
+      }
+
+      return result
     } catch (error) {
       logger.error('IndexedDB has error:', error)
       return false
@@ -717,6 +760,7 @@ class IndexedDBStore {
 
   /**
    * 批量检查多个 URL 是否存在（优化性能）
+   * 优化：使用 LRU 缓存已查询过的 URL，避免重复 IO
    * 只查询 metadata store
    */
   async hasMany(urls: string[]): Promise<Set<string>> {
@@ -724,52 +768,81 @@ class IndexedDBStore {
 
     try {
       const db = await this.getDB()
-      const urlHashMap = await this.getUrlHashes(urls)
 
-      // 如果 URL 数量较少（< 100），使用批量 getKey 查询
-      if (urls.length < 100) {
-        return new Promise((resolve, reject) => {
-          const transaction = db.transaction(METADATA_STORE_NAME, 'readonly')
-          const store = transaction.objectStore(METADATA_STORE_NAME)
-          const cachedUrls = new Set<string>()
-          let completed = 0
-          let hasError = false
+      // 从 LRU 缓存中批量查询
+      const lruHitUrls: string[] = []
+      const needCheckUrls: string[] = []
 
-          // 批量查询所有 hash（在同一事务中）
-          for (const url of urls) {
-            const hash = urlHashMap.get(url)!
-            const request = store.getKey(hash)
-            request.onerror = () => {
-              if (!hasError) {
-                hasError = true
-                reject(request.error)
-              }
-            }
-            request.onsuccess = () => {
-              if (request.result !== undefined) {
-                cachedUrls.add(url)
-              }
-              completed++
-              if (completed === urls.length && !hasError) {
-                resolve(cachedUrls)
-              }
-            }
-          }
-        })
-      } else {
-        // 对于大量 URL，获取所有键然后取交集
-        const allKeys = await this.getAllKeys()
-        const allKeysSet = new Set(allKeys)
-        const cachedUrls = new Set<string>()
-
-        for (const url of urls) {
-          if (allKeysSet.has(url)) {
-            cachedUrls.add(url)
-          }
+      for (const url of urls) {
+        if (this.urlExistsLRU.has(url)) {
+          lruHitUrls.push(url)
+        } else {
+          needCheckUrls.push(url)
         }
-
-        return cachedUrls
       }
+
+      // 对于 LRU 未命中的 URL，查询 IndexedDB
+      const fromDBUrls: string[] = []
+      if (needCheckUrls.length > 0) {
+        const urlHashMap = await this.getUrlHashes(needCheckUrls)
+
+        // 如果 URL 数量较少（< 100），使用批量 getKey 查询
+        if (needCheckUrls.length < 100) {
+          const dbResult = await new Promise<Set<string>>((resolve, reject) => {
+            const transaction = db.transaction(METADATA_STORE_NAME, 'readonly')
+            const store = transaction.objectStore(METADATA_STORE_NAME)
+            const cachedUrls = new Set<string>()
+            let completed = 0
+            let hasError = false
+
+            // 批量查询所有 hash（在同一事务中）
+            for (const url of needCheckUrls) {
+              const hash = urlHashMap.get(url)!
+              const request = store.getKey(hash)
+              request.onerror = () => {
+                if (!hasError) {
+                  hasError = true
+                  reject(request.error)
+                }
+              }
+              request.onsuccess = () => {
+                if (request.result !== undefined) {
+                  cachedUrls.add(url)
+                }
+                completed++
+                if (completed === needCheckUrls.length && !hasError) {
+                  resolve(cachedUrls)
+                }
+              }
+            }
+          })
+
+          // 缓存查询结果到 LRU
+          for (const url of dbResult) {
+            this.urlExistsLRU.set(url, true)
+          }
+          fromDBUrls.push(...dbResult)
+        } else {
+          // 对于大量 URL，获取所有键然后取交集
+          const allKeys = await this.getAllKeys()
+          const allKeysSet = new Set(allKeys)
+          const cachedUrls = new Set<string>()
+
+          for (const url of needCheckUrls) {
+            if (allKeysSet.has(url)) {
+              cachedUrls.add(url)
+            }
+          }
+
+          // 缓存查询结果到 LRU
+          for (const url of cachedUrls) {
+            this.urlExistsLRU.set(url, true)
+          }
+          fromDBUrls.push(...cachedUrls)
+        }
+      }
+
+      return new Set([...lruHitUrls, ...fromDBUrls])
     } catch (error) {
       logger.error('IndexedDB hasMany error:', error)
       return new Set()
@@ -883,6 +956,7 @@ class IndexedDBStore {
       this.dbPromise = null
     }
     this.urlHashCache.clear()
+    this.urlExistsLRU.clear()
   }
 }
 

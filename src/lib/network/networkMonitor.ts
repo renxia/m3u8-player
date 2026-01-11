@@ -63,13 +63,7 @@ export interface PreloadConfig {
 /**
  * 网络事件类型
  */
-export type NetworkEventType =
-  | 'online'
-  | 'offline'
-  | 'change'
-  | 'quality-up'
-  | 'quality-down'
-  | 'bandwidth-update'
+export type NetworkEventType = 'online' | 'offline' | 'change' | 'quality-up' | 'quality-down' | 'bandwidth-update'
 
 /**
  * 网络事件监听器
@@ -465,7 +459,7 @@ class NetworkMonitor {
    */
   async testBandwidth(): Promise<number> {
     const startTime = Date.now()
-    const testFileSize = 1024 * 1024 // 1MB
+    const _testFileSize = 1024 * 1024 // 1MB
 
     try {
       // 使用一个小文件测试网络速度

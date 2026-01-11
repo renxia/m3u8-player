@@ -4,8 +4,8 @@ import type { PlayerInstances, PlayerType, VideoType } from '@/types'
 import { logger } from '@/utils/logger'
 import { initArtPlayer } from './player/artplayerConfig'
 import { initDPlayer } from './player/dplayerConfig'
-import { createResilientPlayer, ErrorClassifier } from './player/resilientPlayer'
 import { detectVideoType } from './player/playerUtils'
+import { createResilientPlayer, ErrorClassifier } from './player/resilientPlayer'
 
 export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, onEnd?: (url: string) => void) {
   const instances = useRef<PlayerInstances>({
@@ -21,13 +21,15 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
   const isInitializingRef = useRef(false) // 新增：标记是否正在初始化
 
   // 创建降级播放器管理器
-  const resilientPlayerRef = useRef(createResilientPlayer({
-    enabled: true,
-    allowFormatFallback: true,
-    allowPlayerFallback: true,
-    useFallbackUrls: true,
-    fallbackDelay: 1000,
-  }))
+  const resilientPlayerRef = useRef(
+    createResilientPlayer({
+      enabled: true,
+      allowFormatFallback: true,
+      allowPlayerFallback: true,
+      useFallbackUrls: true,
+      fallbackDelay: 1000,
+    }),
+  )
 
   // 统一的播放器销毁函数
   const destroyAll = useCallback(() => {
@@ -350,7 +352,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
                 const errorObj = error instanceof Error ? error : new Error(String(error))
 
                 // 获取用户友好的错误信息
-                let userMessage = ErrorClassifier.getUserFriendlyMessage(errorObj)
+                const userMessage = ErrorClassifier.getUserFriendlyMessage(errorObj)
 
                 // 尝试使用 toast，回退到 alert
                 if (window.h5Utils?.toast) {

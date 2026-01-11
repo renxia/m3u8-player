@@ -37,6 +37,9 @@ export interface UnifiedCacheAdapter {
 
   /** 获取 M3U8 统计 */
   getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }>
+
+  /** 获取最旧的缓存键（用于 LRU 淘汰） */
+  getOldestKeys(limit: number): Promise<string[]>
 }
 
 /**
@@ -80,6 +83,12 @@ class IndexedDBCacheAdapter implements UnifiedCacheAdapter {
   async getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }> {
     return idbCacheManager.getM3U8CacheInfo(m3u8Url)
   }
+
+  async getOldestKeys(limit: number): Promise<string[]> {
+    const { indexedDBStore } = await import('./indexedDB')
+    const oldestEntries = await indexedDBStore.getOldestEntries(limit)
+    return oldestEntries.map((entry) => entry.originalUrl)
+  }
 }
 
 /**
@@ -113,8 +122,7 @@ class PWACacheAdapter implements UnifiedCacheAdapter {
   }
 
   async has(url: string): Promise<boolean> {
-    const response = await pwaCacheManager.get(url)
-    return response !== undefined
+    return pwaCacheManager.has(url)
   }
 
   async hasMany(urls: string[]): Promise<Set<string>> {
@@ -142,6 +150,12 @@ class PWACacheAdapter implements UnifiedCacheAdapter {
 
   async getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }> {
     return pwaCacheManager.getM3U8Stats(m3u8Url)
+  }
+
+  async getOldestKeys(limit: number): Promise<string[]> {
+    const items = await pwaCacheManager.query({ limit })
+    // items 已按 cachedAt 降序排序（最新的在前），反转获取最旧的
+    return items.reverse().map((item) => item.url)
   }
 }
 
