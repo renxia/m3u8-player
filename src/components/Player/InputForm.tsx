@@ -157,18 +157,24 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
 
   // 处理文件选择
   const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
+    (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent) => {
+      e.preventDefault()
+
+      const file = 'dataTransfer' in e ? e.dataTransfer?.files?.[0] : e.target.files?.[0]
       if (!file) return
+
+      console.log(file.type)
 
       if (file.name.endsWith('.m3u8')) {
         file.text().then((text) => {
           setM3u8Content(text)
           handlePlay('artplayer')
         })
-      } else {
+      } else if (file.type.startsWith('video/')) {
         const url = URL.createObjectURL(file)
-        onPlay(url, file.name.includes('.m3u8') ? 'customHls' : '')
+        const ext = file.name.split('.')[1]
+        const type = ext || file.type.split('video/')[1]
+        onPlay(url, type)
       }
     },
     [handlePlay, onPlay],
@@ -177,21 +183,14 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
   // 处理拖放
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault()
-      const file = e.dataTransfer?.files?.[0]
-      if (file?.name.endsWith('.m3u8')) {
-        file.text().then((text) => {
-          setM3u8Content(text)
-          handlePlay('artplayer')
-        })
-      }
+      handleFileChange(e)
     },
-    [handlePlay],
+    [handleFileChange],
   )
 
   return (
     <div
-      className="bg-white/80 dark:bg-slate-800/50 rounded-2xl shadow-xl backdrop-blur-sm p-3 md:p-6"
+      className="bg-white/80 dark:bg-slate-800/50 rounded-2xl shadow-xl backdrop-blur-sm p-1 sm:p-3 md:p-6"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
@@ -205,7 +204,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
             placeholder={demoUrl}
             className="flex-1 px-3 md:px-4 py-2 md:py-3 rounded-xl text-sm md:text-base bg-slate-100 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600/50 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
           />
-          <div className="flex flex-wrap gap-1.5 md:gap-2">
+          <div className="flex flex-wrap gap-1 sm:gap-1.5 md:gap-2">
             <button
               type="button"
               onClick={() => handlePlay('artplayer')}

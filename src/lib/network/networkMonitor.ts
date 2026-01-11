@@ -436,7 +436,7 @@ class NetworkMonitor {
    * 获取网络状态描述（用于 UI 显示）
    */
   getStateDescription(): string {
-    const { online, effectiveType, downlink } = this.state
+    const { online, downlink } = this.state
 
     if (!online) {
       return '离线'
@@ -459,11 +459,11 @@ class NetworkMonitor {
    */
   async testBandwidth(): Promise<number> {
     const startTime = Date.now()
-    const _testFileSize = 1024 * 1024 // 1MB
+    // const _testFileSize = 1024 * 1024 // 1MB
 
     try {
       // 使用一个小文件测试网络速度
-      const response = await fetch(`https://www.google.com/favicon.ico?t=${Date.now()}`, {
+      const response = await fetch(`https://www.bing.com/favicon.ico?t=${Date.now()}`, {
         cache: 'no-cache',
         mode: 'cors',
       })

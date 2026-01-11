@@ -6,6 +6,7 @@
 import { Database, Download, Pause, Play, Settings, Trash2, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { useCache } from '@/hooks/useCache'
 import { idbCacheManager, preloader } from '@/lib/cache'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,7 @@ interface CacheIndicatorProps {
 export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicatorProps) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
   const {
     enabled,
     stats,
@@ -61,6 +63,13 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
 
   // 优先使用 prop 传入的 URL，否则使用 preloader 的 URL
   const m3u8Url = propM3U8Url || preloaderM3U8Url
+
+  // 处理清除缓存
+  const handleClearCache = async () => {
+    await clearCache()
+    setShowClearConfirm(false)
+    toast.success(t('cache.clearSuccess'))
+  }
 
   // 获取当前视频的缓存信息
   useEffect(() => {
@@ -266,7 +275,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
             <div className="flex items-center gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-slate-700/50">
               <button
                 type="button"
-                onClick={clearCache}
+                onClick={() => setShowClearConfirm(true)}
                 className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs sm:text-sm transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -279,6 +288,37 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                 <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>{t('cache.settings')}</span>
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 清除确认对话框 */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{t('cache.clearConfirmTitle')}</h3>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 mb-6">{t('cache.clearConfirmMessage')}</p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleClearCache}
+                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors"
+              >
+                {t('cache.confirmClear')}
+              </button>
             </div>
           </div>
         </div>

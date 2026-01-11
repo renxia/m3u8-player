@@ -75,10 +75,10 @@ export default function AboutPage() {
               <ExternalLink className="w-3 h-3" />
             </a>
             <a
-              href="https://lzw.me"
+              href="https://lzw.me/messagewall"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm md:text-base"
+              className="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-gray-100 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm md:text-base"
             >
               {t('about.contactLink')}
               <ExternalLink className="w-3 h-3" />

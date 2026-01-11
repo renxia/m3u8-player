@@ -56,6 +56,21 @@ export interface Release {
 // 操作系统类型
 export type OSType = 'windows' | 'macos' | 'linux' | ''
 
+export interface AlertOptions {
+  icon?: 'success' | 'error' | 'info' | 'warn'
+  showConfirmButton: boolean
+  showCancelButton: boolean
+  confirmButtonText?: string
+  cancelButtonText?: string
+}
+
+export interface AlertResult {
+  isConfirmed: boolean
+  isDenied: boolean
+  isDismissed: boolean
+  dismiss: 'close' | 'confirm' | 'deny'
+}
+
 // 全局 Window 扩展
 declare global {
   interface Window {
@@ -65,8 +80,8 @@ declare global {
     Artplayer: any
     DPlayer: any
     h5Utils: {
-      alert: (msg: string, options?: { icon?: string }) => Promise<any>
-      toast: (msg: string, options?: { icon?: string }) => Promise<any>
+      alert: (msg: string, options?: AlertOptions) => Promise<AlertResult>
+      toast: (msg: string, options?: AlertOptions) => Promise<AlertResult>
       copy: (text: string) => Promise<any>
       loadJsOrCss: (urls: string | string[], options?: { attr?: Record<string, string | boolean> } & Record<string, any>) => Promise<void>
       getUrlParams: () => Record<string, string>

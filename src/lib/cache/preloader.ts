@@ -10,7 +10,7 @@ import { getCurrentCacheAdapter } from './cacheAdapter'
 import { fetchAndParseM3U8, getSegmentsInRange, type TSSegment } from './m3u8Parser'
 import { logger } from '@/utils/logger'
 import { downloadManager, DownloadPriority } from './downloadManager'
-import { getNetworkMonitor, type PreloadConfig as NetworkPreloadConfig } from '@/lib/network/networkMonitor'
+import { getNetworkMonitor } from '@/lib/network/networkMonitor'
 import { getResourceMonitor } from '@/lib/resource/resourceMonitor'
 
 /** 预加载进度回调 */
