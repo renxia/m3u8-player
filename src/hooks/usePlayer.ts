@@ -30,30 +30,79 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
     // 停止预加载
     preloader.stop()
 
+    // 彻底清理所有播放器实例和事件监听器
     if (instances.current.dp) {
-      instances.current.dp.destroy()
-      instances.current.dp = null
-    }
-    if (instances.current.art) {
-      instances.current.art.destroy()
-      instances.current.art = null
-    }
-    if (instances.current.hls) {
-      instances.current.hls.destroy()
-      instances.current.hls = null
-    }
-    if (instances.current.flvPlayer) {
-      instances.current.flvPlayer.destroy()
-      instances.current.flvPlayer = null
-    }
-    if (instances.current.wtClient) {
-      instances.current.wtClient.destroy()
-      instances.current.wtClient = null
+      try {
+        instances.current.dp.destroy()
+        // 移除所有事件监听器
+        instances.current.dp.off?.()
+      } catch (error) {
+        logger.warn('[usePlayer] Error destroying DPlayer instance:', error)
+      } finally {
+        instances.current.dp = null
+      }
     }
 
-    // 重置状态
+    if (instances.current.art) {
+      try {
+        // ArtPlayer 可能有自定义的清理逻辑
+        instances.current.art.destroy()
+        // 显式触发销毁事件，确保所有监听器被清理
+        instances.current.art.emit?.('destroy')
+        // 移除所有事件监听器
+        instances.current.art.off?.()
+      } catch (error) {
+        logger.warn('[usePlayer] Error destroying ArtPlayer instance:', error)
+      } finally {
+        instances.current.art = null
+      }
+    }
+
+    if (instances.current.hls) {
+      try {
+        instances.current.hls.destroy()
+        // HLS.js 可能需要额外的清理
+        instances.current.hls.detachMedia?.()
+      } catch (error) {
+        logger.warn('[usePlayer] Error destroying HLS instance:', error)
+      } finally {
+        instances.current.hls = null
+      }
+    }
+
+    if (instances.current.flvPlayer) {
+      try {
+        instances.current.flvPlayer.destroy()
+        instances.current.flvPlayer.detachMediaElement?.()
+        instances.current.flvPlayer.unload?.()
+      } catch (error) {
+        logger.warn('[usePlayer] Error destroying FLV player instance:', error)
+      } finally {
+        instances.current.flvPlayer = null
+      }
+    }
+
+    if (instances.current.wtClient) {
+      try {
+        instances.current.wtClient.destroy()
+        // WebTorrent 可能有额外的清理需求
+        instances.current.wtClient.removeAllListeners?.()
+      } catch (error) {
+        logger.warn('[usePlayer] Error destroying WebTorrent client:', error)
+      } finally {
+        instances.current.wtClient = null
+      }
+    }
+
+    // 重置所有状态引用，帮助垃圾回收
+    currentUrlRef.current = ''
     isPlayingRef.current = false
     isInitializingRef.current = false
+
+    // 强制垃圾回收提示（仅开发环境）
+    if (import.meta.env.DEV) {
+      logger.debug('[usePlayer] Player instances destroyed, ready for GC')
+    }
   }, [])
 
   // ArtPlayer 播放器初始化（简化，移除冗余检查）
@@ -140,7 +189,13 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
   const play = useCallback(
     async (url: string, customType?: string, playerType: PlayerType = 'artplayer') => {
       if (!url) {
-        window.h5Utils?.alert('请输入 m3u8 地址或内容')
+        // 尝试使用 toast，回退到 alert
+        const message = '请输入视频地址（M3U8、MP4、FLV 或磁力链）'
+        if (window.h5Utils?.alert) {
+          window.h5Utils.alert(message, { icon: 'info' })
+        } else {
+          logger.error('[play] No URL provided:', message)
+        }
         return false
       }
 
@@ -218,6 +273,32 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
             } catch (error) {
               logger.error('[play] Initialization error:', error)
               isPlayingRef.current = false
+
+              // 向用户显示友好的错误信息
+              try {
+                const errorMsg = (error as Error).message || '播放失败，请检查网络连接和视频地址'
+                const isNetworkError =
+                  errorMsg.includes('network') || errorMsg.includes('Network') || errorMsg.includes('fetch') || errorMsg.includes('timeout')
+                const isFormatError =
+                  errorMsg.includes('format') || errorMsg.includes('unsupported') || errorMsg.includes('Hls') || errorMsg.includes('m3u8')
+
+                let userMessage = '播放失败，请重试'
+                if (isNetworkError) {
+                  userMessage = '网络连接失败，请检查网络设置'
+                } else if (isFormatError) {
+                  userMessage = '视频格式不支持，请检查视频地址是否正确'
+                }
+
+                // 尝试使用 toast，回退到 alert
+                if (window.h5Utils?.toast) {
+                  window.h5Utils.toast(userMessage, { icon: 'error' })
+                } else {
+                  logger.error('[play]', errorMsg)
+                }
+              } catch (uiError) {
+                logger.warn('[play] Failed to show error message:', uiError)
+              }
+
               resolve(false)
             } finally {
               isInitializingRef.current = false

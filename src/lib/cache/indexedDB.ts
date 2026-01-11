@@ -24,6 +24,8 @@ export interface CacheMetadata {
   accessTime: number
   /** 所属 M3U8 URL */
   m3u8Url: string
+  /** 版本号（用于乐观锁，防止数据竞争） */
+  version?: number
 }
 
 /** 缓存数据 */
@@ -48,6 +50,8 @@ export interface CacheEntry {
   accessTime: number
   /** 所属 M3U8 URL */
   m3u8Url: string
+  /** 版本号（用于乐观锁，防止数据竞争） */
+  version?: number
 }
 
 /** 缓存统计信息 */
@@ -85,9 +89,9 @@ class IndexedDBStore {
   private db: IDBDatabase | null = null
   private dbPromise: Promise<IDBDatabase> | null = null
   // URL -> Hash 的映射缓存（避免重复计算），带 LRU 淘汰
+  // 使用 Map 的插入顺序作为 LRU 顺序，每次访问时重新插入以更新位置
   private urlHashCache = new Map<string, string>()
   private readonly URL_HASH_CACHE_SIZE = 1000
-  private urlHashAccessOrder: string[] = []
 
   /**
    * 获取数据库实例
@@ -151,9 +155,11 @@ class IndexedDBStore {
   private async getUrlHash(url: string): Promise<string> {
     // 检查缓存
     if (this.urlHashCache.has(url)) {
-      // 更新访问顺序（LRU）
-      this.updateAccessOrder(url)
-      return this.urlHashCache.get(url)!
+      // 更新访问顺序（LRU）：删除并重新插入
+      const hash = this.urlHashCache.get(url)!
+      this.urlHashCache.delete(url)
+      this.urlHashCache.set(url, hash)
+      return hash
     }
 
     const hash = await hashUrl(url)
@@ -171,8 +177,11 @@ class IndexedDBStore {
     // 先检查缓存
     for (const url of urls) {
       if (this.urlHashCache.has(url)) {
-        urlHashMap.set(url, this.urlHashCache.get(url)!)
-        this.updateAccessOrder(url)
+        const hash = this.urlHashCache.get(url)!
+        // 更新访问顺序（LRU）：删除并重新插入
+        this.urlHashCache.delete(url)
+        this.urlHashCache.set(url, hash)
+        urlHashMap.set(url, hash)
       } else {
         uncachedUrls.push(url)
       }
@@ -199,37 +208,25 @@ class IndexedDBStore {
    * 添加到 URL hash 缓存（带 LRU 淘汰）
    */
   private addToUrlHashCache(url: string, hash: string): void {
-    // 如果已存在，先删除旧的
+    // 如果已存在，先删除旧的（这会更新位置）
     if (this.urlHashCache.has(url)) {
-      const index = this.urlHashAccessOrder.indexOf(url)
-      if (index > -1) {
-        this.urlHashAccessOrder.splice(index, 1)
-      }
+      this.urlHashCache.delete(url)
     }
 
-    // 添加新的
+    // 添加新的（插入到末尾）
     this.urlHashCache.set(url, hash)
-    this.urlHashAccessOrder.push(url)
 
-    // 检查是否超过缓存大小，淘汰最旧的
+    // 检查是否超过缓存大小，淘汰最旧的（第一个条目）
     if (this.urlHashCache.size > this.URL_HASH_CACHE_SIZE) {
-      const oldestUrl = this.urlHashAccessOrder.shift()
-      if (oldestUrl) {
-        this.urlHashCache.delete(oldestUrl)
+      // Map.keys() 返回迭代器，第一个键是最旧的
+      const oldestKey = this.urlHashCache.keys().next().value
+      if (oldestKey) {
+        this.urlHashCache.delete(oldestKey)
       }
     }
   }
 
-  /**
-   * 更新访问顺序
-   */
-  private updateAccessOrder(url: string): void {
-    const index = this.urlHashAccessOrder.indexOf(url)
-    if (index > -1) {
-      this.urlHashAccessOrder.splice(index, 1)
-      this.urlHashAccessOrder.push(url)
-    }
-  }
+
 
   /**
    * 带重试的辅助方法
@@ -314,6 +311,7 @@ class IndexedDBStore {
               size: metadata.size,
               accessTime: metadata.accessTime,
               m3u8Url: metadata.m3u8Url,
+              version: metadata.version || 0,
             })
           }
         }
@@ -354,10 +352,39 @@ class IndexedDBStore {
   /**
    * 存储缓存条目
    */
-  async set(entry: Omit<CacheEntry, 'hash' | 'originalUrl'> & { url: string }): Promise<boolean> {
+  async set(entry: Omit<CacheEntry, 'hash' | 'originalUrl'> & { url: string; version?: number }): Promise<boolean> {
     try {
       const db = await this.getDB()
       const hash = await this.getUrlHash(entry.url)
+
+      // 读取现有条目的版本（如果存在）
+      let currentVersion = 0
+      try {
+        const existingMetadata = await new Promise<CacheMetadata | undefined>((resolve) => {
+          const transaction = db.transaction(METADATA_STORE_NAME, 'readonly')
+          const store = transaction.objectStore(METADATA_STORE_NAME)
+          const request = store.get(hash)
+          request.onerror = () => resolve(undefined)
+          request.onsuccess = () => resolve(request.result)
+        })
+        currentVersion = existingMetadata?.version || 0
+      } catch (error) {
+        logger.warn('[IndexedDB] Failed to read current version:', error)
+      }
+
+      // 简单版本检查：如果现有版本较新，跳过更新
+      const requestedVersion = entry.version || 0
+      if (requestedVersion > 0 && requestedVersion <= currentVersion) {
+        logger.debug('[IndexedDB] Version check failed, skipping update', {
+          url: entry.url,
+          requestedVersion,
+          currentVersion,
+        })
+        return false
+      }
+
+      // 新版本号：现有版本+1或请求的版本（取较大者）
+      const newVersion = Math.max(currentVersion, requestedVersion) + 1
 
       const metadata: CacheMetadata = {
         hash,
@@ -365,6 +392,7 @@ class IndexedDBStore {
         size: entry.size,
         accessTime: Date.now(),
         m3u8Url: entry.m3u8Url,
+        version: newVersion,
       }
 
       const cacheData: CacheData = {

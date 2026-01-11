@@ -70,7 +70,7 @@ class CacheConfigManager {
   }
 
   /**
-   * 从 localStorage 加载配置
+   * 从 localStorage 加载配置，失败时尝试 IndexedDB
    */
   private loadConfig(): void {
     try {
@@ -79,20 +79,61 @@ class CacheConfigManager {
         const parsed = JSON.parse(stored)
         // 合并配置，保留新增字段的默认值
         this.config = { ...DEFAULT_CONFIG, ...parsed }
+        return
       }
     } catch (error) {
-      logger.error('[CacheConfigManager] Failed to load config:', error)
+      logger.error('[CacheConfigManager] Failed to load config from localStorage:', error)
     }
+    
+    // 如果 localStorage 中没有配置或加载失败，尝试 IndexedDB（异步，不阻塞）
+    this.loadFromIndexedDB()
+      .then((idbConfig) => {
+        if (idbConfig) {
+          this.config = { ...DEFAULT_CONFIG, ...idbConfig }
+          logger.debug('[CacheConfigManager] Config loaded from IndexedDB')
+          // 通知配置已更新
+          this.emit('config', this.config)
+        }
+      })
+      .catch((idbError) => {
+        logger.debug('[CacheConfigManager] No config found in IndexedDB, using defaults:', idbError)
+      })
   }
 
   /**
    * 保存配置到 localStorage
+   * 如果 localStorage 失败，尝试 IndexedDB 作为备用存储（异步）
    */
   private saveConfig(): void {
     try {
       localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(this.config))
+      return
     } catch (error) {
-      logger.error('[CacheConfigManager] Failed to save config:', error)
+      const storageError = error as DOMException
+      
+      // 如果是配额超出错误，提供更详细的日志
+      if (storageError.name === 'QuotaExceededError') {
+        logger.error('[CacheConfigManager] localStorage quota exceeded, config not saved:', {
+          configSize: JSON.stringify(this.config).length,
+          error: storageError.message,
+        })
+        
+        // 尝试清理其他数据或提示用户
+        this.notifyStorageQuotaExceeded()
+      } else {
+        logger.error('[CacheConfigManager] Failed to save config to localStorage:', storageError)
+      }
+      
+      // 尝试使用 IndexedDB 作为备用存储（异步，不阻塞）
+      this.saveToIndexedDB()
+        .then(() => {
+          logger.debug('[CacheConfigManager] Config saved to IndexedDB as fallback')
+        })
+        .catch((idbError) => {
+          logger.error('[CacheConfigManager] Failed to save config to IndexedDB:', idbError)
+          // 最后的手段：使用内存存储（会话期间有效）
+          this.saveToMemory()
+        })
     }
   }
 
@@ -235,6 +276,94 @@ class CacheConfigManager {
     this.config = { ...DEFAULT_CONFIG }
     this.saveConfig()
     this.emit('config', this.config)
+  }
+
+  /**
+   * 保存配置到 IndexedDB（备用存储）
+   */
+  private async saveToIndexedDB(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        const request = indexedDB.open('m3u8_cache_config', 1)
+        
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => {
+          const db = request.result
+          const transaction = db.transaction('config', 'readwrite')
+          const store = transaction.objectStore('config')
+          const putRequest = store.put(this.config, CONFIG_STORAGE_KEY)
+          
+          putRequest.onerror = () => reject(putRequest.error)
+          putRequest.onsuccess = () => resolve()
+        }
+        
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result
+          if (!db.objectStoreNames.contains('config')) {
+            db.createObjectStore('config')
+          }
+        }
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  /**
+   * 从 IndexedDB 加载配置（备用存储）
+   */
+  private async loadFromIndexedDB(): Promise<CacheConfig | null> {
+    return new Promise((resolve, reject) => {
+      try {
+        const request = indexedDB.open('m3u8_cache_config', 1)
+        
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => {
+          const db = request.result
+          const transaction = db.transaction('config', 'readonly')
+          const store = transaction.objectStore('config')
+          const getRequest = store.get(CONFIG_STORAGE_KEY)
+          
+          getRequest.onerror = () => reject(getRequest.error)
+          getRequest.onsuccess = () => resolve(getRequest.result || null)
+        }
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  /**
+   * 保存配置到内存（最后的手段）
+   */
+  private saveToMemory(): void {
+    // 内存存储，仅在当前会话有效
+    // 在类级别已经有 this.config，所以不需要额外存储
+    logger.warn('[CacheConfigManager] Config saved to memory only (session lifetime)')
+  }
+
+  /**
+   * 通知存储配额超出
+   */
+  private notifyStorageQuotaExceeded(): void {
+    // 记录详细的存储使用情况
+    let totalSize = 0
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key) {
+        const value = localStorage.getItem(key) || ''
+        totalSize += key.length + value.length
+      }
+    }
+    
+    logger.warn('[CacheConfigManager] localStorage usage:', {
+      totalItems: localStorage.length,
+      estimatedSize: totalSize,
+      configKey: CONFIG_STORAGE_KEY,
+    })
+    
+    // 可以在这里触发 UI 通知，但为了解耦，只记录日志
+    // UI 组件可以监听日志或添加专门的事件
   }
 }
 

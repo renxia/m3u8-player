@@ -66,7 +66,7 @@ declare global {
     DPlayer: any
     h5Utils: {
       alert: (msg: string, options?: { icon?: string }) => Promise<any>
-      toast: (msg: string) => void
+      toast: (msg: string, options?: { icon?: string }) => Promise<any>
       copy: (text: string) => Promise<any>
       loadJsOrCss: (urls: string | string[], options?: { attr?: Record<string, string | boolean> } & Record<string, any>) => Promise<void>
       getUrlParams: () => Record<string, string>
