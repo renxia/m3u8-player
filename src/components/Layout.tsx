@@ -1,8 +1,12 @@
 import { Outlet } from 'react-router'
+import { useSeo } from '@/hooks/useSeo'
 import Footer from './Footer'
 import Header from './Header'
 
 export default function Layout() {
+  // 根据 SEO 考虑，在路由和语言变化时自动更新 meta 信息
+  useSeo()
+
   return (
     <div className="min-h-screen flex flex-col layout-bg transition-colors duration-300">
       <Header />

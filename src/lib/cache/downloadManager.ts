@@ -34,8 +34,8 @@ interface DownloadResult {
   timestamp: number
 }
 
-/** 结果缓存时间（5秒） */
-const RESULT_CACHE_TIME = 5000
+/** 结果缓存时间（30秒） */
+const RESULT_CACHE_TIME = 30000
 
 /**
  * 统一的下载管理器

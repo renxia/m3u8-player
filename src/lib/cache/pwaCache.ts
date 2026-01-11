@@ -14,7 +14,7 @@ import type {
 } from './pwaCache.types'
 
 /** 默认缓存名称 */
-const DEFAULT_CACHE_NAME = 'm3u8-player-resources'
+const DEFAULT_CACHE_NAME = "m3u8-player-media-v1"
 
 /** 元数据存储键前缀 */
 const METADATA_KEY_PREFIX = '__metadata__'

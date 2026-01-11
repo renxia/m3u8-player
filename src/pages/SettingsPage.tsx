@@ -3,10 +3,12 @@
  * 提供完整的缓存管理功能
  */
 
-import { AlertTriangle, Database, HardDrive, Info, RefreshCw, Settings, Sliders, Trash2, XCircle, Zap } from 'lucide-react'
+import { AlertTriangle, Database, HardDrive, Info, PieChart, RefreshCw, Settings, Sliders, Trash2, XCircle, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import CollapsibleSection from '@/components/CollapsibleSection'
+import { ServiceWorkerSettings } from '@/components/ServiceWorkerSettings'
 import { useCache } from '@/hooks/useCache'
 import type { CacheType } from '@/lib/cache'
 import { cn } from '@/lib/utils'
@@ -128,37 +130,78 @@ export default function SettingsPage() {
         </div>
 
         <div className="p-6 space-y-6">
-          {/* 启用开关 */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Zap className={cn('w-5 h-5', enabled ? 'text-emerald-500' : 'text-slate-400')} />
-              <div>
-                <div className="font-medium text-slate-800 dark:text-white">{t('cache.enable')}</div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">{t('cache.enableDescription')}</div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={toggleEnabled}
-              className={cn(
-                'relative w-14 h-8 rounded-full transition-colors',
-                enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600',
+          {/* Service Worker 设置 */}
+          <div className="pb-6 border-b border-slate-200 dark:border-slate-700/50">
+            <CollapsibleSection
+              sectionKey="sw-settings"
+              title=""
+              defaultExpanded={true}
+              className="!bg-transparent !shadow-none !p-0 !mt-0"
+              titleClassName="text-sm font-medium text-slate-600 dark:text-slate-300 !font-medium"
+              titleRender={(isExpanded, toggleExpanded) => (
+                <button type="button" onClick={toggleExpanded} className="flex items-center justify-between w-full text-left">
+                  <span>Service Worker 设置</span>
+                  <span
+                    className="flex-shrink-0 text-slate-400 transition-transform duration-200"
+                    style={{ transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </span>
+                </button>
               )}
+              hideMode="remove"
             >
-              <span
-                className={cn(
-                  'absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
-                  enabled ? 'translate-0' : '-translate-x-5.5',
-                )}
-              />
-            </button>
+              <ServiceWorkerSettings />
+            </CollapsibleSection>
           </div>
 
           {/* 统计信息 - 仅在缓存支持时显示 */}
           {!cacheNotSupported && (
-            <div>
-              <h3 className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-3">{t('cache.statistics')}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <CollapsibleSection
+              sectionKey="stats"
+              title=""
+              defaultExpanded={true}
+              className="!bg-transparent !shadow-none !p-0 !mt-0"
+              titleClassName="text-sm font-medium text-slate-600 dark:text-slate-300 !font-medium"
+              titleRender={(isExpanded, toggleExpanded) => (
+                <button type="button" onClick={toggleExpanded} className="flex items-center justify-between w-full text-left">
+                  <div className="flex items-center gap-2">
+                    <PieChart className="w-4 h-4 text-slate-500" />
+                    <span>{t('cache.statistics')}</span>
+                  </div>
+                  <span
+                    className="flex-shrink-0 text-slate-400 transition-transform duration-200"
+                    style={{ transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </span>
+                </button>
+              )}
+              hideMode="remove"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                 <div className="p-4 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Database className="w-4 h-4 text-indigo-500" />
@@ -190,18 +233,71 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </CollapsibleSection>
           )}
 
           {/* 配置项 */}
           {!cacheNotSupported ? (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Sliders className="w-4 h-4 text-slate-500" />
-                <h3 className="text-sm font-medium text-slate-600 dark:text-slate-300">{t('cache.configuration')}</h3>
+            <CollapsibleSection
+              sectionKey="config"
+              title=""
+              defaultExpanded={true}
+              className="!bg-transparent !shadow-none !p-0 !mt-0"
+              titleClassName="text-sm font-medium text-slate-600 dark:text-slate-300 !font-medium"
+              titleRender={(isExpanded, toggleExpanded) => (
+                <button type="button" onClick={toggleExpanded} className="flex items-center justify-between w-full text-left">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-slate-500" />
+                    <span>{t('cache.configuration')}</span>
+                  </div>
+                  <span
+                    className="flex-shrink-0 text-slate-400 transition-transform duration-200"
+                    style={{ transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </span>
+                </button>
+              )}
+              hideMode="remove"
+            >
+              {/* 启用开关 */}
+              <div className="flex items-center justify-between p-4 mt-2 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Zap className={cn('w-5 h-5', enabled ? 'text-emerald-500' : 'text-slate-400')} />
+                  <div>
+                    <div className="font-medium text-slate-800 dark:text-white">{t('cache.enable')}</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">{t('cache.enableDescription')}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleEnabled}
+                  className={cn(
+                    'relative w-14 h-8 rounded-full transition-colors',
+                    enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
+                      enabled ? 'translate-0' : '-translate-x-5.5',
+                    )}
+                  />
+                </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 mt-4">
                 {/* 缓存类型选择 - 仅在有多种选择时显示 */}
                 {showCacheTypeSelect && availableCacheTypes.length > 1 && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
@@ -308,7 +404,7 @@ export default function SettingsPage() {
                   {t('cache.resetConfig')}
                 </button>
               </div>
-            </div>
+            </CollapsibleSection>
           ) : (
             /* 缓存不支持提示 */
             <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800/50">

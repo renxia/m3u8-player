@@ -209,10 +209,10 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
       }
 
       // 如果正在播放相同的 URL，直接返回成功
-      if (isPlayingRef.current && currentUrlRef.current === url && !isInitializingRef.current) {
-        logger.log('[play] Already playing', url)
-        return true
-      }
+      // if (isPlayingRef.current && currentUrlRef.current === url && !isInitializingRef.current) {
+      //   logger.log('[play] Already playing', url)
+      //   return true
+      // }
 
       // 如果正在初始化中，避免重复初始化
       if (isInitializingRef.current) {

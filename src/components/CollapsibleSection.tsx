@@ -7,7 +7,7 @@ export interface CollapsibleSectionProps {
   /** 唯一标识符，用于区分不同的部分（如 'instructions', 'features', 'faq'） */
   sectionKey: string
   /** 标题文本或自定义标题内容 */
-  title: string | React.ReactNode
+  title?: string | React.ReactNode
   /** 子内容 */
   children: React.ReactNode
   /** 默认是否展开，默认为 true */
