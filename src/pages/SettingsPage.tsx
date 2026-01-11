@@ -148,7 +148,7 @@ export default function SettingsPage() {
               <span
                 className={cn(
                   'absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
-                  enabled ? 'translate-x-7' : 'translate-x-1',
+                  enabled ? 'translate-0' : '-translate-x-5.5',
                 )}
               />
             </button>

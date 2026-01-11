@@ -146,7 +146,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                 <span
                   className={cn(
                     'absolute top-0.5 sm:top-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full transition-transform',
-                    enabled ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0.5 sm:translate-x-1',
+                    enabled ? 'translate-x-0.5 sm:translate-x-1': '-translate-x-4 sm:-translate-x-5',
                   )}
                 />
               </button>

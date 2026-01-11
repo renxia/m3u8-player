@@ -1,6 +1,8 @@
 /**
  * 预加载器
  * 支持自动预加载和手动预加载 TS 片段
+ * 集成网络状态感知，实现自适应预加载
+ * 集成资源监控，实现资源不足时的优雅降级
  */
 
 import { cacheConfigManager } from './cacheConfigManager'
@@ -8,6 +10,8 @@ import { getCurrentCacheAdapter } from './cacheAdapter'
 import { fetchAndParseM3U8, getSegmentsInRange, type TSSegment } from './m3u8Parser'
 import { logger } from '@/utils/logger'
 import { downloadManager, DownloadPriority } from './downloadManager'
+import { getNetworkMonitor, type PreloadConfig as NetworkPreloadConfig } from '@/lib/network/networkMonitor'
+import { getResourceMonitor } from '@/lib/resource/resourceMonitor'
 
 /** 预加载进度回调 */
 export interface PreloadProgress {
@@ -46,6 +50,8 @@ class Preloader {
   private status: PreloadStatus = 'idle'
   private abortController: AbortController | null = null
   private autoPreloadTimer: ReturnType<typeof setTimeout> | null = null
+  private networkMonitor = getNetworkMonitor()
+  private resourceMonitor = getResourceMonitor()
 
   /**
    * 获取当前预加载状态
@@ -66,6 +72,27 @@ class Preloader {
    */
   getSegments(): TSSegment[] {
     return this.segments
+  }
+
+  /**
+   * 获取自适应预加载配置
+   * 结合用户配置、网络状态和资源状态动态调整
+   */
+  private getAdaptivePreloadConfig(): { preloadCount: number; concurrency: number } {
+    const userConfig = cacheConfigManager.getPreloadConfig()
+    const networkConfig = this.networkMonitor.getPreloadConfig()
+    const isDegraded = this.resourceMonitor.isDegradationActive()
+
+    // 如果资源降级已激活或网络监控建议禁用预加载，则禁用
+    if (!networkConfig.enabled || (isDegraded && this.resourceMonitor.shouldDisablePreload())) {
+      return { preloadCount: 0, concurrency: 1 }
+    }
+
+    // 取用户配置和网络配置的较小值，保守预加载
+    const preloadCount = Math.min(userConfig.preloadCount, networkConfig.preloadCount)
+    const concurrency = Math.min(userConfig.preloadConcurrency, networkConfig.concurrency)
+
+    return { preloadCount, concurrency }
   }
 
   /**
@@ -107,7 +134,11 @@ class Preloader {
         await this.prepare(m3u8Url)
       }
 
-      await this.preloadSegments(this.segments, m3u8Url, { ...options, signal })
+      // 使用自适应预加载配置
+      const adaptiveConfig = this.getAdaptivePreloadConfig()
+      const concurrency = options.concurrency || adaptiveConfig.concurrency
+
+      await this.preloadSegments(this.segments, m3u8Url, { ...options, signal, concurrency })
 
       this.status = 'completed'
       options.onComplete?.()
@@ -142,13 +173,14 @@ class Preloader {
   /**
    * 自动预加载（播放时预缓存后续片段）
    * 使用较低的并发数，避免与播放器竞争资源
+   * 根据网络状态自适应调整预加载策略
    */
   startAutoPreload(m3u8Url: string, currentIndex: number): void {
     const adapter = getCurrentCacheAdapter()
     if (!adapter.isEnabled()) return
 
-    const preloadConfig = cacheConfigManager.getPreloadConfig()
-    const { preloadCount } = preloadConfig
+    // 使用自适应预加载配置
+    const adaptiveConfig = this.getAdaptivePreloadConfig()
 
     // 清除之前的定时器
     if (this.autoPreloadTimer) {
@@ -158,8 +190,8 @@ class Preloader {
     // 延迟 500ms 开始预加载，避免影响当前播放
     // 使用较低的并发数（1-2），避免与播放器竞争网络和存储资源
     this.autoPreloadTimer = setTimeout(() => {
-      const reducedConcurrency = Math.max(1, Math.floor(preloadConfig.preloadConcurrency / 2))
-      this.preloadRange(m3u8Url, currentIndex + 1, preloadCount, {
+      const reducedConcurrency = Math.max(1, Math.floor(adaptiveConfig.concurrency / 2))
+      this.preloadRange(m3u8Url, currentIndex + 1, adaptiveConfig.preloadCount, {
         concurrency: reducedConcurrency,
       }).catch((err) => {
         logger.warn('[Preloader] Auto preload error:', err)

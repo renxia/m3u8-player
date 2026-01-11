@@ -4,6 +4,7 @@ import type { PlayerInstances, PlayerType, VideoType } from '@/types'
 import { logger } from '@/utils/logger'
 import { initArtPlayer } from './player/artplayerConfig'
 import { initDPlayer } from './player/dplayerConfig'
+import { createResilientPlayer, ErrorClassifier } from './player/resilientPlayer'
 import { detectVideoType } from './player/playerUtils'
 
 export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, onEnd?: (url: string) => void) {
@@ -18,6 +19,15 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
   const isPlayingRef = useRef(false)
   const pendingAnimationFrameRef = useRef<number | null>(null)
   const isInitializingRef = useRef(false) // 新增：标记是否正在初始化
+
+  // 创建降级播放器管理器
+  const resilientPlayerRef = useRef(createResilientPlayer({
+    enabled: true,
+    allowFormatFallback: true,
+    allowPlayerFallback: true,
+    useFallbackUrls: true,
+    fallbackDelay: 1000,
+  }))
 
   // 统一的播放器销毁函数
   const destroyAll = useCallback(() => {
@@ -187,7 +197,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
 
   // 主播放函数 - 统一管理播放器生命周期
   const play = useCallback(
-    async (url: string, customType?: string, playerType: PlayerType = 'artplayer') => {
+    async (url: string, customType?: string, playerType: PlayerType = 'artplayer', fallbackUrls?: string[]) => {
       if (!url) {
         // 尝试使用 toast，回退到 alert
         const message = '请输入视频地址（M3U8、MP4、FLV 或磁力链）'
@@ -252,10 +262,70 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
 
               // 初始化播放器
               let success = false
-              if (actualPlayer === 'dplayer') {
-                success = await initDPlayerInstance(url, type)
-              } else {
-                success = await initArtPlayerInstance(url, type)
+              try {
+                if (actualPlayer === 'dplayer') {
+                  success = await initDPlayerInstance(url, type)
+                } else {
+                  success = await initArtPlayerInstance(url, type)
+                }
+              } catch (error) {
+                success = false
+                logger.error('[play] Initialization error:', error)
+
+                // 处理降级逻辑
+                const errorObj = error instanceof Error ? error : new Error(String(error))
+
+                // 检查是否可降级
+                if (ErrorClassifier.isRetriable(errorObj)) {
+                  logger.log('[play] Attempting fallback due to error:', errorObj.message)
+
+                  // 尝试降级播放
+                  const fallbackOptions = await resilientPlayerRef.current.handlePlaybackError(
+                    {
+                      url,
+                      customType,
+                      playerType,
+                      fallbackUrls,
+                      maxRetries: 3,
+                      onFallback: (attempt) => {
+                        // 显示降级提示
+                        const msg = `播放方式降级 (${attempt.strategy})，正在重试...`
+                        if (window.h5Utils?.toast) {
+                          window.h5Utils.toast(msg, { icon: 'info' })
+                        }
+                      },
+                    },
+                    type,
+                    errorObj,
+                  )
+
+                  if (fallbackOptions) {
+                    logger.log('[play] Using fallback options:', fallbackOptions)
+                    // 使用降级选项重新播放
+                    const fallbackType = detectVideoType(fallbackOptions.url, customType)
+                    const fallbackPlayer = fallbackOptions.playerType
+
+                    if (fallbackPlayer === 'dplayer') {
+                      success = await initDPlayerInstance(fallbackOptions.url, fallbackType)
+                    } else {
+                      success = await initArtPlayerInstance(fallbackOptions.url, fallbackType)
+                    }
+                  }
+                }
+
+                // 最终确认 URL 未变化
+                if (currentUrlRef.current === url) {
+                  if (success) {
+                    logger.log('[play] Success after fallback', url)
+                  } else {
+                    logger.error('[play] Failed after fallback', url)
+                  }
+                  resolve(success)
+                } else {
+                  logger.log('[play] URL changed after fallback, discarding result')
+                  resolve(false)
+                }
+                return
               }
 
               // 最终确认 URL 未变化
@@ -277,17 +347,10 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
               // 向用户显示友好的错误信息
               try {
                 const errorMsg = (error as Error).message || '播放失败，请检查网络连接和视频地址'
-                const isNetworkError =
-                  errorMsg.includes('network') || errorMsg.includes('Network') || errorMsg.includes('fetch') || errorMsg.includes('timeout')
-                const isFormatError =
-                  errorMsg.includes('format') || errorMsg.includes('unsupported') || errorMsg.includes('Hls') || errorMsg.includes('m3u8')
+                const errorObj = error instanceof Error ? error : new Error(String(error))
 
-                let userMessage = '播放失败，请重试'
-                if (isNetworkError) {
-                  userMessage = '网络连接失败，请检查网络设置'
-                } else if (isFormatError) {
-                  userMessage = '视频格式不支持，请检查视频地址是否正确'
-                }
+                // 获取用户友好的错误信息
+                let userMessage = ErrorClassifier.getUserFriendlyMessage(errorObj)
 
                 // 尝试使用 toast，回退到 alert
                 if (window.h5Utils?.toast) {
