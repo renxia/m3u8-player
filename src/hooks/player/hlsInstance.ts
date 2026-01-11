@@ -3,7 +3,7 @@
  * 统一的 HLS 实例创建函数，支持缓存和预加载
  */
 
-import { cacheConfigManager, HlsCachedFragmentLoader, preloader, setCurrentM3U8Url } from '@/lib/cache'
+import { cacheConfigManager, getSmartPreloader, HlsCachedFragmentLoader, preloader, setCurrentM3U8Url } from '@/lib/cache'
 import { fetchAndParseM3U8 } from '@/lib/cache/m3u8Parser'
 import { logger } from '@/utils/logger'
 
@@ -47,6 +47,9 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
   // 设置当前 M3U8 URL 用于缓存关联
   setCurrentM3U8Url(url)
 
+  // 获取智能预加载器实例
+  const smartPreloader = getSmartPreloader()
+
   // 创建带缓存的 HLS 配置
   const hlsConfig: Record<string, unknown> = {
     // 禁用自动质量切换，避免额外请求
@@ -62,6 +65,66 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
   hls.attachMedia(video)
 
   const cleanupFunctions: Array<() => void> = []
+
+  // 监听播放事件，记录到智能预加载器
+  const handlePlay = () => {
+    smartPreloader.recordEvent({
+      type: 'play',
+      currentTime: video.currentTime,
+      playbackRate: video.playbackRate,
+      m3u8Url: url,
+    })
+  }
+
+  const handlePause = () => {
+    smartPreloader.recordEvent({
+      type: 'pause',
+      currentTime: video.currentTime,
+      playbackRate: video.playbackRate,
+      m3u8Url: url,
+    })
+  }
+
+  const handleSeek = () => {
+    smartPreloader.recordEvent({
+      type: 'seek',
+      currentTime: video.currentTime,
+      playbackRate: video.playbackRate,
+      m3u8Url: url,
+    })
+  }
+
+  const handleRateChange = () => {
+    smartPreloader.recordEvent({
+      type: 'speed-change',
+      currentTime: video.currentTime,
+      playbackRate: video.playbackRate,
+      m3u8Url: url,
+    })
+  }
+
+  const handleEnded = () => {
+    smartPreloader.recordEvent({
+      type: 'ended',
+      currentTime: video.currentTime,
+      playbackRate: video.playbackRate,
+      m3u8Url: url,
+    })
+  }
+
+  video.addEventListener('play', handlePlay)
+  video.addEventListener('pause', handlePause)
+  video.addEventListener('seeked', handleSeek)
+  video.addEventListener('ratechange', handleRateChange)
+  video.addEventListener('ended', handleEnded)
+
+  cleanupFunctions.push(() => {
+    video.removeEventListener('play', handlePlay)
+    video.removeEventListener('pause', handlePause)
+    video.removeEventListener('seeked', handleSeek)
+    video.removeEventListener('ratechange', handleRateChange)
+    video.removeEventListener('ended', handleEnded)
+  })
 
   // 监听片段加载事件，触发自动预加载
   if (enableAutoPreload && cacheConfigManager.isEnabled()) {

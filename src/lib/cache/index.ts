@@ -25,3 +25,12 @@ export { pwaCacheManager, PWACacheManager } from './pwaCache'
 export type { PWACacheItem, PWACacheStats, PWACacheQueryOptions, PWACacheOperationResult } from './pwaCache.types'
 export { getCurrentCacheAdapter, type UnifiedCacheAdapter } from './cacheAdapter'
 export { cacheWriteQueue } from './cacheWriteQueue'
+export {
+  getSmartPreloader,
+  type PlaybackEvent,
+  type PlaybackBehavior,
+  type BandwidthSample,
+  type PreloadStrategy,
+  type SmartPreloaderConfig,
+  adjustPreloadConfig,
+} from './smartPreloader'

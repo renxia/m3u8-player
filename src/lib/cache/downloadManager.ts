@@ -2,6 +2,7 @@
  * 统一的下载管理器
  * 实现优先级队列、去重机制，避免重复下载
  * HLS 播放器的请求优先级总是最高
+ * 支持带宽测量并记录到智能预加载器
  */
 
 interface DownloadManagerOptions {
@@ -158,34 +159,52 @@ class DownloadManager {
     this.activeDownloads++;
 
     try {
-      const response = await fetch(url, { signal });
+      const startTime = Date.now()
+      const response = await fetch(url, { signal })
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const data = await response.arrayBuffer();
+      const data = await response.arrayBuffer()
+      const endTime = Date.now()
 
-      // 缓存结果（仅缓存播放器请求的结果，避免内存占用过大）
+      // 测量并记录带宽（仅针对播放器请求）
       if (priority === DownloadPriority.PLAYBACK) {
+        const duration = (endTime - startTime) / 1000 // 秒
+        if (duration > 0) {
+          const fileSizeInBits = data.byteLength * 8
+          const bandwidth = fileSizeInBits / duration / 1000000 // Mbps
+
+          // 动态导入智能预加载器，避免循环依赖
+          import('./smartPreloader').then(({ getSmartPreloader }) => {
+            const smartPreloader = getSmartPreloader()
+            smartPreloader.recordBandwidth(bandwidth, 'download')
+          }).catch((error) => {
+            // 静默处理错误，不影响下载
+            console.warn('[DownloadManager] Failed to record bandwidth:', error)
+          })
+        }
+
+        // 缓存结果（仅缓存播放器请求的结果，避免内存占用过大）
         this.resultCache.set(url, {
           data: data.slice(0), // 存储副本
           timestamp: Date.now(),
-        });
+        })
       }
 
       // 通知所有等待该 URL 的任务
-      this.notifyWaitingTasks(url, data);
+      this.notifyWaitingTasks(url, data)
 
-      return data;
+      return data
     } catch (error) {
       // 通知所有等待该 URL 的任务（失败）
-      this.notifyWaitingTasksError(url, error as Error);
-      throw error;
+      this.notifyWaitingTasksError(url, error as Error)
+      throw error
     } finally {
-      this.downloading.delete(url);
-      this.activeDownloads--;
+      this.downloading.delete(url)
+      this.activeDownloads--
       // 继续处理队列
-      this.processQueue();
+      this.processQueue()
     }
   }
 

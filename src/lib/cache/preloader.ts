@@ -12,6 +12,7 @@ import { logger } from '@/utils/logger'
 import { downloadManager, DownloadPriority } from './downloadManager'
 import { getNetworkMonitor } from '@/lib/network/networkMonitor'
 import { getResourceMonitor } from '@/lib/resource/resourceMonitor'
+import { getSmartPreloader } from './smartPreloader'
 
 /** 预加载进度回调 */
 export interface PreloadProgress {
@@ -52,6 +53,7 @@ class Preloader {
   private autoPreloadTimer: ReturnType<typeof setTimeout> | null = null
   private networkMonitor = getNetworkMonitor()
   private resourceMonitor = getResourceMonitor()
+  private smartPreloader = getSmartPreloader()
 
   /**
    * 获取当前预加载状态
@@ -76,7 +78,7 @@ class Preloader {
 
   /**
    * 获取自适应预加载配置
-   * 结合用户配置、网络状态和资源状态动态调整
+   * 结合用户配置、网络状态、资源状态和智能预测动态调整
    */
   private getAdaptivePreloadConfig(): { preloadCount: number; concurrency: number } {
     const userConfig = cacheConfigManager.getPreloadConfig()
@@ -88,9 +90,14 @@ class Preloader {
       return { preloadCount: 0, concurrency: 1 }
     }
 
-    // 取用户配置和网络配置的较小值，保守预加载
-    const preloadCount = Math.min(userConfig.preloadCount, networkConfig.preloadCount)
-    const concurrency = Math.min(userConfig.preloadConcurrency, networkConfig.concurrency)
+    // 取用户配置和网络配置的较小值
+    let preloadCount = Math.min(userConfig.preloadCount, networkConfig.preloadCount)
+    let concurrency = Math.min(userConfig.preloadConcurrency, networkConfig.concurrency)
+
+    // 应用智能预加载策略
+    const smartStrategy = this.smartPreloader.getPreloadStrategy(preloadCount, concurrency)
+    preloadCount = smartStrategy.preloadCount
+    concurrency = smartStrategy.concurrency
 
     return { preloadCount, concurrency }
   }
