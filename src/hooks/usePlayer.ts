@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react'
 import { preloader } from '@/lib/cache'
 import type { PlayerInstances, PlayerType, VideoType } from '@/types'
 import { logger } from '@/utils/logger'
+import { dialog } from '@/utils/toast'
 import { initArtPlayer } from './player/artplayerConfig'
 import { initDPlayer } from './player/dplayerConfig'
 import { detectVideoType } from './player/playerUtils'
@@ -203,11 +204,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
       if (!url) {
         // 尝试使用 toast，回退到 alert
         const message = '请输入视频地址（M3U8、MP4、FLV 或磁力链）'
-        if (window.h5Utils?.alert) {
-          window.h5Utils.alert(message, { icon: 'info' })
-        } else {
-          logger.error('[play] No URL provided:', message)
-        }
+        dialog.alert(message, { icon: 'info' })
         return false
       }
 
@@ -292,9 +289,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
                       onFallback: (attempt) => {
                         // 显示降级提示
                         const msg = `播放方式降级 (${attempt.strategy})，正在重试...`
-                        if (window.h5Utils?.toast) {
-                          window.h5Utils.toast(msg, { icon: 'info' })
-                        }
+                        dialog.toast(msg, { icon: 'info' })
                       },
                     },
                     type,
@@ -348,18 +343,12 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
 
               // 向用户显示友好的错误信息
               try {
-                const errorMsg = (error as Error).message || '播放失败，请检查网络连接和视频地址'
+                // const errorMsg = (error as Error).message || '播放失败，请检查网络连接和视频地址'
                 const errorObj = error instanceof Error ? error : new Error(String(error))
 
                 // 获取用户友好的错误信息
                 const userMessage = ErrorClassifier.getUserFriendlyMessage(errorObj)
-
-                // 尝试使用 toast，回退到 alert
-                if (window.h5Utils?.toast) {
-                  window.h5Utils.toast(userMessage, { icon: 'error' })
-                } else {
-                  logger.error('[play]', errorMsg)
-                }
+                dialog.toast(userMessage, { icon: 'error' })
               } catch (uiError) {
                 logger.warn('[play] Failed to show error message:', uiError)
               }

@@ -196,5 +196,24 @@
   "feedback": {
     "title": "フィードバック",
     "desc": "提案、問題の報告、使用体験の共有を歓迎します。あなたのフィードバックは私たちの製品の継続的な改善に役立ちます！"
+  },
+  "player": {
+    "playbackSpeed": "再生速度",
+    "speedChanged": "再生速度",
+    "screenshot": "スクリーンショット",
+    "screenshotSuccess": "スクリーンショット保存成功",
+    "screenshotFailed": "スクリーンショット失敗",
+    "rotate": "回転",
+    "rotated": "画面回転しました",
+    "shortcuts": "ショートカット",
+    "paused": "一時停止",
+    "playing": "再生中",
+    "muted": "ミュート",
+    "unmuted": "ミュート解除",
+    "volume": "音量"
+  },
+  "shortcuts": {
+    "title": "キーボードショートカット",
+    "tip": "ヒント：入力ボックス内では、ほとんどのショートカットは入力を妨げないように無効化されています。"
   }
 }

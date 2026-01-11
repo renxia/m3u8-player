@@ -19,6 +19,26 @@ export interface PlayerRef {
   play: (url: string, type?: string, player?: PlayerType) => Promise<boolean>
   rotate: () => void
   destroy: () => void
+  /** 播放器容器引用 */
+  containerRef?: React.RefObject<HTMLDivElement | null>
+  /** 获取视频元素 */
+  getVideoElement?: () => HTMLVideoElement | null
+  /** 切换播放/暂停 */
+  togglePlay?: () => void
+  /** 跳转到指定时间 */
+  seek?: (time: number) => void
+  /** 设置音量 */
+  setVolume?: (volume: number) => void
+  /** 切换静音 */
+  toggleMute?: () => void
+  /** 设置播放速度 */
+  setPlaybackRate?: (rate: number) => void
+  /** 切换全屏 */
+  toggleFullscreen?: () => void
+  /** 开启/关闭画中画 */
+  togglePip?: () => void
+  /** 截图 */
+  screenshot?: () => void
 }
 
 const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], currentIndex = -1, onPlaylistItemClick, onEnded }, ref) => {
@@ -235,6 +255,88 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
       setShowPlaceholder(true)
       // 重置依赖加载状态，确保下次播放时重新检查
       setIsDependenciesLoaded(false)
+    },
+    containerRef,
+    getVideoElement: () => containerRef.current?.querySelector('video') || null,
+    togglePlay: () => {
+      const video = containerRef.current?.querySelector('video')
+      if (video) {
+        if (video.paused) {
+          video.play()
+        } else {
+          video.pause()
+        }
+      }
+    },
+    seek: (time: number) => {
+      const video = containerRef.current?.querySelector('video')
+      if (video) {
+        video.currentTime = time
+      }
+    },
+    setVolume: (volume: number) => {
+      const video = containerRef.current?.querySelector('video')
+      if (video) {
+        video.volume = Math.max(0, Math.min(1, volume))
+      }
+    },
+    toggleMute: () => {
+      const video = containerRef.current?.querySelector('video')
+      if (video) {
+        video.muted = !video.muted
+      }
+    },
+    setPlaybackRate: (rate: number) => {
+      const video = containerRef.current?.querySelector('video')
+      if (video) {
+        video.playbackRate = rate
+      }
+    },
+    toggleFullscreen: () => {
+      if (!document.fullscreenElement) {
+        containerRef.current?.requestFullscreen()
+      } else {
+        document.exitFullscreen()
+      }
+    },
+    togglePip: async () => {
+      const video = containerRef.current?.querySelector('video')
+      if (video) {
+        try {
+          if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture()
+          } else {
+            await video.requestPictureInPicture()
+          }
+        } catch (error) {
+          console.error('[Player] PiP error:', error)
+        }
+      }
+    },
+    screenshot: () => {
+      const video = containerRef.current?.querySelector('video')
+      if (!video) return
+
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob((blob) => {
+          if (!blob) return
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `screenshot_${Date.now()}.png`
+          link.click()
+          URL.revokeObjectURL(url)
+        }, 'image/png')
+      } catch (error) {
+        console.error('[Player] Screenshot error:', error)
+      }
     },
   }))
 

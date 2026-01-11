@@ -78,7 +78,8 @@
     "noVersions": "No version suitable for your system was detected, please select manual download below.",
     "size": "Size",
     "refresh": "Refresh",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "Close"
   },
   "settings": {
     "title": "Settings",
@@ -196,5 +197,24 @@
   "feedback": {
     "title": "Feedback",
     "desc": "Welcome to make suggestions, report issues or share your experience. Your feedback will help us continuously improve our products!"
+  },
+  "player": {
+    "playbackSpeed": "Playback Speed",
+    "speedChanged": "Playback Speed",
+    "screenshot": "Screenshot",
+    "screenshotSuccess": "Screenshot saved",
+    "screenshotFailed": "Screenshot failed",
+    "rotate": "Rotate",
+    "rotated": "Screen rotated",
+    "shortcuts": "Shortcuts",
+    "paused": "Paused",
+    "playing": "Playing",
+    "muted": "Muted",
+    "unmuted": "Unmuted",
+    "volume": "Volume"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "tip": "Tip: Most shortcuts are disabled in input boxes to avoid interfering with typing."
   }
 }

@@ -4,6 +4,7 @@
 
 import type React from 'react'
 import { cacheConfigManager, preloader } from '@/lib/cache'
+import { PLAYBACK_RATES } from '@/lib/constants'
 import type { VideoType } from '@/types'
 import { createHlsInstance, preloadSegmentForTime } from './hlsInstance'
 import { loadArtPlayerDependencies } from './playerUtils'
@@ -39,7 +40,7 @@ export async function initArtPlayer(options: ArtPlayerInitOptions): Promise<any>
   }
 
   // 配置 ArtPlayer 全局设置
-  Artplayer.PLAYBACK_RATE = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 8, 16]
+  Artplayer.PLAYBACK_RATE = PLAYBACK_RATES
   Artplayer.SEEK_STEP = 10
   Artplayer.FAST_FORWARD_VALUE = 3
 

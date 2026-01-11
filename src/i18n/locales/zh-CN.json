@@ -78,7 +78,8 @@
     "noVersions": "未检测到适合您系统的版本，请在下方选择手动下载。",
     "size": "大小",
     "refresh": "刷新",
-    "cancel": "取消"
+    "cancel": "取消",
+    "close": "关闭"
   },
   "settings": {
     "title": "设置",
@@ -192,5 +193,24 @@
   "feedback": {
     "title": "留言与反馈",
     "desc": "欢迎提出建议、反馈问题或交流使用体验。您的留言将帮助我们不断改进产品！"
+  },
+  "player": {
+    "playbackSpeed": "播放速度",
+    "speedChanged": "播放速度",
+    "screenshot": "截图",
+    "screenshotSuccess": "截图成功",
+    "screenshotFailed": "截图失败",
+    "rotate": "旋转",
+    "rotated": "画面已旋转",
+    "shortcuts": "快捷键",
+    "paused": "已暂停",
+    "playing": "播放中",
+    "muted": "已静音",
+    "unmuted": "已取消静音",
+    "volume": "音量"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "tip": "提示：在输入框中，大部分快捷键会被禁用，避免干扰输入。"
   }
 }

@@ -58,8 +58,8 @@ export type OSType = 'windows' | 'macos' | 'linux' | ''
 
 export interface AlertOptions {
   icon?: 'success' | 'error' | 'info' | 'warn'
-  showConfirmButton: boolean
-  showCancelButton: boolean
+  showConfirmButton?: boolean
+  showCancelButton?: boolean
   confirmButtonText?: string
   cancelButtonText?: string
 }

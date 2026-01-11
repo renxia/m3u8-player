@@ -5,17 +5,39 @@ import Player, { type PlayerRef } from '@/components/Player'
 import HistoryList from '@/components/Player/HistoryList'
 import HlsDescription from '@/components/Player/HlsDescription'
 import InputForm from '@/components/Player/InputForm'
+import PlayerControls from '@/components/Player/PlayerControls'
+import { PLAYER_SHORTCUTS, useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useFavorites, useHistory, usePlaylist } from '@/hooks/useStorage'
+import { PLAYBACK_RATES } from '@/lib/constants'
 import { getUrlParams } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
 
 const DEMO_URL = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
+
+// 格式化时间显示
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// 获取下一个播放速度
+const getNextPlaybackRate = (current: number, increase: boolean): number => {
+  const rates = PLAYBACK_RATES
+  const currentIndex = rates.indexOf(current)
+  if (increase) {
+    return currentIndex < rates.length - 1 ? rates[currentIndex + 1] : current
+  } else {
+    return currentIndex > 0 ? rates[currentIndex - 1] : current
+  }
+}
 
 export default function HomePage() {
   const { t } = useTranslation()
   const playerRef = useRef<PlayerRef>(null)
   const [currentIndex, setCurrentIndex] = useState(-1)
   const [currentPlayingUrl, setCurrentPlayingUrl] = useState('')
+  const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1)
 
   const { history, addHistory, removeHistory, clearHistory } = useHistory()
   const { favorites, addFavorite, removeFavorite, clearFavorites } = useFavorites()
@@ -110,6 +132,79 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handlePlay, playlist.length])
 
+  // 键盘快捷键处理
+  const handleShortcut = useCallback(
+    (shortcutName: string, _e: KeyboardEvent) => {
+      const video = playerRef.current?.getVideoElement?.()
+      if (!video) return
+
+      switch (shortcutName) {
+        case 'togglePlay':
+          playerRef.current?.togglePlay?.()
+          toast.info(video.paused ? t('player.paused', { defaultValue: '已暂停' }) : t('player.playing', { defaultValue: '播放中' }))
+          break
+        case 'toggleMute':
+          playerRef.current?.toggleMute?.()
+          toast.info(video.muted ? t('player.muted', { defaultValue: '已静音' }) : t('player.unmuted', { defaultValue: '已取消静音' }))
+          break
+        case 'fullscreen':
+          playerRef.current?.toggleFullscreen?.()
+          break
+        case 'seekForward':
+          playerRef.current?.seek?.(video.currentTime + 10)
+          toast.info(`+10s (${formatTime(video.currentTime + 10)})`)
+          break
+        case 'seekBackward':
+          playerRef.current?.seek?.(video.currentTime - 10)
+          toast.info(`-10s (${formatTime(video.currentTime - 10)})`)
+          break
+        case 'volumeUp':
+          playerRef.current?.setVolume?.(video.volume + 0.1)
+          toast.info(`${t('player.volume', { defaultValue: '音量' })}: ${Math.round((video.volume + 0.1) * 100)}%`)
+          break
+        case 'volumeDown':
+          playerRef.current?.setVolume?.(video.volume - 0.1)
+          toast.info(`${t('player.volume', { defaultValue: '音量' })}: ${Math.round((video.volume - 0.1) * 100)}%`)
+          break
+        case 'speedUp': {
+          const nextSpeedUp = getNextPlaybackRate(currentPlaybackRate, true)
+          playerRef.current?.setPlaybackRate?.(nextSpeedUp)
+          setCurrentPlaybackRate(nextSpeedUp)
+          toast.info(`${t('player.playbackSpeed', { defaultValue: '播放速度' })}: ${nextSpeedUp}x`)
+          break
+        }
+        case 'speedDown': {
+          const nextSpeedDown = getNextPlaybackRate(currentPlaybackRate, false)
+          playerRef.current?.setPlaybackRate?.(nextSpeedDown)
+          setCurrentPlaybackRate(nextSpeedDown)
+          toast.info(`${t('player.playbackSpeed', { defaultValue: '播放速度' })}: ${nextSpeedDown}x`)
+          break
+        }
+        case 'pip':
+          playerRef.current?.togglePip?.()
+          break
+        case 'screenshot':
+          playerRef.current?.screenshot?.()
+          toast.success(t('player.screenshotSuccess', { defaultValue: '截图成功' }))
+          break
+        case 'rotate':
+          playerRef.current?.rotate()
+          toast.info(t('player.rotated', { defaultValue: '画面已旋转' }))
+          break
+      }
+    },
+    [currentPlaybackRate, t],
+  )
+
+  // 启用键盘快捷键
+  useKeyboardShortcuts({
+    enabled: true,
+    shortcuts: PLAYER_SHORTCUTS.map((shortcut) => ({
+      ...shortcut,
+      callback: (e) => handleShortcut(shortcut.name, e),
+    })),
+  })
+
   return (
     <div className="space-y-3 md:space-y-6">
       {/* 输入表单 */}
@@ -129,6 +224,9 @@ export default function HomePage() {
         onPlaylistItemClick={handlePlaylistItemClick}
         onEnded={handleEnded}
       />
+
+      {/* 播放器控制面板 */}
+      <PlayerControls playerRef={playerRef} showScreenshot showRotate showShortcutsHelp />
 
       {/* 历史记录和收藏夹 */}
       <HistoryList
