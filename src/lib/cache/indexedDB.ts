@@ -3,10 +3,12 @@
  * 用于存储 TS 视频片段缓存
  * 使用 URL hash 作为主键以优化性能
  * 分离 metadata 和 data 以提升查询性能
+ * 集成性能监控
  */
 
 import { logger } from '@/utils/logger'
 import QuickLRU from 'quick-lru'
+import { getPerformanceMonitor } from '@/lib/monitor/performanceMonitor'
 
 const DB_NAME = 'm3u8-cache'
 const DB_VERSION = 3 // 升级版本以分离 metadata 和 data
@@ -246,6 +248,9 @@ class IndexedDBStore {
   private updateCacheHitRate(): void {
     const total = this.urlHashCacheStats.hits + this.urlHashCacheStats.misses
     this.urlHashCacheStats.hitRate = total > 0 ? this.urlHashCacheStats.hits / total : 0
+
+    // 记录 URL hash 缓存命中率到性能监控
+    getPerformanceMonitor().recordUrlHashHitRate(this.urlHashCacheStats.hitRate)
   }
 
   /**
@@ -304,11 +309,13 @@ class IndexedDBStore {
    * 获取缓存条目
    * 使用 readonly 事务以提升性能，避免与写入操作竞争
    * 访问时间更新改为异步批量更新，不阻塞读取
+   * 集成性能监控
    */
   async get(url: string): Promise<CacheEntry | undefined> {
     return this.withRetry(async () => {
       const db = await this.getDB()
       const hash = await this.getUrlHash(url)
+      const startTime = performance.now()
 
       return new Promise((resolve, reject) => {
         // 使用 readonly 事务，避免与写入操作竞争
@@ -322,6 +329,9 @@ class IndexedDBStore {
         metadataRequest.onsuccess = () => {
           const metadata = metadataRequest.result as CacheMetadata | undefined
           if (!metadata) {
+            // 记录缓存未命中
+            const responseTime = performance.now() - startTime
+            getPerformanceMonitor().recordCacheEvent('cache-miss', { responseTime })
             resolve(undefined)
             return
           }
@@ -340,9 +350,16 @@ class IndexedDBStore {
           dataRequest.onsuccess = () => {
             const cacheData = dataRequest.result as CacheData | undefined
             if (!cacheData) {
+              // 记录缓存未命中（部分数据缺失）
+              const responseTime = performance.now() - startTime
+              getPerformanceMonitor().recordCacheEvent('cache-miss', { responseTime })
               resolve(undefined)
               return
             }
+
+            // 记录缓存命中
+            const responseTime = performance.now() - startTime
+            getPerformanceMonitor().recordCacheEvent('cache-hit', { responseTime })
 
             // 组合返回
             resolve({
@@ -466,6 +483,8 @@ class IndexedDBStore {
       // 添加到 LRU 缓存
       if (result) {
         this.urlExistsLRU.set(entry.url, true)
+        // 记录缓存写入
+        getPerformanceMonitor().recordCacheWrite()
       }
 
       return result
@@ -494,6 +513,10 @@ class IndexedDBStore {
 
         const checkComplete = () => {
           if (metadataDeleted && dataDeleted) {
+            if (!hasError) {
+              // 记录缓存删除
+              getPerformanceMonitor().recordCacheDelete()
+            }
             resolve(!hasError)
           }
         }

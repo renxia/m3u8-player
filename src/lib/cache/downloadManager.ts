@@ -5,6 +5,8 @@
  * 支持带宽测量并记录到智能预加载器
  */
 
+import { getSmartPreloader } from './smartPreloader'
+
 interface DownloadManagerOptions {
   maxConcurrency?: number
 }
@@ -174,15 +176,8 @@ class DownloadManager {
         if (duration > 0) {
           const fileSizeInBits = data.byteLength * 8
           const bandwidth = fileSizeInBits / duration / 1000000 // Mbps
-
-          // 动态导入智能预加载器，避免循环依赖
-          import('./smartPreloader').then(({ getSmartPreloader }) => {
-            const smartPreloader = getSmartPreloader()
-            smartPreloader.recordBandwidth(bandwidth, 'download')
-          }).catch((error) => {
-            // 静默处理错误，不影响下载
-            console.warn('[DownloadManager] Failed to record bandwidth:', error)
-          })
+          const smartPreloader = getSmartPreloader()
+          smartPreloader.recordBandwidth(bandwidth, 'download')
         }
 
         // 缓存结果（仅缓存播放器请求的结果，避免内存占用过大）

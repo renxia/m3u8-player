@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
+import { DevTools } from './components/DevTools'
 import Layout from './components/Layout'
 import { useTheme } from './hooks/useTheme'
 import AboutPage from './pages/AboutPage'
@@ -13,6 +14,7 @@ function App() {
 
   return (
     <>
+      {import.meta.env.DEV && <DevTools />}
       <Toaster
         position="top-center"
         theme={resolvedTheme}
