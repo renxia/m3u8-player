@@ -101,10 +101,8 @@ interface UrlHashCacheStats {
 class IndexedDBStore {
   private db: IDBDatabase | null = null
   private dbPromise: Promise<IDBDatabase> | null = null
-  // URL -> Hash 的映射缓存（避免重复计算），带 LRU 淘汰
-  // 使用 Map 的插入顺序作为 LRU 顺序，每次访问时重新插入以更新位置
-  private urlHashCache = new Map<string, string>()
-  private readonly URL_HASH_CACHE_SIZE = 2000 // 增加缓存大小到 2000
+  // URL -> Hash 的映射缓存（使用 QuickLRU 实现高性能 LRU）
+  private urlHashCache = new QuickLRU<string, string>({ maxSize: 2000 })
   // URL hash 缓存统计
   private urlHashCacheStats: UrlHashCacheStats = {
     hits: 0,
@@ -114,7 +112,7 @@ class IndexedDBStore {
   }
   // LRU 缓存已存在的 URL（用于优化 has/hasMany 性能）
   // key: url, value: true
-  private urlExistsLRU: QuickLRU<string, true> = new QuickLRU({ maxSize: 3000 })
+  private urlExistsLRU = new QuickLRU<string, true>({ maxSize: 3000 })
 
   /**
    * 获取数据库实例
@@ -176,18 +174,14 @@ class IndexedDBStore {
    * 获取 URL 对应的 hash（带缓存）
    */
   private async getUrlHash(url: string): Promise<string> {
-    // 检查缓存
-    if (this.urlHashCache.has(url)) {
-      // 更新访问顺序（LRU）：删除并重新插入
-      const hash = this.urlHashCache.get(url)!
-      this.urlHashCache.delete(url)
-      this.urlHashCache.set(url, hash)
-
+    // 检查缓存（QuickLRU 自动处理 LRU 更新）
+    const cached = this.urlHashCache.get(url)
+    if (cached !== undefined) {
       // 更新统计
       this.urlHashCacheStats.hits++
       this.updateCacheHitRate()
 
-      return hash
+      return cached
     }
 
     // 缓存未命中
@@ -195,7 +189,8 @@ class IndexedDBStore {
     this.updateCacheHitRate()
 
     const hash = await hashUrl(url)
-    this.addToUrlHashCache(url, hash)
+    this.urlHashCache.set(url, hash) // QuickLRU 自动处理 LRU 淘汰
+    this.urlHashCacheStats.size = this.urlHashCache.size
     return hash
   }
 
@@ -208,13 +203,10 @@ class IndexedDBStore {
     let batchHits = 0
     let batchMisses = 0
 
-    // 先检查缓存
+    // 先检查缓存（QuickLRU 自动处理 LRU 更新）
     for (const url of urls) {
-      if (this.urlHashCache.has(url)) {
-        const hash = this.urlHashCache.get(url)!
-        // 更新访问顺序（LRU）：删除并重新插入
-        this.urlHashCache.delete(url)
-        this.urlHashCache.set(url, hash)
+      const hash = this.urlHashCache.get(url)
+      if (hash !== undefined) {
         urlHashMap.set(url, hash)
         batchHits++
       } else {
@@ -232,7 +224,7 @@ class IndexedDBStore {
     if (uncachedUrls.length > 0) {
       const hashPromises = uncachedUrls.map(async (url) => {
         const hash = await hashUrl(url)
-        this.addToUrlHashCache(url, hash)
+        this.urlHashCache.set(url, hash) // QuickLRU 自动处理 LRU 淘汰
         return { url, hash }
       })
 
@@ -242,33 +234,10 @@ class IndexedDBStore {
       }
     }
 
-    return urlHashMap
-  }
-
-  /**
-   * 添加到 URL hash 缓存（带 LRU 淘汰）
-   */
-  private addToUrlHashCache(url: string, hash: string): void {
-    // 如果已存在，先删除旧的（这会更新位置）
-    if (this.urlHashCache.has(url)) {
-      this.urlHashCache.delete(url)
-    }
-
-    // 添加新的（插入到末尾）
-    this.urlHashCache.set(url, hash)
-
-    // 更新缓存大小统计
+    // 更新缓存大小
     this.urlHashCacheStats.size = this.urlHashCache.size
 
-    // 检查是否超过缓存大小，淘汰最旧的（第一个条目）
-    if (this.urlHashCache.size > this.URL_HASH_CACHE_SIZE) {
-      // Map.keys() 返回迭代器，第一个键是最旧的
-      const oldestKey = this.urlHashCache.keys().next().value
-      if (oldestKey) {
-        this.urlHashCache.delete(oldestKey)
-        this.urlHashCacheStats.size = this.urlHashCache.size
-      }
-    }
+    return urlHashMap
   }
 
   /**
