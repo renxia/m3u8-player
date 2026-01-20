@@ -18,10 +18,10 @@ export interface UnifiedCacheAdapter {
   set(url: string, data: ArrayBuffer, m3u8Url: string): Promise<boolean>
 
   /** 检查是否存在 */
-  has(url: string): Promise<boolean>
+  has(url: string, m3u8Url?: string): Promise<boolean>
 
   /** 批量检查 */
-  hasMany(urls: string[]): Promise<Set<string>>
+  hasMany(urls: string[], m3u8Url?: string): Promise<Set<string>>
 
   /** 删除 */
   delete(url: string): Promise<boolean>
@@ -54,11 +54,13 @@ class IndexedDBCacheAdapter implements UnifiedCacheAdapter {
     return idbCacheManager.set(url, data, m3u8Url)
   }
 
-  async has(url: string): Promise<boolean> {
+  async has(url: string, _m3u8Url?: string): Promise<boolean> {
+    // IndexedDB 实现不需要 m3u8Url，保持原有逻辑
     return idbCacheManager.has(url)
   }
 
-  async hasMany(urls: string[]): Promise<Set<string>> {
+  async hasMany(urls: string[], _m3u8Url?: string): Promise<Set<string>> {
+    // IndexedDB 实现不需要 m3u8Url，保持原有逻辑
     return idbCacheManager.hasMany(urls)
   }
 
@@ -121,12 +123,12 @@ class PWACacheAdapter implements UnifiedCacheAdapter {
     return result.success
   }
 
-  async has(url: string): Promise<boolean> {
-    return pwaCacheManager.has(url)
+  async has(url: string, m3u8Url?: string): Promise<boolean> {
+    return pwaCacheManager.has(url, m3u8Url)
   }
 
-  async hasMany(urls: string[]): Promise<Set<string>> {
-    return pwaCacheManager.hasMany(urls)
+  async hasMany(urls: string[], m3u8Url?: string): Promise<Set<string>> {
+    return pwaCacheManager.hasMany(urls, m3u8Url)
   }
 
   async delete(url: string): Promise<boolean> {

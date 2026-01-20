@@ -25,6 +25,7 @@ const CACHE_STRATEGIES = {
     maxAge: 5 * 60 * 1000, // 5分钟
   },
   // M3U8 媒体资源：Network First with Cache
+  // 注意：使用与 pwaCache.ts 相同的缓存名称，确保缓存共享
   media: {
     cacheName: M3U8_CACHE,
     strategy: cacheFirst, // networkFirst
@@ -91,13 +92,21 @@ async function cleanExpiredCache(cacheName, maxAge) {
   const cache = await caches.open(cacheName)
   const now = Date.now()
   const requests = await cache.keys()
+  // 对于 M3U8_CACHE，使用 URL 字符串作为 key
+  const useUrlKey = cacheName === M3U8_CACHE
 
   for (const request of requests) {
-    const response = await cache.match(request)
+    // 跳过元数据 key（pwaCache.ts 使用的前缀）
+    if (useUrlKey && request.url.includes('__metadata__')) {
+      continue
+    }
+
+    const cacheKey = useUrlKey ? request.url : request
+    const response = await cache.match(cacheKey)
     if (response) {
       const cacheTime = parseInt(response.headers.get('sw-cache-time') || '0')
       if (now - cacheTime > maxAge) {
-        await cache.delete(request)
+        await cache.delete(cacheKey)
       }
     }
   }
@@ -112,7 +121,9 @@ async function cleanExpiredCache(cacheName, maxAge) {
  */
 async function cacheFirst(request, cacheName, maxAge) {
   const cache = await caches.open(cacheName)
-  const cached = await cache.match(request)
+  // 对于 M3U8_CACHE，使用 URL 字符串作为 key，确保与 pwaCache.ts 兼容
+  const cacheKey = cacheName === M3U8_CACHE ? request.url : request
+  const cached = await cache.match(cacheKey)
 
   if (cached) {
     // 检查是否过期
@@ -121,7 +132,7 @@ async function cacheFirst(request, cacheName, maxAge) {
       return cached
     }
     // 过期则删除缓存
-    await cache.delete(request)
+    await cache.delete(cacheKey)
   }
 
   try {
@@ -131,13 +142,13 @@ async function cacheFirst(request, cacheName, maxAge) {
       if (request.method === 'GET') {
         // 克隆响应，避免 body 被锁定
         const responseClone = network.clone()
-        await cache.put(request, responseClone)
+        await cache.put(cacheKey, responseClone)
       }
     }
     return network
   } catch (error) {
     // 网络失败，尝试返回缓存（即使过期）
-    const cached = await cache.match(request)
+    const cached = await cache.match(cacheKey)
     if (cached) {
       return cached
     }
@@ -154,6 +165,8 @@ async function cacheFirst(request, cacheName, maxAge) {
  */
 async function networkFirst(request, cacheName, _maxAge) {
   const cache = await caches.open(cacheName)
+  // 对于 M3U8_CACHE，使用 URL 字符串作为 key，确保与 pwaCache.ts 兼容
+  const cacheKey = cacheName === M3U8_CACHE ? request.url : request
 
   try {
     // console.debug('networkfirst', request.url)
@@ -163,13 +176,13 @@ async function networkFirst(request, cacheName, _maxAge) {
       if (request.method === 'GET') {
         // 克隆响应，避免 body 被锁定
         const responseClone = network.clone()
-        await cache.put(request, responseClone)
+        await cache.put(cacheKey, responseClone)
       }
     }
     return network
   } catch (error) {
     // 网络失败，返回缓存
-    const cached = await cache.match(request)
+    const cached = await cache.match(cacheKey)
     if (cached) {
       return cached
     }
@@ -229,7 +242,7 @@ async function handleNavigation(request) {
 
 /**
  * 安装 Service Worker
- */ 
+ */
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing Service Worker...')
 
@@ -352,11 +365,14 @@ self.addEventListener('message', async (event) => {
     case 'CACHE_URL':
       console.log('[SW] Caching URL:', data?.url)
       if (data?.url) {
-        const cache = await caches.open(CACHE_NAME)
+        const cacheName = data?.cacheName || CACHE_NAME
+        const cache = await caches.open(cacheName)
         const response = await fetch(data.url)
         // 克隆响应，避免 body 被锁定
         const responseClone = response.clone()
-        cache.put(new Request(data.url), responseClone)
+        // 对于 M3U8_CACHE，使用 URL 字符串作为 key，确保与 pwaCache.ts 兼容
+        const cacheKey = cacheName === M3U8_CACHE ? data.url : new Request(data.url)
+        await cache.put(cacheKey, responseClone)
       }
       break
 

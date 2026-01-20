@@ -71,6 +71,7 @@ class PWACacheManager {
 
   /**
    * 从缓存中加载元数据
+   * 同时为没有 metadata 的资源补充 metadata（例如 sw.js 缓存的资源）
    */
   private async loadMetadata(): Promise<void> {
     const cache = await this.getCache()
@@ -82,33 +83,36 @@ class PWACacheManager {
       // 获取当前页面的 origin，用于处理相对 URL 转换问题
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
 
-      const metadataPromises = keys
-        .map((request) => request.url)
-        .filter((url) => {
-          // 检查是否是元数据 key（可能包含 origin 前缀）
-          return url.includes(METADATA_KEY_PREFIX)
-        })
-        .map(async (url) => {
-          try {
-            // Cache API 可能会将元数据 key 转换为绝对 URL
-            // 例如：__metadata__https://example.com/file.ts
-            // 可能被转换为：http://localhost:3009/__metadata__https://example.com/file.ts
+      // 分离资源 URL 和 metadata keys
+      const resourceUrls = new Set<string>()
+      const metadataKeys = new Set<string>()
 
-            // 首先尝试使用完整的 URL 匹配（Cache API 保存的格式）
-            let response = await cache.match(url)
-
-            // 如果匹配失败，尝试提取原始 key（去掉 origin 前缀）
-            if (!response && currentOrigin && url.startsWith(currentOrigin)) {
-              // 提取路径部分：去掉 origin
+      for (const key of keys) {
+        let url = key.url
+        // 处理 origin 前缀
+        if (currentOrigin && url.startsWith(currentOrigin)) {
               const path = url.substring(currentOrigin.length)
-              // 如果路径以 / 开头，去掉它
-              const metadataKey = path.startsWith('/') ? path.substring(1) : path
+          url = path.startsWith('/') ? path.substring(1) : path
+        }
 
-              // 尝试使用提取的 key 匹配（原始保存的格式）
-              response = await cache.match(metadataKey)
+        if (url.includes(METADATA_KEY_PREFIX)) {
+          // 提取实际的资源 URL（去掉 metadata 前缀）
+          const resourceUrl = url.replace(METADATA_KEY_PREFIX, '')
+          metadataKeys.add(resourceUrl)
+        } else {
+          // 普通资源 URL
+          resourceUrls.add(url)
+        }
+      }
 
-              // 如果还是失败，尝试使用 Request 对象匹配原始 key
-              if (!response) {
+      // 加载已有的 metadata
+      const metadataPromises = Array.from(metadataKeys).map(async (resourceUrl) => {
+        try {
+          const metadataKey = `${METADATA_KEY_PREFIX}${resourceUrl}`
+          let response = await cache.match(metadataKey)
+
+          // 如果匹配失败，尝试处理 URL 转换问题
+          if (!response && currentOrigin) {
                 try {
                   const request = new Request(metadataKey, { method: 'GET' })
                   response = await cache.match(request)
@@ -117,32 +121,58 @@ class PWACacheManager {
                 }
               }
 
-              // 如果还是失败，尝试使用 Request 对象匹配完整 URL
-              if (!response) {
-                try {
-                  const request = new Request(url, { method: 'GET' })
-                  response = await cache.match(request)
-                } catch {
-                  // 忽略错误
-                }
-              }
-            }
+          if (response) {
+            const metadata: PWACacheItem = await response.json()
+            // 确保使用元数据中保存的原始 URL
+            this.metadataCache.set(metadata.url, metadata)
+          }
+        } catch (error) {
+          logger.warn('[PWACache] Failed to load metadata item:', resourceUrl, error)
+        }
+      })
 
+      await Promise.all(metadataPromises)
+
+      // 为没有 metadata 的资源补充 metadata（例如 sw.js 缓存的资源）
+      const missingMetadataUrls = Array.from(resourceUrls).filter(
+        (url) => !metadataKeys.has(url) && !this.metadataCache.has(url),
+      )
+
+      if (missingMetadataUrls.length > 0) {
+        logger.debug(
+          '[PWACache] Found resources without metadata, supplementing:',
+          missingMetadataUrls.length,
+        )
+
+        const supplementPromises = missingMetadataUrls.map(async (url) => {
+          try {
+            const response = await cache.match(url)
             if (response) {
-              const metadata: PWACacheItem = await response.json()
-              // 确保使用元数据中保存的原始 URL（这是实际的资源 URL）
-              // metadata.url 应该是实际的资源 URL，而不是元数据 key
-              this.metadataCache.set(metadata.url, metadata)
-            } else {
-              // 调试：输出无法匹配的 key
-              logger.debug('[PWACache] Failed to match metadata for key:', url)
+              // 获取资源大小和类型
+              const size = await this.getResponseSize(response)
+              const contentType = response.headers.get('Content-Type') || undefined
+
+              // 创建 metadata（使用当前时间，因为无法知道真实缓存时间）
+              const metadata: PWACacheItem = {
+                url,
+                cachedAt: Date.now(),
+                size,
+                contentType,
+                // m3u8Url 无法确定，留空
+              }
+
+              // 保存 metadata
+              await this.saveMetadata(metadata)
+              logger.debug('[PWACache] Supplemented metadata for:', url)
             }
           } catch (error) {
-            logger.warn('[PWACache] Failed to load metadata item:', url, error)
+            logger.warn('[PWACache] Failed to supplement metadata for:', url, error)
           }
         })
 
-      await Promise.all(metadataPromises)
+        await Promise.all(supplementPromises)
+      }
+
       logger.log('[PWACache] Loaded metadata:', this.metadataCache.size, 'items')
     } catch (error) {
       logger.error('[PWACache] Failed to load metadata:', error)
@@ -232,10 +262,74 @@ class PWACacheManager {
 
   /**
    * 获取资源大小（从 Response）
+   * 优化：优先使用 Content-Length header，避免读取 blob
    */
   private async getResponseSize(response: Response): Promise<number> {
+    // 优先使用 Content-Length header（不需要读取 blob）
+    const contentLength = response.headers.get('Content-Length')
+    if (contentLength) {
+      const size = parseInt(contentLength, 10)
+      if (!isNaN(size) && size > 0) {
+        return size
+      }
+    }
+
+    // 如果没有 Content-Length header，才读取 blob
     const blob = await response.blob()
     return blob.size
+  }
+
+  /**
+   * 更新 metadata 的 m3u8Url（内部方法，性能优化：仅更新字段）
+   * @param url 资源 URL
+   * @param m3u8Url M3U8 URL
+   */
+  private async updateM3U8Url(url: string, m3u8Url: string): Promise<void> {
+    const metadata = this.metadataCache.get(url)
+    if (!metadata) {
+      // metadata 不存在，需要完整补齐（这种情况较少）
+      const cache = await this.getCache()
+      if (!cache) return
+
+      try {
+        const response = await cache.match(url)
+        if (response) {
+          // 使用优化后的 getResponseSize（优先使用 Content-Length）
+          const size = await this.getResponseSize(response)
+          const contentType = response.headers.get('Content-Type') || undefined
+
+          const newMetadata: PWACacheItem = {
+            url,
+            cachedAt: Date.now(),
+            size,
+            contentType,
+            m3u8Url,
+          }
+          await this.saveMetadata(newMetadata)
+          logger.debug('[PWACache] Created metadata with m3u8Url for:', url)
+        }
+      } catch (error) {
+        logger.warn('[PWACache] Failed to create metadata with m3u8Url:', url, error)
+      }
+      return
+    }
+
+    // metadata 已存在，只需更新 m3u8Url
+    if (metadata.m3u8Url === m3u8Url) {
+      // 已经是最新的，不需要更新
+      return
+    }
+
+    metadata.m3u8Url = m3u8Url
+    this.metadataCache.set(url, metadata)
+
+    // 保存到 Cache API（异步，不阻塞）
+    try {
+      await this.saveMetadata(metadata)
+      logger.debug('[PWACache] Updated m3u8Url for:', url)
+    } catch (error) {
+      logger.warn('[PWACache] Failed to save updated m3u8Url:', url, error)
+    }
   }
 
   /**
@@ -341,7 +435,7 @@ class PWACacheManager {
    * 检查单个资源是否已缓存
    * 优化方案：使用 LRU 缓存已查询过的 URL，避免重复 IO
    */
-  async has(url: string): Promise<boolean> {
+  async has(url: string, m3u8Url?: string): Promise<boolean> {
     const startTime = Date.now()
     const cache = await this.getCache()
     if (!cache) return false
@@ -349,6 +443,16 @@ class PWACacheManager {
     try {
       // 先检查 LRU 缓存
       if (this.cacheKeysLRU.has(url)) {
+        // LRU 命中：资源已确认存在，检查是否需要补齐 m3u8Url
+        if (m3u8Url) {
+          const metadata = this.metadataCache.get(url)
+          if (metadata && !metadata.m3u8Url) {
+            // 异步更新 m3u8Url（不阻塞返回）
+            this.updateM3U8Url(url, m3u8Url).catch((error: unknown) => {
+              logger.warn('[PWACache] Failed to update m3u8Url in has():', error)
+            })
+          }
+        }
         logger.debug('[PWACache][has] LRU hit, timecost:', Date.now() - startTime, url)
         return true
       }
@@ -358,6 +462,18 @@ class PWACacheManager {
       if (response) {
         // 缓存到 LRU
         this.cacheKeysLRU.set(url, true)
+
+        // 如果提供了 m3u8Url，检查并更新 metadata
+        if (m3u8Url) {
+          const metadata = this.metadataCache.get(url)
+          if (metadata && !metadata.m3u8Url) {
+            // 异步更新（不阻塞返回）
+            this.updateM3U8Url(url, m3u8Url).catch((error: unknown) => {
+              logger.warn('[PWACache] Failed to update m3u8Url in has():', error)
+            })
+          }
+        }
+
         logger.debug('[PWACache][has] cache hit, timecost:', Date.now() - startTime, url)
         return true
       }
@@ -372,9 +488,11 @@ class PWACacheManager {
 
   /**
    * 批量检查资源是否已缓存
+   * @param urls 资源 URL 数组
+   * @param m3u8Url 可选的 M3U8 URL，如果提供且资源存在但没有 m3u8Url，会自动补齐
    * 优化方案：使用 LRU 缓存已查询过的 URL，避免重复 IO
    */
-  async hasMany(urls: string[]): Promise<Set<string>> {
+  async hasMany(urls: string[], m3u8Url?: string): Promise<Set<string>> {
     const startTime = Date.now()
     const cache = await this.getCache()
     if (!cache) return new Set()
@@ -402,6 +520,10 @@ class PWACacheManager {
 
         for (const key of keys) {
           let url = key.url
+          // 跳过 metadata keys（pwaCache.ts 使用的元数据 key）
+          if (url.includes(METADATA_KEY_PREFIX)) {
+            continue
+          }
           if (currentOrigin && url.startsWith(currentOrigin)) {
             const path = url.substring(currentOrigin.length)
             url = path.startsWith('/') ? path.substring(1) : path
@@ -418,8 +540,59 @@ class PWACacheManager {
         }
       }
 
+      // 对于 LRU 命中的 URL，批量检查并更新 m3u8Url
+      if (m3u8Url && lruHitUrls.length > 0) {
+        const urlsToUpdate = lruHitUrls.filter((url) => {
+          const metadata = this.metadataCache.get(url)
+          return metadata && !metadata.m3u8Url
+        })
+
+        // 批量更新（异步，不阻塞返回）
+        if (urlsToUpdate.length > 0) {
+          Promise.all(
+            urlsToUpdate.map((url) =>
+              this.updateM3U8Url(url, m3u8Url).catch((error: unknown) => {
+                logger.warn('[PWACache] Failed to update m3u8Url in hasMany():', error)
+              }),
+            ),
+          ).catch(() => {
+            // 忽略错误
+          })
+        }
+      }
+
+      // 对于 LRU 未命中但找到的资源，也检查并更新 m3u8Url
+      if (m3u8Url && fromCacheUrls.length > 0) {
+        const urlsToUpdate = fromCacheUrls.filter((url) => {
+          const metadata = this.metadataCache.get(url)
+          return metadata && !metadata.m3u8Url
+        })
+
+        // 批量更新（异步，不阻塞返回）
+        if (urlsToUpdate.length > 0) {
+          Promise.all(
+            urlsToUpdate.map((url) =>
+              this.updateM3U8Url(url, m3u8Url).catch((error: unknown) => {
+                logger.warn('[PWACache] Failed to update m3u8Url in hasMany():', error)
+              }),
+            ),
+          ).catch(() => {
+            // 忽略错误
+          })
+        }
+      }
+
       const result = new Set([...lruHitUrls, ...fromCacheUrls])
-      logger.debug('[PWACache][hasMany] timecost:', Date.now() - startTime, 'urls:', urls.length, 'cached:', result.size, 'lruHit:', lruHitUrls.length)
+      logger.debug(
+        '[PWACache][hasMany] timecost:',
+        Date.now() - startTime,
+        'urls:',
+        urls.length,
+        'cached:',
+        result.size,
+        'lruHit:',
+        lruHitUrls.length,
+      )
       return result
     } catch (error) {
       logger.debug('[PWACache][hasMany] Failed to check hasMany:', error)

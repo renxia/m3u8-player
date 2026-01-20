@@ -247,9 +247,9 @@ class Preloader {
       const adapter = getCurrentCacheAdapter()
       // 找到第一个未缓存的片段（优化性能：批量查询）
       const segmentUrls = this.segments.map((s) => s.url)
-      const cachedUrls = await adapter.hasMany(segmentUrls)
+      const cachedUrls = await adapter.hasMany(segmentUrls, this.currentM3U8Url)
       const startIndex = segmentUrls.findIndex(d => !cachedUrls.has(d))
-      
+
       // 从该位置继续预加载
       const remainingSegments = this.segments.slice(startIndex)
       if (remainingSegments.length > 0) {
@@ -311,7 +311,7 @@ class Preloader {
 
     // 批量过滤已缓存的片段（优化性能）
     const segmentUrls = segments.map((s) => s.url)
-    const cachedUrls = await adapter.hasMany(segmentUrls)
+    const cachedUrls = await adapter.hasMany(segmentUrls, m3u8Url)
 
     const uncachedSegments: TSSegment[] = []
     for (const segment of segments) {
@@ -391,7 +391,7 @@ class Preloader {
     const adapter = getCurrentCacheAdapter()
     // 批量查询已缓存的片段（性能优化：一次查询替代多次查询）
     const segmentUrls = this.segments.map((s) => s.url)
-    const cachedUrls = await adapter.hasMany(segmentUrls)
+    const cachedUrls = await adapter.hasMany(segmentUrls, url)
 
     const total = segmentUrls.length
     const loaded = cachedUrls.size
