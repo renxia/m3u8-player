@@ -42,8 +42,10 @@ async function fetchRelease() {
 
     const response = await fetch('https://api.github.com/repos/lzwme/m3u8-dl/releases/latest')
     const data = await response.json()
-    storage.set<Release>(StorageKeys.version, data, { expiresIn: 60 * 60 * 24 })
-    return data as Release
+    if (data.assets?.length) {
+      storage.set<Release>(StorageKeys.version, data, { expiresIn: 60 * 60 * 24 })
+      return data as Release
+    }
   } catch (_error) {
     // 使用本地 fallback
     try {

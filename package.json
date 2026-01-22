@@ -10,6 +10,7 @@
     "format": "biome format --fix",
     "fix": "biome check --fix",
     "lint": "npm run fix",
+    "i18n:align": "bun scripts/i18n-align.ts",
     "preview": "vite preview"
   },
   "devDependencies": {

@@ -93,8 +93,8 @@ export default function SettingsPage() {
   const showCacheTypeSelect = (cacheSupport.indexeddb && cacheSupport.pwa) || cacheSupport.indexeddb || cacheSupport.pwa
   const cacheNotSupported = !cacheSupport.indexeddb && !cacheSupport.pwa
   const availableCacheTypes = [
-    ...(cacheSupport.indexeddb ? [{ value: 'indexeddb' as const, label: 'IndexedDB', desc: '兼容性好' }] : []),
     ...(cacheSupport.pwa ? [{ value: 'pwa' as const, label: 'PWA Cache', desc: '性能更优' }] : []),
+    ...(cacheSupport.indexeddb ? [{ value: 'indexeddb' as const, label: 'IndexedDB', desc: '兼容性好' }] : []),
   ]
 
   return (

@@ -1,0 +1,235 @@
+{
+  "about": {
+    "contactDesc": "Bei Verstößen oder Vorschlägen kontaktieren Sie bitte den Autor über",
+    "contactLink": "Kontakt",
+    "features": [
+      "Unterstützung für Online-Videowiedergabe durch Eingabe der M3U8-Adresse, kompatibel mit verschiedenen Verschlüsselungsmethoden",
+      "Unterstützung für das Einfügen von M3U8-Inhalten oder Batch-Episodenliste zur Wiedergabe",
+      "Unterstützung für lokale Dateiauswahl zur Wiedergabe",
+      "Unterstützung für das Umschalten zwischen mehreren Playern wie ArtPlayer und DPlayer",
+      "Unterstützung für Verlaufs- und Favoritenverwaltung für schnellen Zugriff",
+      "Unterstützung für Ein-Klick-Download, Bearbeitung, Drehen und andere praktische Operationen",
+      "Unterstützung für das Einbetten des Online-Players in andere Websites (iframe)",
+      "Bereitstellung von M3U8-DL-Client und Befehlszeilen-Tool-Download und Verwendungsanweisungen"
+    ],
+    "featuresTitle": "Hauptfunktionen",
+    "githubUrl": "GitHub-URL",
+    "intro": "M3U8-Online-Player ist ein einfaches und praktisches HLS/M3U8-Streaming-Wiedergabe- und Download-Tool. Es unterstützt Online-Wiedergabe, Entschlüsselung, Bearbeitung, Batch-Episoden-Wiedergabe, Verlauf, Favoriten und andere Funktionen. Geeignet für Tests, Vorschau, Lernen und tägliche Nutzung.",
+    "meta": {
+      "description": "Erfahren Sie mehr über M3U8-Online-Player-Funktionen, Anwendungsfälle und Open-Source-Informationen. Unterstützt Online-Wiedergabe, Entschlüsselung, Batch-Episoden, Verlauf und mehr.",
+      "keywords": "M3U8-Player-Einführung, HLS-Player-Funktionen, M3U8-Tools-Übersicht, Streaming-Player",
+      "title": "Über - Kostenloser M3U8-Videoplayer"
+    },
+    "openSourceDesc": "Dieses Projekt ist Open Source. Vorschläge und Feedback sind willkommen.",
+    "openSourceTitle": "Open Source & Feedback",
+    "scenarios": [
+      "Online-Wiedergabe und -Test von M3U8/HLS-Videostreams",
+      "Batch-Episoden-Wiedergabe und -Verwaltung",
+      "Entschlüsselung und Wiedergabe von verschlüsselten Videostreams",
+      "Video-Download, Formatkonvertierung und lokale Speicherung",
+      "Entwickler-Debugging und Lernen von Streaming-Protokollen"
+    ],
+    "scenariosTitle": "Anwendungsfälle",
+    "title": "Über M3U8-Online-Player",
+    "toolsDesc1": "Wenn Sie einfach ein einzelnes Video herunterladen möchten, können Sie dieses von uns bereitgestellte Online-Tool verwenden:",
+    "toolsDesc2": "Wenn Sie M3U8-Videos in Chargen herunterladen müssen, können Sie versuchen,",
+    "toolsDesc3": "zu verwenden, der eine leistungsstarke Batch-Download-Funktionalität bietet.",
+    "toolsLink1": "M3U8-Video-Online-MP4-Konvertierungs-Download-Tool",
+    "toolsLink2": "M3U8-DL-Downloader-Client",
+    "toolsTitle": "M3U8-Online-Download- und Konvertierungstools"
+  },
+  "cache": {
+    "cacheType": "Cache-Typ",
+    "clear": "Löschen",
+    "clearAll": "Gesamten Cache löschen",
+    "clearConfirmMessage": "Diese Aktion löscht alle zwischengespeicherten Videosegmente und kann nicht rückgängig gemacht werden. Möchten Sie wirklich fortfahren?",
+    "clearConfirmTitle": "Cache-Löschung bestätigen",
+    "clearSuccess": "Cache gelöscht",
+    "clearWarning": "Das Löschen des Caches löscht alle zwischengespeicherten Videosegmente. Sie müssen beim Aktualisieren der Seite erneut heruntergeladen werden.",
+    "concurrency": "Vorlade-Parallelität",
+    "configReset": "Konfiguration auf Standard zurückgesetzt",
+    "configSaved": "Konfiguration gespeichert",
+    "configuration": "Cache-Konfiguration",
+    "confirmClear": "Löschung bestätigen",
+    "count": "Zwischengespeicherte Elemente",
+    "currentVideo": "Aktueller Video-Cache",
+    "dangerZone": "Gefahrenzone",
+    "disabled": "Deaktiviert",
+    "enable": "Cache aktivieren",
+    "enableDescription": "Wenn aktiviert, werden abgespielte Videosegmente zwischengespeichert, um das Laden beim Aktualisieren der Seite zu beschleunigen",
+    "hitRate": "Trefferquote",
+    "info1": "Das Cache-System verwendet IndexedDB oder PWA Cache zum Speichern von Videosegmenten und verbessert die Ladezeiten bei wiederholter Wiedergabe erheblich.",
+    "info2": "Wenn das Cache-Limit erreicht ist, löscht das System automatisch die am wenigsten kürzlich aufgerufenen Einträge (LRU-Richtlinie).",
+    "max": "max",
+    "maxCount": "Maximale Cache-Elemente",
+    "notSupported": "Cache nicht unterstützt",
+    "notSupportedDescription": "Ihr Browser unterstützt IndexedDB oder PWA Cache nicht, daher ist die Cache-Funktion nicht verfügbar.",
+    "pausePreload": "Vorladen pausieren",
+    "preload": "Vorladen",
+    "preloadComplete": "Vorladen abgeschlossen",
+    "preloadCount": "Automatisch vorladen Segmente",
+    "resetConfig": "Auf Standard zurücksetzen",
+    "resumePreload": "Vorladen fortsetzen",
+    "saveConfig": "Konfiguration speichern",
+    "settings": "Einstellungen",
+    "size": "Verwendeter Speicher",
+    "startPreload": "Vorladen starten",
+    "statistics": "Cache-Statistiken",
+    "stopPreload": "Vorladen stoppen",
+    "title": "Video-Cache",
+    "totalStorage": "Gesamtspeicher"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "collected": "Gesammelt",
+    "copied": "Kopiert",
+    "copy": "Kopieren",
+    "delete": "Löschen",
+    "enterUrl": "Bitte geben Sie die URL oder den Inhalt von m3u8 ein",
+    "fav": "Favorit",
+    "favSuccess": "Erfolgreich zu Favoriten hinzugefügt",
+    "justNow": "Gerade eben",
+    "minuteAgo": "Minute(n) zuvor",
+    "noFav": "Keine Favoriten",
+    "noHistory": "Keine Verlaufsdaten verfügbar",
+    "noVersions": "Es wurde keine für Ihr System geeignete Version erkannt, bitte wählen Sie unten den manuellen Download.",
+    "osdv": "Unterstützt nur das Herunterladen von Videos im m3u8-Format",
+    "petc": "Bitte geben Sie die richtige m3u8-Videoadresse ein",
+    "play": "Abspielen",
+    "recdl": "Empfohlene Downloads für Ihr System",
+    "refresh": "Aktualisieren",
+    "releaseDate": "Veröffentlichungsdatum",
+    "size": "Größe",
+    "sopebap": "Erfolgreich erhalten, bitte unten bearbeiten und abspielen",
+    "startPlaying": "Wiedergabe des Inhalts des Editorfelds starten",
+    "tmcy": "Der von Ihnen eingegebene M3U8-Inhalt ist eine verschlüsselte Ressource. Wenn die Wiedergabe fehlschlägt, geben Sie bitte auch die URL-Adresse der Quellseite ein, um Entschlüsselungsinformationen zu erhalten",
+    "version": "Version"
+  },
+  "download": {
+    "clientDesc": "@lzwme/m3u8-dl ist ein leistungsstarkes m3u8-Datei-Video-Batch-Download-Tool, das Multi-Thread-Download, Wiedergabe während des Downloads, Cache-Fortsetzung und andere Funktionen unterstützt. Es unterstützt Installation und Verwendung in verschiedenen Formen, hier ist eine kurze Einführung.",
+    "clientTitle": "M3U8-DL-Downloader-Client-Funktionen und Verwendungsanweisungen",
+    "dockerComplete": "Nach Abschluss der Bereitstellung besuchen Sie",
+    "dockerCompose": "Mit docker-compose ausführen:",
+    "dockerRun": "Mit Docker-Befehl ausführen:",
+    "dockerWebUI": "um die WebUI-Oberfläche zu verwenden.",
+    "features": [
+      "Unterstützung für Docker-Bereitstellung, PC-Client, CLI-Befehlszeilen-Tool und andere Installationsmethoden",
+      "Multi-Thread-Download: Multi-Thread-Download im Thread-Pool-Modus",
+      "Wiedergabe während des Downloads: Unterstützung für die Verwendung heruntergeladener ts-Cache-Dateien zur Online-Wiedergabe",
+      "Batch-Download: Unterstützung für Batch-Download durch Angabe mehrerer m3u8-Adressen",
+      "Cache-Fortsetzung: Cache wird bei Download-Fehler beibehalten, bei Wiederholung werden nur fehlgeschlagene Segmente heruntergeladen",
+      "Verschlüsselungsunterstützung: Unterstützung für die Entschlüsselung gängiger AES-verschlüsselter Videostreams",
+      "Formatkonvertierung: Unterstützung für automatische Konvertierung in mp4 (erfordert ffmpeg-Installation)",
+      "Suchfunktion: Unterstützung für die Angabe der Standard-API der Sammelstelle für interaktive Befehlszeilen-Suche und -Download",
+      "WebUI: Bereitstellung eines Download-Centers, Unterstützung für den Start als webui-Service zur Download-Verwaltung"
+    ],
+    "featuresTitle": "Hauptfunktionen",
+    "globalInstall": "Globale Installation:",
+    "meta": {
+      "description": "Laden Sie den M3U8-DL-Downloader-Client und CLI-Tools herunter. Verfügbar für Windows, macOS und Linux. Ein leistungsstarkes M3U8-Video-Batch-Download-Tool.",
+      "keywords": "M3U8-Download-Tool, M3U8-DL-Downloader, M3U8-Client-Download, M3U8-Batch-Download",
+      "title": "Downloads - Kostenloser M3U8-Videoplayer"
+    },
+    "method1Desc": "Client-Installationssoftware für Windows-, macOS- und Linux-Betriebssysteme wird derzeit bereitgestellt. Sie können das neueste Installationspaket aus der Download-Dateiliste oben herunterladen und dann installieren, um es zu verwenden.",
+    "method1Title": "Methode 1: PC-Client herunterladen und installieren",
+    "method2Title": "Methode 2: CLI-Befehlszeilen-Tool-Installation und -Verwendung",
+    "method3Title": "Methode 3: Docker-Bereitstellung",
+    "method4Desc": "Das M3U8-DL-Downloader-Tool bietet eine leistungsstarke Batch-Download-Funktionalität. Wenn Sie jedoch einfach schnell ein einzelnes Video herunterladen möchten, können Sie die folgenden von uns bereitgestellten Online-Tool-Websites verwenden:",
+    "method4Title": "Methode 4: Browser-basierte M3U8-Online-Download-Website",
+    "onlineTools": [
+      "M3U8-Video-Online-MP4-Konvertierungs-Download-Tool",
+      "M3U8-Online-Download-Tool (UI optimiert)",
+      "M3U8-Video-Online-Player"
+    ],
+    "title": "Download-Liste",
+    "useNpx": "npx verwenden:"
+  },
+  "feedback": {
+    "desc": "Wir freuen uns über Vorschläge, Problem-Meldungen oder das Teilen Ihrer Erfahrungen. Ihr Feedback hilft uns, unsere Produkte kontinuierlich zu verbessern!",
+    "meta": {
+      "description": "Wir freuen uns über Vorschläge, Problem-Meldungen oder das Teilen Ihrer Erfahrungen mit dem M3U8-Online-Player. Ihr Feedback hilft uns, unsere Produkte kontinuierlich zu verbessern.",
+      "keywords": "M3U8-Player-Feedback, Benutzer-Vorschläge, Problem-Meldung, Produkt-Diskussion",
+      "title": "Feedback - Kostenloser M3U8-Videoplayer"
+    },
+    "title": "Feedback"
+  },
+  "footer": {
+    "disclaimer": "Ressourcen stammen aus dem Internet. Bei Verstößen kontaktieren Sie mich bitte zum Löschen!"
+  },
+  "index": {
+    "clear": "Löschen",
+    "clearHistory": "Verlauf löschen",
+    "download": "Herunterladen",
+    "dplayer": "DPlayer",
+    "edit": "Bearbeiten",
+    "favorites": "Favoriten",
+    "history": "Verlauf",
+    "hlsDesc": {
+      "content1": "HLS (HTTP Live Streaming) ist ein Streaming-Protokoll von Apple. M3U8 ist sein Playlist-Dateiformat. Es unterstützt Verschlüsselung, Segmentierung und andere Funktionen, geeignet für Online-Wiedergabe und Livestreaming.",
+      "content2": "Eine M3U8-Datei ist eine Klartextdatei, die Indizes aufzeichnet. Beim Öffnen spielt die Player-Software sie nicht direkt ab, sondern findet die entsprechenden Audio- und Videodateien auf dem Server basierend auf ihren Indizes zur Online-Wiedergabe. Videowebsites können automatisch eine geeignete Bitrate-Datei für den Client basierend auf der Netzwerkbandbreite des Benutzers zuordnen und so die Videoflüssigkeit sicherstellen.",
+      "content3": "M3U8 wurde ursprünglich für die Wiedergabe von Audiodateien wie MP3 entwickelt, aber immer mehr Software verwendet es jetzt zum Abspielen von Videodateilisten. M3U8 kann auch Online-Streaming-Audioquellen angeben. Viele Player und Software unterstützen das M3U8-Dateiformat.",
+      "content4": "M3U8-Videoinhalte können basierend auf AES verschlüsselt werden. Dieser Player unterstützt die Entschlüsselung und Wiedergabe von M3U8-Dateivideos mit gängigen Verschlüsselungsmethoden.",
+      "embedTitle": "In Website einbetten:",
+      "encryptionContent": "Das HLS-Protokoll verwendet M3U8-Dateien, um den Client über die Videodatei-Playlist zu informieren. Nachdem der Client die M3U8-Datei erhalten hat, kann er das Video direkt abspielen. Um zu verhindern, dass die vom HLS-Protokoll verwendeten TS-Videodateien von nicht autorisierten Clients aufgerufen werden, müssen die vom HLS-Protokoll verwendeten TS-Videodateien verschlüsselt werden. Nach der Verschlüsselung der TS-Videodateien muss die Entschlüsselungsmethode dem Client mitgeteilt werden. Dies kann durch Konfigurieren der M3U8-Standardverschlüsselungs-Umschreibfunktion erfolgen und den Client über den Verschlüsselungsalgorithmus, die Schlüssel-URI und den Authentifizierungsschlüssel über das #EXT-X-KEY-Tag informieren.",
+      "encryptionTitle": "M3U8-Datei-Verwendungsszenarien und Verschlüsselung",
+      "features": [
+        "Unterstützung für Entschlüsselung und Wiedergabe von M3U8-Dateivideos mit gängigen Verschlüsselungsmethoden",
+        "Diese Seite bietet nur Online-Wiedergabedienst. Wenn Sie Videos herunterladen müssen, verwenden Sie bitte das M3U8-Video-Online-Download-Tool",
+        "Referenz: M3U8-Standardverschlüsselungs-Umschreibung konfigurieren"
+      ],
+      "title": "HLS/M3U8-Beschreibung"
+    },
+    "inputPlaceholder": "M3U8-URL eingeben",
+    "m3u8Placeholder": "1. M3U8-Inhalt einfügen zum Abspielen\n2. Unterstützung für Batch-Episoden, eine pro Zeile, Format: URL|Titel oder Titel$URL",
+    "play": "Abspielen",
+    "rotate": "Drehen",
+    "selectFile": "Lokale Datei zum Abspielen auswählen"
+  },
+  "meta": {
+    "author": "Zhiwen Studio",
+    "description": "Ein einfacher und praktischer M3U8-Online-Player mit Funktionen wie Online-Entschlüsselung, Bearbeitung, Batch-Wiedergabe, Verlauf und Favoriten.",
+    "keywords": "M3U8 Online-Player, M3U8-Streaming, HLS-Stream-Player, M3U8-Player, M3U8-Livestream, M3U8-Test",
+    "title": "Kostenloser M3U8-Videoplayer - Online HLS-Player für PC, iOS und Android"
+  },
+  "nav": {
+    "about": "Über uns",
+    "downloads": "Downloads",
+    "feedback": "Feedback",
+    "home": "M3U8-Player",
+    "language": "Sprache",
+    "settings": "Einstellungen",
+    "theme": "Design",
+    "themeDark": "Dunkel",
+    "themeLight": "Hell",
+    "themeSystem": "System"
+  },
+  "player": {
+    "muted": "Stummgeschaltet",
+    "paused": "Pausiert",
+    "playbackSpeed": "Wiedergabegeschwindigkeit",
+    "playing": "Wiedergabe",
+    "rotate": "Drehen",
+    "rotated": "Bildschirm gedreht",
+    "screenshot": "Screenshot",
+    "screenshotFailed": "Screenshot fehlgeschlagen",
+    "screenshotSuccess": "Screenshot gespeichert",
+    "shortcuts": "Tastenkürzel",
+    "speedChanged": "Wiedergabegeschwindigkeit",
+    "unmuted": "Stummschaltung aufgehoben",
+    "volume": "Lautstärke"
+  },
+  "settings": {
+    "description": "App-Einstellungen und Cache-Konfiguration verwalten",
+    "meta": {
+      "description": "Verwalten Sie die App-Einstellungen des M3U8-Online-Players, die Cache-Konfiguration und die Player-Einstellungen, um Ihre Erfahrung zu optimieren.",
+      "keywords": "M3U8-Player-Einstellungen, Cache-Konfiguration, Player-Konfiguration, Einstellungen",
+      "title": "Einstellungen - Kostenloser M3U8-Videoplayer"
+    },
+    "title": "Einstellungen"
+  },
+  "shortcuts": {
+    "tip": "Hinweis: Die meisten Tastenkürzel sind in Eingabefeldern deaktiviert, um die Eingabe nicht zu stören.",
+    "title": "Tastenkürzel"
+  }
+}

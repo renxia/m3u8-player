@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { supportedLanguages } from '@/i18n'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -72,7 +73,9 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 // 获取语言路由前缀
 export function getLangPrefix(): string {
   const pathname = window.location.pathname
-  if (pathname.includes('/en')) return '/en'
-  if (pathname.includes('/ja-JP')) return '/ja-JP'
+  for (const lang of supportedLanguages) {
+    if (pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`) return `/${lang}`
+  }
+
   return ''
 }

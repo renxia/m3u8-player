@@ -1,0 +1,235 @@
+{
+  "about": {
+    "contactDesc": "Se houver alguma violação ou sugestão, entre em contato com o autor via",
+    "contactLink": "Contato",
+    "features": [
+      "Suporta reprodução de vídeo online inserindo o endereço M3U8, compatível com vários métodos de criptografia",
+      "Suporta colar conteúdo M3U8 ou lista de episódios em lote para reprodução",
+      "Suporta seleção de arquivo local para reprodução",
+      "Suporta alternância entre vários reprodutores como ArtPlayer e DPlayer",
+      "Suporta gerenciamento de histórico e favoritos para acesso rápido",
+      "Suporta download com um clique, edição, rotação e outras operações práticas",
+      "Suporta incorporar o reprodutor online em outros sites (iframe)",
+      "Fornece cliente M3U8-DL e instruções de download e uso da ferramenta de linha de comando"
+    ],
+    "featuresTitle": "Recursos principais",
+    "githubUrl": "URL do GitHub",
+    "intro": "O Reprodutor M3U8 Online é uma ferramenta simples e prática de reprodução e download de streaming HLS/M3U8. Suporta reprodução online, descriptografia, edição, reprodução de episódios em lote, histórico, favoritos e outros recursos. Adequado para testes, visualização, aprendizado e uso diário.",
+    "meta": {
+      "description": "Saiba mais sobre os recursos do Reprodutor M3U8 Online, casos de uso e informações de código aberto. Suporta reprodução online, descriptografia, episódios em lote, histórico e muito mais.",
+      "keywords": "introdução do reprodutor M3U8, recursos do reprodutor HLS, visão geral das ferramentas M3U8, reprodutor de streaming",
+      "title": "Sobre - Reprodutor de vídeo M3U8 gratuito"
+    },
+    "openSourceDesc": "Este projeto é de código aberto. Sugestões e feedback são bem-vindos.",
+    "openSourceTitle": "Código aberto e feedback",
+    "scenarios": [
+      "Reprodução e teste online de fluxos de vídeo M3U8/HLS",
+      "Reprodução e gerenciamento de episódios em lote",
+      "Descriptografia e reprodução de fluxos de vídeo criptografados",
+      "Download de vídeo, conversão de formato e armazenamento local",
+      "Depuração de desenvolvedores e aprendizado de protocolos de streaming"
+    ],
+    "scenariosTitle": "Casos de uso",
+    "title": "Sobre o Reprodutor M3U8 Online",
+    "toolsDesc1": "Se você quiser simplesmente baixar um único vídeo, pode tentar usar esta ferramenta online que fornecemos:",
+    "toolsDesc2": "Se você precisar baixar vídeos M3U8 em lote, pode tentar usar",
+    "toolsDesc3": ", que fornece funcionalidade poderosa de download em lote.",
+    "toolsLink1": "Ferramenta de download de conversão MP4 de vídeo M3U8 online",
+    "toolsLink2": "Cliente de download M3U8-DL",
+    "toolsTitle": "Ferramentas de download e conversão M3U8 online"
+  },
+  "cache": {
+    "cacheType": "Tipo de cache",
+    "clear": "Limpar",
+    "clearAll": "Limpar todo o cache",
+    "clearConfirmMessage": "Esta ação limpará todos os segmentos de vídeo em cache e não pode ser desfeita. Tem certeza de que deseja continuar?",
+    "clearConfirmTitle": "Confirmar limpeza de cache",
+    "clearSuccess": "Cache limpo",
+    "clearWarning": "Limpar o cache excluirá todos os segmentos de vídeo em cache. Eles precisarão ser baixados novamente ao atualizar a página.",
+    "concurrency": "Concorrência de pré-carregamento",
+    "configReset": "Configuração redefinida para padrão",
+    "configSaved": "Configuração salva",
+    "configuration": "Configuração de cache",
+    "confirmClear": "Confirmar limpeza",
+    "count": "Itens em cache",
+    "currentVideo": "Cache de vídeo atual",
+    "dangerZone": "Zona de perigo",
+    "disabled": "Desabilitado",
+    "enable": "Habilitar cache",
+    "enableDescription": "Quando habilitado, os segmentos de vídeo reproduzidos serão armazenados em cache para carregamento mais rápido ao atualizar a página",
+    "hitRate": "Taxa de acerto",
+    "info1": "O sistema de cache usa IndexedDB ou PWA Cache para armazenar segmentos de vídeo, melhorando significativamente os tempos de carregamento para reprodução repetida.",
+    "info2": "Quando o limite de cache é atingido, o sistema limpa automaticamente as entradas menos recentemente acessadas (política LRU).",
+    "max": "máx",
+    "maxCount": "Máximo de itens em cache",
+    "notSupported": "Cache não suportado",
+    "notSupportedDescription": "Seu navegador não suporta IndexedDB ou PWA Cache, então o recurso de cache não está disponível.",
+    "pausePreload": "Pausar pré-carregamento",
+    "preload": "Pré-carregamento",
+    "preloadComplete": "Pré-carregamento completo",
+    "preloadCount": "Segmentos de pré-carregamento automático",
+    "resetConfig": "Redefinir para padrão",
+    "resumePreload": "Retomar pré-carregamento",
+    "saveConfig": "Salvar configuração",
+    "settings": "Configurações",
+    "size": "Armazenamento usado",
+    "startPreload": "Iniciar pré-carregamento",
+    "statistics": "Estatísticas de cache",
+    "stopPreload": "Parar pré-carregamento",
+    "title": "Cache de vídeo",
+    "totalStorage": "Armazenamento total"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "collected": "Coletado",
+    "copied": "Copiado",
+    "copy": "Copiar",
+    "delete": "Excluir",
+    "enterUrl": "Digite a URL ou o conteúdo de m3u8",
+    "fav": "Favorito",
+    "favSuccess": "Adicionado aos favoritos com sucesso",
+    "justNow": "Agora mesmo",
+    "minuteAgo": "minuto(s) atrás",
+    "noFav": "Nenhum favorito",
+    "noHistory": "Nenhum registro histórico disponível",
+    "noVersions": "Nenhuma versão adequada para seu sistema foi detectada, selecione o download manual abaixo.",
+    "osdv": "Suporta apenas o download de vídeos no formato m3u8",
+    "petc": "Digite o endereço de vídeo m3u8 correto",
+    "play": "Reproduzir",
+    "recdl": "Downloads recomendados para seu sistema",
+    "refresh": "Atualizar",
+    "releaseDate": "Data de lançamento",
+    "size": "Tamanho",
+    "sopebap": "Obtido com sucesso, edite abaixo e reproduza",
+    "startPlaying": "Começar a reproduzir o conteúdo da caixa de edição",
+    "tmcy": "O conteúdo M3U8 que você inseriu é um recurso criptografado. Se a reprodução falhar, também insira o endereço URL da página de origem para tentar obter informações de descriptografia",
+    "version": "Versão"
+  },
+  "download": {
+    "clientDesc": "@lzwme/m3u8-dl é uma ferramenta poderosa de download em lote de vídeo de arquivo m3u8 que suporta download multi-thread, reprodução durante o download, retomada de cache e outros recursos. Suporta instalação e uso em várias formas, aqui está uma breve introdução.",
+    "clientTitle": "Recursos e instruções de uso do cliente downloader M3U8-DL",
+    "dockerComplete": "Após a conclusão da implantação, visite",
+    "dockerCompose": "Executar com docker-compose:",
+    "dockerRun": "Executar com comando Docker:",
+    "dockerWebUI": "para usar a interface WebUI.",
+    "features": [
+      "Suporta implantação docker, cliente PC, ferramenta de linha de comando CLI e outros métodos de instalação",
+      "Download multi-thread: download multi-thread em modo de pool de threads",
+      "Reprodução durante o download: suporta o uso de arquivos de cache ts baixados para reprodução online",
+      "Download em lote: suporta download em lote especificando vários endereços m3u8",
+      "Retomada de cache: o cache será retido quando o download falhar, apenas os segmentos com falha serão baixados na nova tentativa",
+      "Suporte a criptografia: suporta descriptografia de fluxo de vídeo criptografado AES comum",
+      "Conversão de formato: suporta conversão automática para mp4 (requer instalação do ffmpeg)",
+      "Função de pesquisa: suporta especificar API padrão do site de coleta para pesquisa interativa de linha de comando e download",
+      "WebUI: fornece centro de download, suporta lançamento como serviço webui para gerenciamento de download"
+    ],
+    "featuresTitle": "Recursos principais",
+    "globalInstall": "Instalação global:",
+    "meta": {
+      "description": "Baixe o cliente downloader M3U8-DL e ferramentas CLI. Disponível para Windows, macOS e Linux. Uma ferramenta poderosa de download em lote de vídeo M3U8.",
+      "keywords": "ferramenta de download M3U8, downloader M3U8-DL, download de cliente M3U8, download em lote M3U8",
+      "title": "Downloads - Reprodutor de vídeo M3U8 gratuito"
+    },
+    "method1Desc": "Software de instalação de cliente que suporta sistemas operacionais Windows, macOS e Linux está atualmente disponível. Você pode baixar o pacote de instalação mais recente da lista de arquivos de download acima e depois instalá-lo para usar.",
+    "method1Title": "Método 1: Baixar e instalar cliente PC",
+    "method2Title": "Método 2: Instalação e uso da ferramenta de linha de comando CLI",
+    "method3Title": "Método 3: Implantação Docker",
+    "method4Desc": "A ferramenta downloader M3U8-DL fornece funcionalidade poderosa de download em lote. No entanto, se você quiser simplesmente baixar rapidamente um único vídeo, pode tentar usar os seguintes sites de ferramentas online que fornecemos:",
+    "method4Title": "Método 4: Site de download M3U8 online baseado em navegador",
+    "onlineTools": [
+      "Ferramenta de download de conversão MP4 de vídeo M3U8 online",
+      "Ferramenta de download M3U8 online (UI otimizada)",
+      "Reprodutor de vídeo M3U8 online"
+    ],
+    "title": "Lista de downloads",
+    "useNpx": "Usar npx:"
+  },
+  "feedback": {
+    "desc": "Sinta-se à vontade para fazer sugestões, relatar problemas ou compartilhar sua experiência. Seu feedback nos ajudará a melhorar continuamente nossos produtos!",
+    "meta": {
+      "description": "Sinta-se à vontade para fazer sugestões, relatar problemas ou compartilhar sua experiência com o Reprodutor M3U8 Online. Seu feedback nos ajuda a melhorar continuamente nossos produtos.",
+      "keywords": "feedback do reprodutor M3U8, sugestões de usuários, relatório de problemas, discussão do produto",
+      "title": "Feedback - Reprodutor de vídeo M3U8 gratuito"
+    },
+    "title": "Feedback"
+  },
+  "footer": {
+    "disclaimer": "Os recursos vêm da Internet. Se houver alguma violação, entre em contato comigo para excluir!"
+  },
+  "index": {
+    "clear": "Limpar",
+    "clearHistory": "Limpar histórico",
+    "download": "Baixar",
+    "dplayer": "DPlayer",
+    "edit": "Editar",
+    "favorites": "Favoritos",
+    "history": "Histórico",
+    "hlsDesc": {
+      "content1": "HLS (HTTP Live Streaming) é um protocolo de streaming proposto pela Apple. M3U8 é seu formato de arquivo de lista de reprodução. Suporta criptografia, segmentação e outros recursos, adequado para reprodução online e transmissão ao vivo.",
+      "content2": "Um arquivo M3U8 é um arquivo de texto simples que registra índices. Ao abri-lo, o software do reprodutor não o reproduz diretamente, mas encontra os arquivos de áudio e vídeo correspondentes no servidor com base em seus índices para reprodução online. Sites de vídeo podem corresponder automaticamente a um arquivo de taxa de bits apropriado para o cliente com base na largura de banda da rede do usuário, garantindo assim a fluidez do vídeo.",
+      "content3": "M3U8 foi originalmente projetado para reproduzir arquivos de áudio, como MP3, mas cada vez mais softwares estão usando-o para reproduzir listas de arquivos de vídeo. M3U8 também pode especificar fontes de áudio de streaming online. Muitos reprodutores e softwares suportam o formato de arquivo M3U8.",
+      "content4": "O conteúdo de vídeo M3U8 pode ser criptografado com base em AES. Este reprodutor suporta descriptografia e reprodução de vídeos de arquivos M3U8 com métodos de criptografia comuns.",
+      "embedTitle": "Incorporar no site:",
+      "encryptionContent": "O protocolo HLS usa arquivos M3U8 para informar o cliente sobre a lista de reprodução de arquivos de vídeo. Após o cliente obter o arquivo M3U8, ele pode reproduzir o vídeo diretamente. Para impedir que os arquivos de vídeo TS usados pelo protocolo HLS sejam acessados por clientes não autorizados, os arquivos de vídeo TS usados pelo protocolo HLS precisam ser criptografados. Após criptografar os arquivos de vídeo TS, o método de descriptografia precisa ser informado ao cliente. Isso pode ser feito configurando a função de reescrita de criptografia padrão M3U8 e informando o cliente sobre o algoritmo de criptografia, a URI da chave e a chave de autenticação através da tag #EXT-X-KEY.",
+      "encryptionTitle": "Cenários de uso e criptografia de arquivos M3U8",
+      "features": [
+        "Suporta descriptografia e reprodução de vídeos de arquivos M3U8 com métodos de criptografia comuns",
+        "Esta página fornece apenas o serviço de reprodução online. Se você precisar baixar vídeos, use a Ferramenta de Download Online de Vídeo M3U8",
+        "Referência: Configurar reescrita de criptografia padrão M3U8"
+      ],
+      "title": "Descrição HLS/M3U8"
+    },
+    "inputPlaceholder": "Digite a URL M3U8",
+    "m3u8Placeholder": "1. Cole o conteúdo M3U8 para reproduzir\n2. Suporta episódios em lote, um por linha, formato: URL|título ou título$URL",
+    "play": "Reproduzir",
+    "rotate": "Girar",
+    "selectFile": "Selecionar arquivo local para reproduzir"
+  },
+  "meta": {
+    "author": "Zhiwen Studio",
+    "description": "Um reprodutor M3U8 online simples e prático com recursos como descriptografia online, edição, reprodução em lote, histórico e favoritos.",
+    "keywords": "reprodutor M3U8 online, streaming M3U8, reprodutor de fluxo HLS, reprodutor M3U8, transmissão ao vivo M3U8, teste M3U8",
+    "title": "Reprodutor de vídeo M3U8 gratuito - Reprodutor HLS online para PC, iOS e Android"
+  },
+  "nav": {
+    "about": "Sobre",
+    "downloads": "Downloads",
+    "feedback": "Feedback",
+    "home": "Reprodutor M3U8",
+    "language": "Idioma",
+    "settings": "Configurações",
+    "theme": "Tema",
+    "themeDark": "Escuro",
+    "themeLight": "Claro",
+    "themeSystem": "Sistema"
+  },
+  "player": {
+    "muted": "Silenciado",
+    "paused": "Pausado",
+    "playbackSpeed": "Velocidade de reprodução",
+    "playing": "Reproduzindo",
+    "rotate": "Girar",
+    "rotated": "Tela girada",
+    "screenshot": "Captura de tela",
+    "screenshotFailed": "Falha na captura de tela",
+    "screenshotSuccess": "Captura de tela salva",
+    "shortcuts": "Atalhos",
+    "speedChanged": "Velocidade de reprodução",
+    "unmuted": "Som ativado",
+    "volume": "Volume"
+  },
+  "settings": {
+    "description": "Gerenciar configurações do aplicativo e configuração de cache",
+    "meta": {
+      "description": "Gerencie as configurações do aplicativo do Reprodutor M3U8 Online, configuração de cache e preferências do reprodutor para otimizar sua experiência.",
+      "keywords": "configurações do reprodutor M3U8, configuração de cache, configuração do reprodutor, preferências",
+      "title": "Configurações - Reprodutor de vídeo M3U8 gratuito"
+    },
+    "title": "Configurações"
+  },
+  "shortcuts": {
+    "tip": "Dica: A maioria dos atalhos está desabilitada em caixas de entrada para evitar interferir na digitação.",
+    "title": "Atalhos de teclado"
+  }
+}

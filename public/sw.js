@@ -10,6 +10,8 @@ const CACHE_NAME = 'm3u8-player-v1'
 const OFFLINE_CACHE = 'm3u8-player-offline-v1'
 /** M3U8 媒体资源缓存名 - 需与 pwaCache 中保持一致 */
 const M3U8_CACHE = 'm3u8-player-media-v1'
+/** 元数据存储键前缀 */
+const METADATA_KEY_PREFIX = '__metadata__'
 // 缓存策略配置
 const CACHE_STRATEGIES = {
   // 静态资源：Cache First
@@ -97,7 +99,7 @@ async function cleanExpiredCache(cacheName, maxAge) {
 
   for (const request of requests) {
     // 跳过元数据 key（pwaCache.ts 使用的前缀）
-    if (useUrlKey && request.url.includes('__metadata__')) {
+    if (useUrlKey && request.url.includes(METADATA_KEY_PREFIX)) {
       continue
     }
 
@@ -331,7 +333,7 @@ self.addEventListener('fetch', (event) => {
   // 默认使用 Network First
   let cacheStrategy = CACHE_STRATEGIES.api;
   // 处理 M3U8 媒体资源
-  if (isM3U8Resource(url.href)) {
+  if (isM3U8Resource(url.href) && url.origin !== location.origin) {
     cacheStrategy = CACHE_STRATEGIES.media;
   } else if (isStaticAsset(url.href) && !url.pathname.includes("?t=")) {
     // 处理静态资源（但排除 Vite 开发构建的资源）

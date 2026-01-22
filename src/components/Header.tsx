@@ -9,6 +9,10 @@ const languages = [
   { code: 'zh-CN', label: '🇨🇳 中文', path: '' },
   { code: 'en', label: '🇺🇸 English', path: '/en' },
   { code: 'ja-JP', label: '🇯🇵 日本語', path: '/ja-JP' },
+  { code: 'fr', label: '🇫🇷 Français', path: '/fr' },
+  { code: 'de', label: '🇩🇪 Deutsch', path: '/de' },
+  { code: 'pt', label: '🇵🇹 Português', path: '/pt' },
+  { code: 'es', label: '🇪🇸 Español', path: '/es' },
 ]
 
 export default function Header() {
@@ -45,7 +49,7 @@ export default function Header() {
   const handleLanguageChange = (langPath: string, langCode: string) => {
     // 获取当前页面路径（不含语言前缀）
     let currentPath = location.pathname
-    currentPath = currentPath.replace(/^\/(en|ja-JP)/, '')
+    currentPath = currentPath.replace(/^\/(en|ja-JP|fr|de|pt|es)/, '')
     if (!currentPath || currentPath === '/') currentPath = ''
 
     // 构建新的路径

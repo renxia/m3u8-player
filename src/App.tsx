@@ -4,6 +4,7 @@ import { DevTools } from './components/DevTools'
 import Layout from './components/Layout'
 import { ServiceWorkerUpdate } from './components/ServiceWorkerUpdate'
 import { useTheme } from './hooks/useTheme'
+import { supportedLanguages } from './i18n'
 import AboutPage from './pages/AboutPage'
 import DownloadPage from './pages/DownloadPage'
 import FeedbackPage from './pages/FeedbackPage'
@@ -29,15 +30,19 @@ function App() {
         }}
       />
       <Routes>
-        {['/', '/en', '/ja-JP'].map((langPath) => (
-          <Route key={langPath} path={langPath} element={<Layout />}>
-            <Route index element={<HomePage />} />
-            <Route path="about" element={<AboutPage />} />
-            <Route path="download" element={<DownloadPage />} />
-            <Route path="feedback" element={<FeedbackPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        ))}
+        {supportedLanguages.map((lang) => {
+          const langPath = `/${lang === 'zh-CN' ? '' : lang}`
+
+          return (
+            <Route key={langPath} path={langPath} element={<Layout />}>
+              <Route index element={<HomePage />} />
+              <Route path="about" element={<AboutPage />} />
+              <Route path="download" element={<DownloadPage />} />
+              <Route path="feedback" element={<FeedbackPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+          )
+        })}
 
         {/* 兼容旧的 .html 路由 */}
         <Route path="/index.html" element={<Navigate to="/" replace />} />

@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useCache } from '@/hooks/useCache'
-import { idbCacheManager, preloader } from '@/lib/cache'
+import { cacheConfigManager, getCurrentCacheAdapter, idbCacheManager, preloader } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 
 interface CacheIndicatorProps {
@@ -71,12 +71,14 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
     toast.success(t('cache.clearSuccess'))
   }
 
-  // 获取当前视频的缓存信息
+  // 获取当前视频的缓存信息（兼容 IndexedDB 和 PWA 缓存模式）
   useEffect(() => {
     const updateCurrentVideoStats = async () => {
       if (m3u8Url) {
         try {
-          const info = await idbCacheManager.getM3U8CacheInfo(m3u8Url)
+          // 使用统一缓存适配器，自动适配当前缓存类型
+          const adapter = getCurrentCacheAdapter()
+          const info = await adapter.getM3U8Stats(m3u8Url)
           setCurrentVideoStats(info)
         } catch (error) {
           console.error('Failed to get current video cache info:', error)
@@ -89,18 +91,28 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
 
     updateCurrentVideoStats()
 
-    // 监听缓存变化，更新当前视频统计
-    const unsubscribe = idbCacheManager.addEventListener(async (event) => {
+    // 监听 IndexedDB 缓存变化（仅当使用 IndexedDB 模式时有效）
+    const unsubscribeIdb = idbCacheManager.addEventListener(async (event) => {
       if (event === 'add' || event === 'remove' || event === 'clear') {
-        await updateCurrentVideoStats()
+        // 检查当前是否使用 IndexedDB 模式
+        const config = cacheConfigManager.getConfig()
+        if (config.cacheType === 'indexeddb') {
+          await updateCurrentVideoStats()
+        }
       }
+    })
+
+    // 监听配置变化（当缓存类型改变时刷新统计）
+    const unsubscribeConfig = cacheConfigManager.addEventListener(() => {
+      updateCurrentVideoStats()
     })
 
     // 定期更新（每 10 秒）
     const interval = setInterval(updateCurrentVideoStats, 10000)
 
     return () => {
-      unsubscribe()
+      unsubscribeIdb()
+      unsubscribeConfig()
       clearInterval(interval)
     }
   }, [m3u8Url])

@@ -13,9 +13,9 @@ export default defineConfig(async ({ mode }) => {
   console.log('SEO_PRERENDER', process.env.SEO_PRERENDER)
   if (process.env.SEO_PRERENDER) {
     const { default: seoPrerender } = await import('vite-plugin-seo-prerender')
-    const allRoutes = ['', 'about', 'download', 'feedback', 'settings']
+    const allRoutes = ['', 'about', 'download']
     const seoPrerenderPlugin = seoPrerender({
-      routes: ['/', ...['', 'en/', 'ja-JP/'].flatMap((lang) => allRoutes.map((route) => `/${lang}${route}`))],
+      routes: ['/', ...['', 'en/', 'ja-JP/', 'fr/', 'de/', 'pt/', 'es/'].flatMap((lang) => allRoutes.map((route) => `/${lang}${route}`))],
       puppeteer: {
         // headless: 'false',
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,

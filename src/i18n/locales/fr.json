@@ -1,0 +1,235 @@
+{
+  "about": {
+    "contactDesc": "En cas d'infraction ou de suggestion, veuillez contacter l'auteur via",
+    "contactLink": "Contact",
+    "features": [
+      "Prise en charge de la lecture vidéo en ligne en entrant l'adresse M3U8, compatible avec diverses méthodes de cryptage",
+      "Prise en charge du collage du contenu M3U8 ou de la liste d'épisodes par lots pour la lecture",
+      "Prise en charge de la sélection de fichiers locaux pour la lecture",
+      "Prise en charge de la commutation entre plusieurs lecteurs tels qu'ArtPlayer et DPlayer",
+      "Prise en charge de la gestion de l'historique et des favoris pour un accès rapide",
+      "Prise en charge du téléchargement en un clic, de l'édition, de la rotation et d'autres opérations pratiques",
+      "Prise en charge de l'intégration du lecteur en ligne dans d'autres sites web (iframe)",
+      "Fournir le client M3U8-DL et les instructions de téléchargement et d'utilisation de l'outil en ligne de commande"
+    ],
+    "featuresTitle": "Fonctionnalités principales",
+    "githubUrl": "URL GitHub",
+    "intro": "Le lecteur M3U8 en ligne est un outil de lecture et de téléchargement de streaming HLS/M3U8 simple et pratique. Il prend en charge la lecture en ligne, le décryptage, l'édition, la lecture d'épisodes par lots, l'historique, les favoris et d'autres fonctionnalités. Adapté aux tests, à l'aperçu, à l'apprentissage et à l'utilisation quotidienne.",
+    "meta": {
+      "description": "Découvrez les fonctionnalités du lecteur M3U8 en ligne, les cas d'utilisation et les informations open source. Prend en charge la lecture en ligne, le décryptage, les épisodes par lots, l'historique et plus encore.",
+      "keywords": "introduction du lecteur M3U8, fonctionnalités du lecteur HLS, aperçu des outils M3U8, lecteur de streaming",
+      "title": "À propos - Lecteur vidéo M3U8 gratuit"
+    },
+    "openSourceDesc": "Ce projet est open source. Les suggestions et commentaires sont les bienvenus.",
+    "openSourceTitle": "Open Source et commentaires",
+    "scenarios": [
+      "Lecture et test en ligne de flux vidéo M3U8/HLS",
+      "Lecture et gestion d'épisodes par lots",
+      "Décryptage et lecture de flux vidéo cryptés",
+      "Téléchargement vidéo, conversion de format et stockage local",
+      "Débogage des développeurs et apprentissage des protocoles de streaming"
+    ],
+    "scenariosTitle": "Cas d'utilisation",
+    "title": "À propos du lecteur M3U8 en ligne",
+    "toolsDesc1": "Si vous souhaitez simplement télécharger une seule vidéo, vous pouvez essayer d'utiliser cet outil en ligne que nous fournissons :",
+    "toolsDesc2": "Si vous devez télécharger des vidéos M3U8 par lots, vous pouvez essayer d'utiliser",
+    "toolsDesc3": ", qui fournit une fonctionnalité de téléchargement par lots puissante.",
+    "toolsLink1": "Outil de téléchargement de conversion MP4 vidéo M3U8 en ligne",
+    "toolsLink2": "Client de téléchargement M3U8-DL",
+    "toolsTitle": "Outils de téléchargement et de conversion M3U8 en ligne"
+  },
+  "cache": {
+    "cacheType": "Type de cache",
+    "clear": "Effacer",
+    "clearAll": "Effacer tout le cache",
+    "clearConfirmMessage": "Cette action effacera tous les segments vidéo mis en cache et ne peut pas être annulée. Êtes-vous sûr de vouloir continuer ?",
+    "clearConfirmTitle": "Confirmer l'effacement du cache",
+    "clearSuccess": "Cache effacé",
+    "clearWarning": "La suppression du cache supprimera tous les segments vidéo mis en cache. Ils devront être retéléchargés lors du rafraîchissement de la page.",
+    "concurrency": "Concurrence de préchargement",
+    "configReset": "Configuration réinitialisée par défaut",
+    "configSaved": "Configuration enregistrée",
+    "configuration": "Configuration du cache",
+    "confirmClear": "Confirmer l'effacement",
+    "count": "Éléments en cache",
+    "currentVideo": "Cache vidéo actuel",
+    "dangerZone": "Zone dangereuse",
+    "disabled": "Désactivé",
+    "enable": "Activer le cache",
+    "enableDescription": "Lorsqu'il est activé, les segments vidéo lus seront mis en cache pour un chargement plus rapide lors du rafraîchissement de la page",
+    "hitRate": "Taux de réussite",
+    "info1": "Le système de cache utilise IndexedDB ou PWA Cache pour stocker les segments vidéo, améliorant considérablement les temps de chargement pour la lecture répétée.",
+    "info2": "Lorsque la limite de cache est atteinte, le système efface automatiquement les entrées les moins récemment consultées (politique LRU).",
+    "max": "max",
+    "maxCount": "Nombre maximum d'éléments en cache",
+    "notSupported": "Cache non pris en charge",
+    "notSupportedDescription": "Votre navigateur ne prend pas en charge IndexedDB ou PWA Cache, donc la fonctionnalité de cache n'est pas disponible.",
+    "pausePreload": "Mettre en pause le préchargement",
+    "preload": "Préchargement",
+    "preloadComplete": "Préchargement terminé",
+    "preloadCount": "Segments de préchargement automatique",
+    "resetConfig": "Réinitialiser par défaut",
+    "resumePreload": "Reprendre le préchargement",
+    "saveConfig": "Enregistrer la configuration",
+    "settings": "Paramètres",
+    "size": "Stockage utilisé",
+    "startPreload": "Démarrer le préchargement",
+    "statistics": "Statistiques du cache",
+    "stopPreload": "Arrêter le préchargement",
+    "title": "Cache vidéo",
+    "totalStorage": "Stockage total"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "collected": "Collecté",
+    "copied": "Copié",
+    "copy": "Copier",
+    "delete": "Supprimer",
+    "enterUrl": "Veuillez entrer l'URL ou le contenu de m3u8",
+    "fav": "Favori",
+    "favSuccess": "Ajouté aux favoris avec succès",
+    "justNow": "À l'instant",
+    "minuteAgo": "minute(s) auparavant",
+    "noFav": "Aucun favori",
+    "noHistory": "Aucun historique disponible",
+    "noVersions": "Aucune version adaptée à votre système n'a été détectée, veuillez sélectionner le téléchargement manuel ci-dessous.",
+    "osdv": "Prend uniquement en charge le téléchargement de vidéos au format m3u8",
+    "petc": "Veuillez entrer la bonne adresse vidéo m3u8",
+    "play": "Lire",
+    "recdl": "Téléchargements recommandés pour votre système",
+    "refresh": "Actualiser",
+    "releaseDate": "Date de publication",
+    "size": "Taille",
+    "sopebap": "Obtenu avec succès, veuillez modifier ci-dessous et lire",
+    "startPlaying": "Commencer à lire le contenu de la boîte d'édition",
+    "tmcy": "Le contenu M3U8 que vous avez entré est une ressource cryptée. Si la lecture échoue, veuillez également entrer l'adresse URL de la page source pour essayer d'obtenir des informations de décryptage",
+    "version": "Version"
+  },
+  "download": {
+    "clientDesc": "@lzwme/m3u8-dl est un outil puissant de téléchargement par lots de vidéos de fichiers m3u8 qui prend en charge le téléchargement multi-thread, la lecture pendant le téléchargement, la reprise du cache et d'autres fonctionnalités. Il prend en charge l'installation et l'utilisation sous diverses formes, voici une brève introduction.",
+    "clientTitle": "Fonctionnalités et instructions d'utilisation du client de téléchargement M3U8-DL",
+    "dockerComplete": "Une fois le déploiement terminé, visitez",
+    "dockerCompose": "Exécuter avec docker-compose :",
+    "dockerRun": "Exécuter avec la commande Docker :",
+    "dockerWebUI": "pour utiliser l'interface WebUI.",
+    "features": [
+      "Prise en charge du déploiement docker, du client PC, de l'outil en ligne de commande CLI et d'autres méthodes d'installation",
+      "Téléchargement multi-thread : téléchargement multi-thread en mode pool de threads",
+      "Lecture pendant le téléchargement : prise en charge de l'utilisation de fichiers de cache ts téléchargés pour la lecture en ligne",
+      "Téléchargement par lots : prise en charge du téléchargement par lots en spécifiant plusieurs adresses m3u8",
+      "Reprise du cache : le cache sera conservé en cas d'échec du téléchargement, seuls les segments échoués seront téléchargés lors de la nouvelle tentative",
+      "Prise en charge du cryptage : prise en charge du décryptage de flux vidéo cryptés AES courants",
+      "Conversion de format : prise en charge de la conversion automatique en mp4 (nécessite l'installation de ffmpeg)",
+      "Fonction de recherche : prise en charge de la spécification de l'API standard du site de collecte pour la recherche interactive en ligne de commande et le téléchargement",
+      "WebUI : fournir un centre de téléchargement, prendre en charge le lancement en tant que service webui pour la gestion des téléchargements"
+    ],
+    "featuresTitle": "Fonctionnalités principales",
+    "globalInstall": "Installation globale :",
+    "meta": {
+      "description": "Téléchargez le client de téléchargement M3U8-DL et les outils CLI. Disponible pour Windows, macOS et Linux. Un outil puissant de téléchargement par lots de vidéos M3U8.",
+      "keywords": "outil de téléchargement M3U8, téléchargeur M3U8-DL, téléchargement client M3U8, téléchargement par lots M3U8",
+      "title": "Téléchargements - Lecteur vidéo M3U8 gratuit"
+    },
+    "method1Desc": "Un logiciel d'installation client prenant en charge les systèmes d'exploitation Windows, macOS et Linux est actuellement fourni. Vous pouvez télécharger le dernier package d'installation dans la liste des fichiers de téléchargement ci-dessus, puis l'installer pour l'utiliser.",
+    "method1Title": "Méthode 1 : Télécharger et installer le client PC",
+    "method2Title": "Méthode 2 : Installation et utilisation de l'outil en ligne de commande CLI",
+    "method3Title": "Méthode 3 : Déploiement Docker",
+    "method4Desc": "L'outil de téléchargement M3U8-DL fournit une fonctionnalité de téléchargement par lots puissante. Cependant, si vous souhaitez simplement télécharger rapidement une seule vidéo, vous pouvez essayer d'utiliser les sites web d'outils en ligne suivants que nous fournissons :",
+    "method4Title": "Méthode 4 : Site web de téléchargement M3U8 en ligne basé sur le navigateur",
+    "onlineTools": [
+      "Outil de téléchargement de conversion MP4 vidéo M3U8 en ligne",
+      "Outil de téléchargement M3U8 en ligne (UI optimisée)",
+      "Lecteur vidéo M3U8 en ligne"
+    ],
+    "title": "Liste de téléchargement",
+    "useNpx": "Utiliser npx :"
+  },
+  "feedback": {
+    "desc": "N'hésitez pas à faire des suggestions, signaler des problèmes ou partager votre expérience. Vos commentaires nous aideront à améliorer continuellement nos produits !",
+    "meta": {
+      "description": "N'hésitez pas à faire des suggestions, signaler des problèmes ou partager votre expérience avec le lecteur M3U8 en ligne. Vos commentaires nous aident à améliorer continuellement nos produits.",
+      "keywords": "commentaires du lecteur M3U8, suggestions des utilisateurs, signalement de problèmes, discussion sur le produit",
+      "title": "Commentaires - Lecteur vidéo M3U8 gratuit"
+    },
+    "title": "Commentaires"
+  },
+  "footer": {
+    "disclaimer": "Les ressources proviennent d'Internet. En cas d'infraction, veuillez me contacter pour supprimer !"
+  },
+  "index": {
+    "clear": "Effacer",
+    "clearHistory": "Effacer l'historique",
+    "download": "Télécharger",
+    "dplayer": "DPlayer",
+    "edit": "Modifier",
+    "favorites": "Favoris",
+    "history": "Historique",
+    "hlsDesc": {
+      "content1": "HLS (HTTP Live Streaming) est un protocole de streaming proposé par Apple. M3U8 est son format de fichier de liste de lecture. Il prend en charge le cryptage, le découpage et d'autres fonctionnalités, adapté à la lecture en ligne et à la diffusion en direct.",
+      "content2": "Un fichier M3U8 est un fichier texte brut qui enregistre les index. Lors de son ouverture, le logiciel de lecture ne le lit pas directement, mais trouve les fichiers audio et vidéo correspondants sur le serveur en fonction de ses index pour la lecture en ligne. Les sites vidéo peuvent automatiquement faire correspondre un fichier de débit binaire approprié pour le client en fonction de la bande passante réseau de l'utilisateur, garantissant ainsi la fluidité de la vidéo.",
+      "content3": "M3U8 a été conçu à l'origine pour lire des fichiers audio, tels que MP3, mais de plus en plus de logiciels l'utilisent maintenant pour lire des listes de fichiers vidéo. M3U8 peut également spécifier des sources audio de streaming en ligne. De nombreux lecteurs et logiciels prennent en charge le format de fichier M3U8.",
+      "content4": "Le contenu vidéo M3U8 peut être crypté sur la base d'AES. Ce lecteur prend en charge le décryptage et la lecture de vidéos de fichiers M3U8 avec des méthodes de cryptage courantes.",
+      "embedTitle": "Intégrer dans le site web :",
+      "encryptionContent": "Le protocole HLS utilise des fichiers M3U8 pour informer le client de la liste de lecture des fichiers vidéo. Après avoir obtenu le fichier M3U8, le client peut directement lire la vidéo. Pour empêcher les fichiers vidéo TS utilisés par le protocole HLS d'être accessibles par des clients non autorisés, les fichiers vidéo TS utilisés par le protocole HLS doivent être cryptés. Après avoir crypté les fichiers vidéo TS, la méthode de décryptage doit être communiquée au client. Cela peut être fait en configurant la fonction de réécriture de cryptage standard M3U8, et en informant le client de l'algorithme de cryptage, de l'URI de la clé et de la clé d'authentification via la balise #EXT-X-KEY.",
+      "encryptionTitle": "Scénarios d'utilisation et cryptage des fichiers M3U8",
+      "features": [
+        "Prise en charge du décryptage et de la lecture de vidéos de fichiers M3U8 avec des méthodes de cryptage courantes",
+        "Cette page ne fournit que le service de lecture en ligne. Si vous devez télécharger des vidéos, veuillez utiliser l'outil de téléchargement vidéo M3U8 en ligne",
+        "Référence : Configurer la réécriture de cryptage standard M3U8"
+      ],
+      "title": "Description HLS/M3U8"
+    },
+    "inputPlaceholder": "Entrez l'URL M3U8",
+    "m3u8Placeholder": "1. Collez le contenu M3U8 pour lire\n2. Prise en charge des épisodes par lots, un par ligne, format : URL|titre ou titre$URL",
+    "play": "Lire",
+    "rotate": "Tourner",
+    "selectFile": "Sélectionner un fichier local à lire"
+  },
+  "meta": {
+    "author": "Zhiwen Studio",
+    "description": "Un lecteur M3U8 en ligne simple et pratique avec des fonctionnalités telles que le décryptage en ligne, l'édition, la lecture par lots, l'historique et les favoris.",
+    "keywords": "lecteur M3U8 en ligne, streaming M3U8, lecteur de flux HLS, lecteur M3U8, flux en direct M3U8, test M3U8",
+    "title": "Lecteur vidéo M3U8 gratuit - Lecteur HLS en ligne pour PC, iOS et Android"
+  },
+  "nav": {
+    "about": "À propos",
+    "downloads": "Téléchargements",
+    "feedback": "Commentaires",
+    "home": "Lecteur M3U8",
+    "language": "Langue",
+    "settings": "Paramètres",
+    "theme": "Thème",
+    "themeDark": "Sombre",
+    "themeLight": "Clair",
+    "themeSystem": "Système"
+  },
+  "player": {
+    "muted": "Sourdine",
+    "paused": "En pause",
+    "playbackSpeed": "Vitesse de lecture",
+    "playing": "En cours de lecture",
+    "rotate": "Tourner",
+    "rotated": "Écran tourné",
+    "screenshot": "Capture d'écran",
+    "screenshotFailed": "Échec de la capture d'écran",
+    "screenshotSuccess": "Capture d'écran enregistrée",
+    "shortcuts": "Raccourcis",
+    "speedChanged": "Vitesse de lecture",
+    "unmuted": "Sourdine désactivée",
+    "volume": "Volume"
+  },
+  "settings": {
+    "description": "Gérer les paramètres de l'application et la configuration du cache",
+    "meta": {
+      "description": "Gérez les paramètres de l'application du lecteur M3U8 en ligne, la configuration du cache et les préférences du lecteur pour optimiser votre expérience.",
+      "keywords": "paramètres du lecteur M3U8, configuration du cache, configuration du lecteur, préférences",
+      "title": "Paramètres - Lecteur vidéo M3U8 gratuit"
+    },
+    "title": "Paramètres"
+  },
+  "shortcuts": {
+    "tip": "Astuce : La plupart des raccourcis sont désactivés dans les zones de saisie pour éviter d'interférer avec la saisie.",
+    "title": "Raccourcis clavier"
+  }
+}
