@@ -14,7 +14,7 @@ export interface KeyboardShortcut {
   callback: (e: KeyboardEvent) => void
   /** 是否在输入框中禁用 */
   disableInInput?: boolean
-  /** 快捷键描述 */
+  /** 快捷键描述（UI 中优先使用 i18n shortcuts.*，缺失时回退到此字段） */
   description?: string
 }
 

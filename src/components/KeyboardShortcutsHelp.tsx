@@ -18,34 +18,14 @@ interface KeyboardShortcutsHelpProps {
 }
 
 /**
- * 快捷键分组
+ * 快捷键分组（标题通过 i18n shortcuts.groups.* 获取）
  */
 const SHORTCUT_GROUPS = [
-  {
-    name: 'basic',
-    title: '基本控制',
-    shortcuts: ['togglePlay', 'toggleMute', 'fullscreen', 'pip'],
-  },
-  {
-    name: 'seek',
-    title: '播放控制',
-    shortcuts: ['seekForward', 'seekBackward'],
-  },
-  {
-    name: 'volume',
-    title: '音量控制',
-    shortcuts: ['volumeUp', 'volumeDown'],
-  },
-  {
-    name: 'speed',
-    title: '播放速度',
-    shortcuts: ['speedUp', 'speedDown'],
-  },
-  {
-    name: 'other',
-    title: '其他功能',
-    shortcuts: ['screenshot', 'rotate'],
-  },
+  { name: 'basic', shortcuts: ['togglePlay', 'toggleMute', 'fullscreen', 'pip'] },
+  { name: 'seek', shortcuts: ['seekForward', 'seekBackward'] },
+  { name: 'volume', shortcuts: ['volumeUp', 'volumeDown'] },
+  { name: 'speed', shortcuts: ['speedUp', 'speedDown'] },
+  { name: 'other', shortcuts: ['screenshot', 'rotate'] },
 ]
 
 /**
@@ -91,7 +71,7 @@ export default function KeyboardShortcutsHelp({ show, onClose, shortcuts = PLAYE
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.name} className="mb-6 last:mb-0">
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">{group.title}</h3>
+              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">{t(`shortcuts.groups.${group.name}`)}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {group.shortcuts.map((name) => {
                   const shortcut = shortcutMap.get(name)
@@ -99,7 +79,9 @@ export default function KeyboardShortcutsHelp({ show, onClose, shortcuts = PLAYE
 
                   return (
                     <div key={name} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
-                      <span className="text-sm text-slate-700 dark:text-slate-300">{shortcut.description || name}</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                        {t(`shortcuts.${name}`, { defaultValue: shortcut.description || name })}
+                      </span>
                       <div className="flex items-center gap-1.5">
                         {shortcut.keys.map((key) => (
                           <kbd

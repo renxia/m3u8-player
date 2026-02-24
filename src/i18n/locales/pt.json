@@ -173,11 +173,9 @@
       "embedTitle": "Incorporar no site:",
       "encryptionContent": "O protocolo HLS usa arquivos M3U8 para informar o cliente sobre a lista de reprodução de arquivos de vídeo. Após o cliente obter o arquivo M3U8, ele pode reproduzir o vídeo diretamente. Para impedir que os arquivos de vídeo TS usados pelo protocolo HLS sejam acessados por clientes não autorizados, os arquivos de vídeo TS usados pelo protocolo HLS precisam ser criptografados. Após criptografar os arquivos de vídeo TS, o método de descriptografia precisa ser informado ao cliente. Isso pode ser feito configurando a função de reescrita de criptografia padrão M3U8 e informando o cliente sobre o algoritmo de criptografia, a URI da chave e a chave de autenticação através da tag #EXT-X-KEY.",
       "encryptionTitle": "Cenários de uso e criptografia de arquivos M3U8",
-      "features": [
-        "Suporta descriptografia e reprodução de vídeos de arquivos M3U8 com métodos de criptografia comuns",
-        "Esta página fornece apenas o serviço de reprodução online. Se você precisar baixar vídeos, use a Ferramenta de Download Online de Vídeo M3U8",
-        "Referência: Configurar reescrita de criptografia padrão M3U8"
-      ],
+      "feature1": "Suporta descriptografia e reprodução de vídeos de arquivos M3U8 com métodos de criptografia comuns",
+      "feature2": "Esta página fornece apenas o serviço de reprodução online. Se você precisar baixar vídeos, use a <anchor>Ferramenta de Download Online de Vídeo M3U8</anchor>",
+      "feature3": "Referência: <anchor>Configurar reescrita de criptografia padrão M3U8</anchor>",
       "title": "Descrição HLS/M3U8"
     },
     "inputPlaceholder": "Digite a URL M3U8",
@@ -205,6 +203,8 @@
     "themeSystem": "Sistema"
   },
   "player": {
+    "placeholderPrompt": "Digite o URL M3U8 para começar a reproduzir",
+    "playDemo": "Reproduzir vídeo de demonstração",
     "muted": "Silenciado",
     "paused": "Pausado",
     "playbackSpeed": "Velocidade de reprodução",
@@ -229,7 +229,26 @@
     "title": "Configurações"
   },
   "shortcuts": {
+    "fullscreen": "Tela cheia / Sair da tela cheia",
+    "groups": {
+      "basic": "Controles básicos",
+      "other": "Outros",
+      "seek": "Reprodução",
+      "speed": "Velocidade de reprodução",
+      "volume": "Volume"
+    },
+    "pip": "Picture-in-Picture",
+    "rotate": "Girar vídeo",
+    "screenshot": "Captura de tela",
+    "seekBackward": "Retroceder 10s",
+    "seekForward": "Avançar 10s",
+    "speedDown": "Mais lento",
+    "speedUp": "Mais rápido",
     "tip": "Dica: A maioria dos atalhos está desabilitada em caixas de entrada para evitar interferir na digitação.",
-    "title": "Atalhos de teclado"
+    "title": "Atalhos de teclado",
+    "toggleMute": "Mudo / Ativar som",
+    "togglePlay": "Reproduzir / Pausar",
+    "volumeDown": "Volume -10%",
+    "volumeUp": "Volume +10%"
   }
 }

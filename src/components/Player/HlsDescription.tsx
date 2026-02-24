@@ -1,9 +1,14 @@
 import { Code, Info, Lock } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import CollapsibleSection from '@/components/CollapsibleSection'
+import { getLangPrefix } from '@/lib/utils'
+
+const EMBED_BASE = 'https://m3u8-player.lzw.me'
 
 export default function HlsDescription() {
   const { t } = useTranslation()
+  const langPrefix = getLangPrefix()
+  const embedUrl = `${EMBED_BASE}${langPrefix}/?showHeader=0&url=https://****.com/****/index.m3u8`
 
   return (
     <CollapsibleSection
@@ -67,46 +72,52 @@ export default function HlsDescription() {
           <h3 className="text-base md:text-lg font-semibold text-slate-900 dark:text-white">{t('index.hlsDesc.embedTitle')}</h3>
         </div>
         <pre className="bg-slate-100 dark:bg-slate-900/80 rounded-xl p-4 text-sm text-emerald-600 dark:text-emerald-400 overflow-x-auto font-mono">
-          {`<iframe src="https://m3u8-player.lzw.me/?url=https://****.com/****/index.m3u8"></iframe>`}
+          {`<iframe src="${embedUrl}"></iframe>`}
         </pre>
       </div>
 
       {/* 功能特性 */}
       <ul className="mt-4 md:mt-6 space-y-1.5 md:space-y-2">
-        {(t('index.hlsDesc.features', { returnObjects: true }) as string[]).map((feature, idx) => (
-          <li key={feature} className="flex items-start gap-2 text-slate-600 dark:text-slate-400 text-sm">
-            <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-            <span>
-              {idx === 1 ? (
-                <>
-                  {feature.split('M3U8视频在线下载工具')[0]}
+        <li className="flex items-start gap-2 text-slate-600 dark:text-slate-400 text-sm">
+          <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
+          <span>{t('index.hlsDesc.feature1')}</span>
+        </li>
+        <li className="flex items-start gap-2 text-slate-600 dark:text-slate-400 text-sm">
+          <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
+          <span>
+            <Trans
+              i18nKey="index.hlsDesc.feature2"
+              components={{
+                anchor: (
                   <a
                     href="https://m3u8-downloader.lzw.me"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 underline"
-                  >
-                    M3U8视频在线下载工具
-                  </a>
-                </>
-              ) : idx === 2 ? (
-                <>
-                  {feature.split('配置M3U8标准加密改写')[0]}
+                  />
+                ),
+              }}
+            />
+          </span>
+        </li>
+        <li className="flex items-start gap-2 text-slate-600 dark:text-slate-400 text-sm">
+          <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
+          <span>
+            <Trans
+              i18nKey="index.hlsDesc.feature3"
+              components={{
+                anchor: (
                   <a
                     href="https://help.aliyun.com/document_detail/179287.html"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 underline"
-                  >
-                    配置M3U8标准加密改写
-                  </a>
-                </>
-              ) : (
-                feature
-              )}
-            </span>
-          </li>
-        ))}
+                  />
+                ),
+              }}
+            />
+          </span>
+        </li>
       </ul>
     </CollapsibleSection>
   )

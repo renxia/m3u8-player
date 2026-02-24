@@ -1,4 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { loadArtPlayerDependencies, loadDPlayerDependencies } from '@/hooks/player/playerUtils'
 import { usePlayer } from '@/hooks/usePlayer'
 import { type CacheConfig, cacheConfigManager, fetchAndParseM3U8 } from '@/lib/cache'
@@ -42,6 +43,7 @@ export interface PlayerRef {
 }
 
 const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], currentIndex = -1, onPlaylistItemClick, onEnded }, ref) => {
+  const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement>(null)
   const [showPlaceholder, setShowPlaceholder] = useState(true)
   const [isDependenciesLoaded, setIsDependenciesLoaded] = useState(false)
@@ -363,12 +365,12 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
         {showPlaceholder && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600 dark:text-slate-400 py-4 md:py-8 bg-white/80 dark:bg-slate-800/50 z-10">
             <div className="text-4xl md:text-6xl mb-3 md:mb-4">🎬</div>
-            <p className="text-base md:text-lg">输入 M3U8 地址开始播放</p>
+            <p className="text-base md:text-lg">{t('player.placeholderPrompt')}</p>
             <button
               onClick={() => handlePlay(demoUrl)}
               className="mt-3 md:mt-4 px-4 md:px-6 py-1.5 md:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm md:text-base"
             >
-              播放示例视频
+              {t('player.playDemo')}
             </button>
           </div>
         )}

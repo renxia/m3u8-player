@@ -173,11 +173,9 @@
       "embedTitle": "Embed in website:",
       "encryptionContent": "The HLS protocol uses M3U8 files to inform the client of the video file playlist. After the client obtains the M3U8 file, it can directly play the video. To prevent the TS video files used by the HLS protocol from being accessed by unauthorized clients, the TS video files used by the HLS protocol need to be encrypted. After encrypting the TS video files, the decryption method needs to be informed to the client. This can be done by configuring the M3U8 standard encryption rewriting function, and informing the client of the encryption algorithm, key URI and authentication key through the #EXT-X-KEY tag.",
       "encryptionTitle": "M3U8 File Usage Scenarios and Encryption",
-      "features": [
-        "Support decryption and playback of M3U8 file videos with common encryption methods",
-        "This page only provides online playback service. If you need to download videos, please use M3U8 Video Online Download Tool",
-        "Reference: Configure M3U8 standard encryption rewriting"
-      ],
+      "feature1": "Support decryption and playback of M3U8 file videos with common encryption methods",
+      "feature2": "This page only provides online playback service. If you need to download videos, please use <anchor>M3U8 Video Online Download Tool</anchor>",
+      "feature3": "Reference: <anchor>Configure M3U8 standard encryption rewriting</anchor>",
       "title": "HLS/M3U8 Description"
     },
     "inputPlaceholder": "Enter M3U8 URL",
@@ -205,6 +203,8 @@
     "themeSystem": "System"
   },
   "player": {
+    "placeholderPrompt": "Enter M3U8 URL to start playing",
+    "playDemo": "Play demo video",
     "muted": "Muted",
     "paused": "Paused",
     "playbackSpeed": "Playback Speed",
@@ -229,7 +229,26 @@
     "title": "Settings"
   },
   "shortcuts": {
+    "fullscreen": "Fullscreen / Exit fullscreen",
+    "groups": {
+      "basic": "Basic Controls",
+      "other": "Other",
+      "seek": "Playback",
+      "speed": "Playback Speed",
+      "volume": "Volume"
+    },
+    "pip": "Picture-in-Picture",
+    "rotate": "Rotate video",
+    "screenshot": "Screenshot",
+    "seekBackward": "Seek backward 10s",
+    "seekForward": "Seek forward 10s",
+    "speedDown": "Slower",
+    "speedUp": "Faster",
     "tip": "Tip: Most shortcuts are disabled in input boxes to avoid interfering with typing.",
-    "title": "Keyboard Shortcuts"
+    "title": "Keyboard Shortcuts",
+    "toggleMute": "Mute / Unmute",
+    "togglePlay": "Play / Pause",
+    "volumeDown": "Volume down 10%",
+    "volumeUp": "Volume up 10%"
   }
 }

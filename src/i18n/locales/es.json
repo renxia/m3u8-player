@@ -173,11 +173,9 @@
       "embedTitle": "Insertar en el sitio web:",
       "encryptionContent": "El protocolo HLS utiliza archivos M3U8 para informar al cliente sobre la lista de reproducción de archivos de video. Después de que el cliente obtiene el archivo M3U8, puede reproducir el video directamente. Para evitar que los archivos de video TS utilizados por el protocolo HLS sean accedidos por clientes no autorizados, los archivos de video TS utilizados por el protocolo HLS deben cifrarse. Después de cifrar los archivos de video TS, el método de descifrado debe informarse al cliente. Esto se puede hacer configurando la función de reescritura de cifrado estándar M3U8 e informando al cliente sobre el algoritmo de cifrado, la URI de la clave y la clave de autenticación a través de la etiqueta #EXT-X-KEY.",
       "encryptionTitle": "Escenarios de uso y cifrado de archivos M3U8",
-      "features": [
-        "Admite descifrado y reproducción de videos de archivos M3U8 con métodos de cifrado comunes",
-        "Esta página solo proporciona servicio de reproducción en línea. Si necesita descargar videos, use la Herramienta de descarga de video M3U8 en línea",
-        "Referencia: Configurar reescritura de cifrado estándar M3U8"
-      ],
+      "feature1": "Admite descifrado y reproducción de videos de archivos M3U8 con métodos de cifrado comunes",
+      "feature2": "Esta página solo proporciona servicio de reproducción en línea. Si necesita descargar videos, use la <anchor>Herramienta de descarga de video M3U8 en línea</anchor>",
+      "feature3": "Referencia: <anchor>Configurar reescritura de cifrado estándar M3U8</anchor>",
       "title": "Descripción HLS/M3U8"
     },
     "inputPlaceholder": "Ingrese la URL M3U8",
@@ -205,6 +203,8 @@
     "themeSystem": "Sistema"
   },
   "player": {
+    "placeholderPrompt": "Introduce la URL M3U8 para empezar a reproducir",
+    "playDemo": "Reproducir video de demostración",
     "muted": "Silenciado",
     "paused": "Pausado",
     "playbackSpeed": "Velocidad de reproducción",
@@ -229,7 +229,26 @@
     "title": "Configuración"
   },
   "shortcuts": {
+    "fullscreen": "Pantalla completa / Salir de pantalla completa",
+    "groups": {
+      "basic": "Controles básicos",
+      "other": "Otros",
+      "seek": "Reproducción",
+      "speed": "Velocidad de reproducción",
+      "volume": "Volumen"
+    },
+    "pip": "Picture-in-Picture",
+    "rotate": "Rotar vídeo",
+    "screenshot": "Captura de pantalla",
+    "seekBackward": "Retroceder 10s",
+    "seekForward": "Avanzar 10s",
+    "speedDown": "Más lento",
+    "speedUp": "Más rápido",
     "tip": "Consejo: La mayoría de los atajos están deshabilitados en los cuadros de entrada para evitar interferir con la escritura.",
-    "title": "Atajos de teclado"
+    "title": "Atajos de teclado",
+    "toggleMute": "Silenciar / Activar sonido",
+    "togglePlay": "Reproducir / Pausar",
+    "volumeDown": "Bajar volumen 10%",
+    "volumeUp": "Subir volumen 10%"
   }
 }

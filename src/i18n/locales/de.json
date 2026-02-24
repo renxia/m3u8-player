@@ -173,11 +173,9 @@
       "embedTitle": "In Website einbetten:",
       "encryptionContent": "Das HLS-Protokoll verwendet M3U8-Dateien, um den Client über die Videodatei-Playlist zu informieren. Nachdem der Client die M3U8-Datei erhalten hat, kann er das Video direkt abspielen. Um zu verhindern, dass die vom HLS-Protokoll verwendeten TS-Videodateien von nicht autorisierten Clients aufgerufen werden, müssen die vom HLS-Protokoll verwendeten TS-Videodateien verschlüsselt werden. Nach der Verschlüsselung der TS-Videodateien muss die Entschlüsselungsmethode dem Client mitgeteilt werden. Dies kann durch Konfigurieren der M3U8-Standardverschlüsselungs-Umschreibfunktion erfolgen und den Client über den Verschlüsselungsalgorithmus, die Schlüssel-URI und den Authentifizierungsschlüssel über das #EXT-X-KEY-Tag informieren.",
       "encryptionTitle": "M3U8-Datei-Verwendungsszenarien und Verschlüsselung",
-      "features": [
-        "Unterstützung für Entschlüsselung und Wiedergabe von M3U8-Dateivideos mit gängigen Verschlüsselungsmethoden",
-        "Diese Seite bietet nur Online-Wiedergabedienst. Wenn Sie Videos herunterladen müssen, verwenden Sie bitte das M3U8-Video-Online-Download-Tool",
-        "Referenz: M3U8-Standardverschlüsselungs-Umschreibung konfigurieren"
-      ],
+      "feature1": "Unterstützung für Entschlüsselung und Wiedergabe von M3U8-Dateivideos mit gängigen Verschlüsselungsmethoden",
+      "feature2": "Diese Seite bietet nur Online-Wiedergabedienst. Wenn Sie Videos herunterladen müssen, verwenden Sie bitte das <anchor>M3U8-Video-Online-Download-Tool</anchor>",
+      "feature3": "Referenz: <anchor>M3U8-Standardverschlüsselungs-Umschreibung konfigurieren</anchor>",
       "title": "HLS/M3U8-Beschreibung"
     },
     "inputPlaceholder": "M3U8-URL eingeben",
@@ -205,6 +203,8 @@
     "themeSystem": "System"
   },
   "player": {
+    "placeholderPrompt": "M3U8-URL eingeben zum Abspielen",
+    "playDemo": "Demo-Video abspielen",
     "muted": "Stummgeschaltet",
     "paused": "Pausiert",
     "playbackSpeed": "Wiedergabegeschwindigkeit",
@@ -229,7 +229,26 @@
     "title": "Einstellungen"
   },
   "shortcuts": {
+    "fullscreen": "Vollbild / Vollbild beenden",
+    "groups": {
+      "basic": "Grundsteuerung",
+      "other": "Sonstiges",
+      "seek": "Wiedergabe",
+      "speed": "Wiedergabegeschwindigkeit",
+      "volume": "Lautstärke"
+    },
+    "pip": "Bild-in-Bild",
+    "rotate": "Video drehen",
+    "screenshot": "Screenshot",
+    "seekBackward": "10 s zurückspulen",
+    "seekForward": "10 s vorspulen",
+    "speedDown": "Langsamer",
+    "speedUp": "Schneller",
     "tip": "Hinweis: Die meisten Tastenkürzel sind in Eingabefeldern deaktiviert, um die Eingabe nicht zu stören.",
-    "title": "Tastenkürzel"
+    "title": "Tastenkürzel",
+    "toggleMute": "Stumm / Ton an",
+    "togglePlay": "Wiedergabe / Pause",
+    "volumeDown": "Lautstärke -10 %",
+    "volumeUp": "Lautstärke +10 %"
   }
 }

@@ -64,32 +64,32 @@ export default function Header() {
 
   return (
     <header className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white shadow-lg">
-      <div className="container mx-auto px-2 md:px-4 py-2 md:py-3">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-2 lg:px-4 py-2 lg:py-3">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
           {/* Logo */}
           <Link
             to={langPrefix || '/'}
-            className="flex items-center gap-1.5 md:gap-2 text-white font-bold text-lg md:text-xl hover:text-cyan-200 transition-colors group"
+            className="flex items-center gap-1.5 lg:gap-2 text-white font-bold text-lg lg:text-xl hover:text-cyan-200 transition-colors group"
           >
-            <div className="p-1.5 md:p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
-              <Home className="w-4 h-4 md:w-5 md:h-5" />
+            <div className="p-1.5 lg:p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
+              <Home className="w-4 h-4 lg:w-5 lg:h-5" />
             </div>
             <span className="tracking-wide">{t('nav.home')}</span>
           </Link>
 
           {/* 导航 */}
-          <div className="flex items-center gap-0.5 md:gap-2">
+          <div className="flex items-center gap-0.5 lg:gap-2">
             {navItems.map(({ path, icon: Icon, label }) => (
               <Link
                 key={path}
                 to={path}
                 className={cn(
-                  'flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 md:py-2 rounded-lg transition-all',
-                  'hover:bg-white/20 text-xs md:text-base',
+                  'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all',
+                  'hover:bg-white/20 text-xs lg:text-base',
                   location.pathname === path && 'bg-white/20',
                 )}
               >
-                <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <Icon className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 <span className="hidden sm:inline">{label}</span>
               </Link>
             ))}
@@ -102,12 +102,12 @@ export default function Header() {
                   setIsThemeOpen(!isThemeOpen)
                 }}
                 className={cn(
-                  'flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 md:py-2 rounded-lg transition-all',
-                  'hover:bg-white/20 text-xs md:text-base',
+                  'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all',
+                  'hover:bg-white/20 text-xs lg:text-base',
                 )}
                 title={t('nav.theme')}
               >
-                {resolvedTheme === 'dark' ? <Moon className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Sun className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+                {resolvedTheme === 'dark' ? <Moon className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> : <Sun className="w-3.5 h-3.5 lg:w-4 lg:h-4" />}
                 <span className="hidden sm:inline">{t('nav.theme')}</span>
                 <ChevronDown className={cn('w-3 h-3 transition-transform', isThemeOpen && 'rotate-180')} />
               </button>
@@ -142,11 +142,11 @@ export default function Header() {
                   setIsLangOpen(!isLangOpen)
                 }}
                 className={cn(
-                  'flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 md:py-2 rounded-lg transition-all',
-                  'hover:bg-white/20 text-xs md:text-base',
+                  'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all',
+                  'hover:bg-white/20 text-xs lg:text-base',
                 )}
               >
-                <Globe className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <Globe className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 <span className="hidden sm:inline">{t('nav.language')}</span>
                 <ChevronDown className={cn('w-3 h-3 transition-transform', isLangOpen && 'rotate-180')} />
               </button>

@@ -169,11 +169,9 @@
       "embedTitle": "嵌入网站：",
       "encryptionContent": "HLS协议采用M3U8文件来告知客户端视频文件播放列表，客户端拿到M3U8文件以后就可以直接播放视频，为了避免源站的视频文件被非授权客户端访问，需要对HLS协议使用的TS视频文件做加密，对TS视频文件做了加密以后，还需要告知客户端解密方法，这里就可以通过配置M3U8标准加密改写功能，通过#EXT-X-KEY标签来告知客户端加密算法、密钥URI和鉴权key。",
       "encryptionTitle": "M3U8文件适用场景与加密",
-      "features": [
-        "支持常见加密方式的 M3U8 文件视频解密和播放",
-        "当前页面仅提供在线播放服务。如需下载视频，请使用 M3U8视频在线下载工具",
-        "参考：配置M3U8标准加密改写"
-      ],
+      "feature1": "支持常见加密方式的 M3U8 文件视频解密和播放",
+      "feature2": "当前页面仅提供在线播放服务。如需下载视频，请使用 <anchor>M3U8视频在线下载工具</anchor>",
+      "feature3": "参考：<anchor>配置M3U8标准加密改写</anchor>",
       "title": "HLS/M3U8 说明"
     },
     "inputPlaceholder": "输入M3U8地址",
@@ -201,6 +199,8 @@
     "themeSystem": "跟随系统"
   },
   "player": {
+    "placeholderPrompt": "输入 M3U8 地址开始播放",
+    "playDemo": "播放示例视频",
     "muted": "已静音",
     "paused": "已暂停",
     "playbackSpeed": "播放速度",
@@ -225,7 +225,26 @@
     "title": "设置"
   },
   "shortcuts": {
+    "fullscreen": "全屏/退出全屏",
+    "groups": {
+      "basic": "基本控制",
+      "other": "其他功能",
+      "seek": "播放控制",
+      "speed": "播放速度",
+      "volume": "音量控制"
+    },
+    "pip": "画中画",
+    "rotate": "旋转画面",
+    "screenshot": "截图",
+    "seekBackward": "快退 10 秒",
+    "seekForward": "快进 10 秒",
+    "speedDown": "减速",
+    "speedUp": "加速",
     "tip": "提示：在输入框中，大部分快捷键会被禁用，避免干扰输入。",
-    "title": "键盘快捷键"
+    "title": "键盘快捷键",
+    "toggleMute": "静音/取消静音",
+    "togglePlay": "播放/暂停",
+    "volumeDown": "音量减少 10%",
+    "volumeUp": "音量增加 10%"
   }
 }

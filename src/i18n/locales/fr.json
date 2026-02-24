@@ -173,11 +173,9 @@
       "embedTitle": "Intégrer dans le site web :",
       "encryptionContent": "Le protocole HLS utilise des fichiers M3U8 pour informer le client de la liste de lecture des fichiers vidéo. Après avoir obtenu le fichier M3U8, le client peut directement lire la vidéo. Pour empêcher les fichiers vidéo TS utilisés par le protocole HLS d'être accessibles par des clients non autorisés, les fichiers vidéo TS utilisés par le protocole HLS doivent être cryptés. Après avoir crypté les fichiers vidéo TS, la méthode de décryptage doit être communiquée au client. Cela peut être fait en configurant la fonction de réécriture de cryptage standard M3U8, et en informant le client de l'algorithme de cryptage, de l'URI de la clé et de la clé d'authentification via la balise #EXT-X-KEY.",
       "encryptionTitle": "Scénarios d'utilisation et cryptage des fichiers M3U8",
-      "features": [
-        "Prise en charge du décryptage et de la lecture de vidéos de fichiers M3U8 avec des méthodes de cryptage courantes",
-        "Cette page ne fournit que le service de lecture en ligne. Si vous devez télécharger des vidéos, veuillez utiliser l'outil de téléchargement vidéo M3U8 en ligne",
-        "Référence : Configurer la réécriture de cryptage standard M3U8"
-      ],
+      "feature1": "Prise en charge du décryptage et de la lecture de vidéos de fichiers M3U8 avec des méthodes de cryptage courantes",
+      "feature2": "Cette page ne fournit que le service de lecture en ligne. Si vous devez télécharger des vidéos, veuillez utiliser l'<anchor>outil de téléchargement vidéo M3U8 en ligne</anchor>",
+      "feature3": "Référence : <anchor>Configurer la réécriture de cryptage standard M3U8</anchor>",
       "title": "Description HLS/M3U8"
     },
     "inputPlaceholder": "Entrez l'URL M3U8",
@@ -205,6 +203,8 @@
     "themeSystem": "Système"
   },
   "player": {
+    "placeholderPrompt": "Entrez l'URL M3U8 pour commencer la lecture",
+    "playDemo": "Lire la vidéo de démonstration",
     "muted": "Sourdine",
     "paused": "En pause",
     "playbackSpeed": "Vitesse de lecture",
@@ -229,7 +229,26 @@
     "title": "Paramètres"
   },
   "shortcuts": {
+    "fullscreen": "Plein écran / Quitter le plein écran",
+    "groups": {
+      "basic": "Contrôles de base",
+      "other": "Autres",
+      "seek": "Lecture",
+      "speed": "Vitesse de lecture",
+      "volume": "Volume"
+    },
+    "pip": "Picture-in-Picture",
+    "rotate": "Pivoter la vidéo",
+    "screenshot": "Capture d'écran",
+    "seekBackward": "Reculer de 10 s",
+    "seekForward": "Avancer de 10 s",
+    "speedDown": "Plus lent",
+    "speedUp": "Plus rapide",
     "tip": "Astuce : La plupart des raccourcis sont désactivés dans les zones de saisie pour éviter d'interférer avec la saisie.",
-    "title": "Raccourcis clavier"
+    "title": "Raccourcis clavier",
+    "toggleMute": "Muet / Activer le son",
+    "togglePlay": "Lecture / Pause",
+    "volumeDown": "Volume -10 %",
+    "volumeUp": "Volume +10 %"
   }
 }
