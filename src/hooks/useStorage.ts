@@ -49,7 +49,18 @@ export function useHistory() {
     setHistory(storage.get<StorageData[]>(StorageKeys.history) || [])
   }, [])
 
-  return { history, addHistory, removeHistory, clearHistory, refreshHistory }
+  const updateHistoryName = useCallback((index: number, name: string) => {
+    setHistory((prev) => {
+      const newHistory = [...prev]
+      if (newHistory[index]) {
+        newHistory[index] = { ...newHistory[index], name }
+        storage.set(StorageKeys.history, newHistory)
+      }
+      return newHistory
+    })
+  }, [])
+
+  return { history, addHistory, removeHistory, clearHistory, refreshHistory, updateHistoryName }
 }
 
 export function useFavorites() {
@@ -96,5 +107,16 @@ export function useFavorites() {
     setFavorites(storage.get<StorageData[]>(StorageKeys.fav) || [])
   }, [])
 
-  return { favorites, addFavorite, removeFavorite, clearFavorites, isFavorite, refreshFavorites }
+  const updateFavoriteName = useCallback((index: number, name: string) => {
+    setFavorites((prev) => {
+      const newFavorites = [...prev]
+      if (newFavorites[index]) {
+        newFavorites[index] = { ...newFavorites[index], name }
+        storage.set(StorageKeys.fav, newFavorites)
+      }
+      return newFavorites
+    })
+  }, [])
+
+  return { favorites, addFavorite, removeFavorite, clearFavorites, isFavorite, refreshFavorites, updateFavoriteName }
 }

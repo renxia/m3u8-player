@@ -3,6 +3,8 @@
  * 用于解析 M3U8 文件并提取 TS 片段 URL
  */
 
+import { toast } from 'sonner';
+
 /** TS 片段信息 */
 export interface TSSegment {
   /** 片段 URL（绝对路径） */
@@ -144,7 +146,7 @@ export async function fetchAndParseM3U8(m3u8Url: string): Promise<M3U8ParseResul
 
       const response = await fetch(m3u8Url);
       if (!response.ok) {
-        throw new Error(`Failed to fetch M3U8: ${response.status} ${response.statusText}`);
+        throw new Error(`[${response.status}]${response.statusText}`);
       }
 
       const content = await response.text();
@@ -157,9 +159,9 @@ export async function fetchAndParseM3U8(m3u8Url: string): Promise<M3U8ParseResul
       });
 
       return result;
-    } finally {
-      // 请求完成，移除 pending 状态
-      pendingRequests.delete(m3u8Url);
+    } catch (err) {
+      toast.error(`Failed to fetch M3U8: ${(err as Error).message}`);
+      return parseM3U8Content("", m3u8Url);
     }
   };
 
@@ -168,6 +170,7 @@ export async function fetchAndParseM3U8(m3u8Url: string): Promise<M3U8ParseResul
   pendingRequests.set(m3u8Url, p);
 
   const result = await p;
+  pendingRequests.delete(m3u8Url);
 
   // 如果是主播放列表，自动解析第一个变体
   if (result.isMasterPlaylist && result.variants && result.variants.length > 0) {

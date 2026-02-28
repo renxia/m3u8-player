@@ -39,8 +39,8 @@ export default function HomePage() {
   const [currentPlayingUrl, setCurrentPlayingUrl] = useState('')
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1)
 
-  const { history, addHistory, removeHistory, clearHistory } = useHistory()
-  const { favorites, addFavorite, removeFavorite, clearFavorites } = useFavorites()
+  const { history, addHistory, removeHistory, clearHistory, updateHistoryName } = useHistory()
+  const { favorites, addFavorite, removeFavorite, clearFavorites, updateFavoriteName } = useFavorites()
   const { playlist, setPlaylist, clearPlaylist } = usePlaylist()
 
   // 播放视频
@@ -113,7 +113,8 @@ export default function HomePage() {
   useEffect(() => {
     const params = getUrlParams()
     const uri = params.url ? decodeURIComponent(params.url) : ''
-    const title = params.title ? decodeURIComponent(params.title) : ''
+    // 支持 name 和 title 参数作为视频名称
+    const title = params.name ? decodeURIComponent(params.name) : params.title ? decodeURIComponent(params.title) : ''
 
     if (uri) {
       // 检查 HTTP 协议
@@ -241,6 +242,8 @@ export default function HomePage() {
         }}
         onClearFavorites={clearFavorites}
         onAddFavorite={addFavorite}
+        onUpdateHistoryName={updateHistoryName}
+        onUpdateFavoriteName={updateFavoriteName}
       />
 
       {/* HLS 说明 */}

@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
 import { loadArtPlayerDependencies, loadDPlayerDependencies } from '@/hooks/player/playerUtils'
 import { usePlayer } from '@/hooks/usePlayer'
-import { type CacheConfig, cacheConfigManager } from '@/lib/cache'
+import { type CacheConfig, cacheConfigManager, fetchAndParseM3U8 } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
 import { logger } from '@/utils/logger'
@@ -213,6 +213,21 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
     if (isPlayingRef.current) {
       logger.log('[Player] Already playing, ignoring request')
       return false
+    }
+
+    // preview url to full
+    if (/\/\d+_i_preview\.m3u8$/.test(url)) {
+      const result = await fetchAndParseM3U8(url)
+
+      if (result.segments.length) {
+        const arr = result.segments[0].url.split('/')
+        const tsBasename = arr[arr.length - 1] // arr.at(-1)
+        if (tsBasename.endsWith('_i0.ts')) {
+          const nUrl = url.replace(/\d+_i_preview.m3u8$/, tsBasename.replace('_i0.ts', '_i.m3u8'))
+          const r = await fetchAndParseM3U8(nUrl)
+          if (r.segments.length > result.segments.length) url = nUrl
+        }
+      }
     }
 
     // 如果占位符还在显示，隐藏占位符并延迟播放

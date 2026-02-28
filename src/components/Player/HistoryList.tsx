@@ -1,4 +1,4 @@
-import { Copy, History, Play, Star, Trash2 } from 'lucide-react'
+import { Check, Copy, Edit2, History, Play, Star, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -15,6 +15,8 @@ interface HistoryListProps {
   onClearHistory: () => void
   onClearFavorites: () => void
   onAddFavorite: (url: string, name?: string) => boolean
+  onUpdateHistoryName?: (index: number, name: string) => void
+  onUpdateFavoriteName?: (index: number, name: string) => void
 }
 
 export default function HistoryList({
@@ -26,9 +28,13 @@ export default function HistoryList({
   onClearHistory,
   onClearFavorites,
   onAddFavorite,
+  onUpdateHistoryName,
+  onUpdateFavoriteName,
 }: HistoryListProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'history' | 'fav'>('history')
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editingName, setEditingName] = useState('')
 
   const handleCopy = async (url: string) => {
     const success = await copyToClipboard(url)
@@ -38,6 +44,28 @@ export default function HistoryList({
   const handleAddFavorite = (url: string, name?: string) => {
     const success = onAddFavorite(url, name)
     toast.success(success ? t('common.favSuccess') : t('common.collected'))
+  }
+
+  const handleStartEdit = (index: number, currentName: string) => {
+    setEditingIndex(index)
+    setEditingName(currentName || '')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null)
+    setEditingName('')
+  }
+
+  const handleSaveEdit = (index: number) => {
+    const trimmedName = editingName.trim()
+    if (activeTab === 'history') {
+      onUpdateHistoryName?.(index, trimmedName)
+    } else {
+      onUpdateFavoriteName?.(index, trimmedName)
+    }
+    setEditingIndex(null)
+    setEditingName('')
+    toast.success(t('common.saved', { defaultValue: '已保存' }))
   }
 
   const currentList = activeTab === 'history' ? history : favorites
@@ -119,7 +147,38 @@ export default function HistoryList({
                 className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 md:p-3 hover:bg-slate-100 dark:hover:bg-slate-900/70 transition-all group"
               >
                 <div className="flex flex-col gap-2">
-                  {item.name && <div className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{item.name}</div>}
+                  {editingIndex === idx ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        placeholder={t('common.videoName', { defaultValue: '视频名称' })}
+                        className="flex-1 px-2 py-1 text-sm rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveEdit(idx)
+                          if (e.key === 'Escape') handleCancelEdit()
+                        }}
+                      />
+                      <button
+                        onClick={() => handleSaveEdit(idx)}
+                        className="p-1 rounded bg-green-600 hover:bg-green-700 text-white transition-all"
+                        title={t('common.save', { defaultValue: '保存' })}
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="p-1 rounded bg-slate-600 hover:bg-slate-700 text-white transition-all"
+                        title={t('common.cancel', { defaultValue: '取消' })}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    item.name && <div className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{item.name}</div>
+                  )}
                   <a
                     href="#"
                     onClick={(e) => {
@@ -153,6 +212,13 @@ export default function HistoryList({
                         title={t('common.copy')}
                       >
                         <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleStartEdit(idx, item.name || '')}
+                        className="p-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-600 dark:text-cyan-400 hover:text-white transition-all"
+                        title={t('common.edit', { defaultValue: '编辑名称' })}
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       {activeTab === 'history' && (
                         <button
