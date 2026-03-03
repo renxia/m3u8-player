@@ -6,6 +6,7 @@ import { StorageKeys, storage } from './lib/storage'
 import './i18n'
 import './lib/cdn'
 import './index.css'
+import { initStats } from './utils/init-stats'
 
 // 初始化主题，避免闪烁
 function initTheme() {
@@ -25,10 +26,11 @@ function initTheme() {
   }
 }
 
+initStats()
 // 在渲染前初始化主题
 initTheme()
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('app')!).render(
   <BrowserRouter>
     <App />
   </BrowserRouter>,

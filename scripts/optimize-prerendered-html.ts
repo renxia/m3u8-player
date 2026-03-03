@@ -8,7 +8,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const distDir = path.resolve(__dirname, '../dist/m3u8-player')
+const config = {
+  distDir: path.resolve(__dirname, '../dist/m3u8-player')
+}
 
 /**
  * 保护指定标签块（如 script/style），避免后续正则替换误伤其内部内容；
@@ -25,13 +27,13 @@ function preserveTagBlocks(
 
   // tags 为空时直接返回
   if (tags.length === 0) {
-    return { html, restore: (s) => s }
+    return { html, restore: s => s }
   }
 
-  const tagsPattern = tags.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+  const tagsPattern = tags.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
   const re = new RegExp(`<(${tagsPattern})\\b[^>]*>[\\s\\S]*?<\\/\\1>`, 'gi')
 
-  const working = html.replace(re, (match) => {
+  const working = html.replace(re, match => {
     const idx = preservedBlocks.length
     preservedBlocks.push(match)
     return `${placeholderPrefix}${idx}${placeholderSuffix}`
@@ -85,14 +87,14 @@ function removeInlineStyles(html: string): { html: string; count: number } {
   const matches = html.match(stylePattern)
   if (matches) {
     // 只移除非关键的样式（可以通过检查内容判断）
-    html = html.replace(stylePattern, (match) => {
+    html = html.replace(stylePattern, match => {
       // 如果样式内容很长（可能是完整的 CSS），则移除
       if (match.length > 1000) {
         count++
         // return '<!-- Inline styles removed, use external CSS file -->'
         return ''
       }
-      return match // 保留关键的小样式
+      return match; // 保留关键的小样式
     })
   }
   return { html, count }
@@ -134,6 +136,19 @@ function minifyHTML(html: string): string {
 }
 
 /**
+ * 添加 loading 指示器
+ */
+function addLoadingIndicator(html: string, replaceKeyStr = '<div id="app">'): string {
+  const loadingIndicator = [
+    `<style>@keyframes p{to{transform:scale(2.5);opacity:.2}}</style>`,
+    `<div style="position:fixed;inset:0;z-index:999999;background:#fff;display:grid;place-items:center">`,
+    `<i style="width:18px;height:18px;background:#26f;border-radius:50%;animation:p .5s infinite alternate"></i>`,
+    `</div>`,
+  ].join('\n')
+  return html.replace(replaceKeyStr, `${replaceKeyStr}${loadingIndicator}`)
+}
+
+/**
  * 优化单个 HTML 文件
  */
 function optimizeHTMLFile(filePath: string, stats: OptimizationStats, showProgress = true): void {
@@ -158,6 +173,9 @@ function optimizeHTMLFile(filePath: string, stats: OptimizationStats, showProgre
     optimizedContent = classResult.html
     stats.classAttributesRemoved += classResult.count
 
+    // 添加 loading
+    optimizedContent = addLoadingIndicator(optimizedContent)
+
     // 压缩 HTML
     optimizedContent = minifyHTML(optimizedContent)
 
@@ -169,7 +187,7 @@ function optimizeHTMLFile(filePath: string, stats: OptimizationStats, showProgre
       fs.writeFileSync(filePath, optimizedContent, 'utf-8')
       if (showProgress)
         console.log(
-          `✓ ${path.relative(distDir, filePath)}: ${(originalSize / 1024).toFixed(2)}KB → ${(optimizedSize / 1024).toFixed(2)}KB (节省 ${savedPercent}%)`,
+          `✓ ${path.relative(config.distDir, filePath)}: ${(originalSize / 1024).toFixed(2)}KB → ${(optimizedSize / 1024).toFixed(2)}KB (节省 ${savedPercent}%)`
         )
     }
 
@@ -183,16 +201,18 @@ function optimizeHTMLFile(filePath: string, stats: OptimizationStats, showProgre
 /**
  * 主函数
  */
-async function optimizePrerenderedHTML(showProgress = true): Promise<void> {
+async function optimizePrerenderedHTML(cfg: Partial<typeof config> = {}, showProgress = true): Promise<void> {
   if (showProgress) console.log('开始优化预渲染 HTML 文件...\n')
 
-  if (!fs.existsSync(distDir)) {
-    console.error(`错误: 输出目录不存在: ${distDir}`)
+  Object.assign(config, cfg)
+
+  if (!fs.existsSync(config.distDir)) {
+    console.error(`错误: 输出目录不存在: ${config.distDir}`)
     process.exit(1)
   }
 
   // 查找所有 HTML 文件
-  const htmlFiles: string[] = globSync('**/*.html', { cwd: distDir })
+  const htmlFiles: string[] = globSync('**/*.html', { cwd: config.distDir })
   // console.log('htmlFiles', htmlFiles)
 
   if (htmlFiles.length === 0) {
@@ -213,7 +233,7 @@ async function optimizePrerenderedHTML(showProgress = true): Promise<void> {
 
   // 优化每个文件
   for (const file of htmlFiles) {
-    optimizeHTMLFile(path.resolve(distDir, file), stats, showProgress)
+    optimizeHTMLFile(path.resolve(config.distDir, file), stats, showProgress)
   }
 
   // 输出统计信息
@@ -226,7 +246,7 @@ async function optimizePrerenderedHTML(showProgress = true): Promise<void> {
   console.log(`移除 class 属性: ${stats.classAttributesRemoved} 个`)
   console.log(`总大小: ${(stats.totalSizeBefore / 1024 / 1024).toFixed(2)}MB → ${(stats.totalSizeAfter / 1024 / 1024).toFixed(2)}MB`)
   console.log(
-    `节省: ${((stats.totalSizeBefore - stats.totalSizeAfter) / 1024 / 1024).toFixed(2)}MB (${(((stats.totalSizeBefore - stats.totalSizeAfter) / stats.totalSizeBefore) * 100).toFixed(2)}%)`,
+    `节省: ${((stats.totalSizeBefore - stats.totalSizeAfter) / 1024 / 1024).toFixed(2)}MB (${(((stats.totalSizeBefore - stats.totalSizeAfter) / stats.totalSizeBefore) * 100).toFixed(2)}%)`
   )
   console.log('='.repeat(60))
 }
@@ -239,7 +259,7 @@ export { optimizePrerenderedHTML }
 const currentFile = fileURLToPath(import.meta.url)
 const mainFile = process.argv[1] ? path.resolve(process.argv[1]) : ''
 if (currentFile === mainFile || currentFile.replace(/\\/g, '/') === mainFile.replace(/\\/g, '/')) {
-  optimizePrerenderedHTML().catch((error) => {
+  optimizePrerenderedHTML().catch(error => {
     console.error('优化过程出错:', error)
     process.exit(1)
   })
