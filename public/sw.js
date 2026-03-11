@@ -40,6 +40,42 @@ const CACHE_STRATEGIES = {
   },
 };
 
+/**
+ * 为响应添加缓存元数据
+ * @param {Response} response - 原始响应
+ * @param {Object} metadata - 元数据
+ * @returns {Response} 带元数据的新响应
+ */
+function responseWithMetadata(response, metadata = {}) {
+  const headers = new Headers(response.headers)
+  headers.set('sw-cache-time', Date.now().toString())
+  Object.entries(metadata).forEach(([key, value]) => {
+    headers.set(`sw-${key}`, value)
+  })
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
+/**
+ * 缓存响应（自动添加元数据）
+ * @param {Cache} cache - 缓存实例
+ * @param {Request|string} cacheKey - 缓存键
+ * @param {Response} response - 响应对象
+ * @param {Object} metadata - 额外的元数据
+ */
+async function cachePut(cache, cacheKey, response, metadata = {}) {
+  // 只有 GET 请求且返回 200 状态的请求才缓存
+  if ((typeof cacheKey === 'string' || cacheKey.method === 'GET') && response.ok && response.status === 200) {
+    const responseWithMeta = responseWithMetadata(response.clone(), metadata)
+    await cache.put(cacheKey, responseWithMeta)
+    return true
+  }
+}
+
 // 需要缓存的静态资源
 const STATIC_ASSETS = [
   '/',
@@ -139,14 +175,8 @@ async function cacheFirst(request, cacheName, maxAge) {
 
   try {
     const network = await fetch(request)
-    if (network.ok) {
-      // 只有 GET 请求才能被缓存
-      if (request.method === 'GET') {
-        // 克隆响应，避免 body 被锁定
-        const responseClone = network.clone()
-        await cache.put(cacheKey, responseClone)
-      }
-    }
+    await cachePut(cache, cacheKey, network)
+    
     return network
   } catch (error) {
     // 网络失败，尝试返回缓存（即使过期）
@@ -173,14 +203,7 @@ async function networkFirst(request, cacheName, _maxAge) {
   try {
     // console.debug('networkfirst', request.url)
     const network = await fetch(request)
-    if (network.ok) {
-      // 只有 GET 请求才能被缓存
-      if (request.method === 'GET') {
-        // 克隆响应，避免 body 被锁定
-        const responseClone = network.clone()
-        await cache.put(cacheKey, responseClone)
-      }
-    }
+    await cachePut(cache, cacheKey, network)
     return network
   } catch (error) {
     // 网络失败，返回缓存
@@ -219,12 +242,8 @@ async function handleNavigation(request) {
 
   try {
     const network = await fetch(request)
-    if (network.ok) {
-      // 只有 GET 请求才能被缓存
-      if (request.method === 'GET') {
-        await cache.put(request, network.clone())
-      }
-    }
+    await cachePut(cache, request, network)
+
     return network
   } catch (error) {
     const cached = await cache.match(request)
@@ -316,6 +335,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // 忽略来自于百度统计、谷歌统计的请求
+  const keywords = ['baidu', 'google'];
+  if (keywords.some(keyword => url.hostname.includes(keyword))) {
+    return;
+  }
+
   if (IS_DEV) {
     // 忽略 Vite 开发服务器的特殊请求，避免拦截开发资源
     const devPatterns = [/\/(@|\.)vite\//, /\/@react-refresh/, /\/src\//, /\/.pnpm\//];
@@ -370,11 +395,9 @@ self.addEventListener('message', async (event) => {
         const cacheName = data?.cacheName || CACHE_NAME
         const cache = await caches.open(cacheName)
         const response = await fetch(data.url)
-        // 克隆响应，避免 body 被锁定
-        const responseClone = response.clone()
         // 对于 M3U8_CACHE，使用 URL 字符串作为 key，确保与 pwaCache.ts 兼容
         const cacheKey = cacheName === M3U8_CACHE ? data.url : new Request(data.url)
-        await cache.put(cacheKey, responseClone)
+        await cachePut(cache, cacheKey, response)
       }
       break
 
