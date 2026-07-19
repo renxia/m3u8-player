@@ -223,6 +223,7 @@ export const StorageKeys = {
   fav: 'm3u8_fav',
   version: 'versionInfo',
   theme: 'theme',
+  embedSettings: 'embed_settings',
   COLLAPSIBLE_SECTION: 'CS',
 } as const
 

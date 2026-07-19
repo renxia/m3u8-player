@@ -5,7 +5,7 @@ export function initStats({ gaId = '', baiduId = '' } = {}) {
   const win = window as unknown as { _hmt: unknown[] }
   if (!Array.isArray(win._hmt) || win._hmt.length === 0) {
     win._hmt = []
-    if (!baiduId) baiduId = import.meta.env.MD_BAIDU_ID || '6619794cd4565ef7fee18ba306b042ca'
+    if (!baiduId) baiduId = import.meta.env.MD_BAIDU_ID || '70e1b27b04035b8343fc3143c21a6790'
     window.h5Utils.loadJsOrCss(`https://hm.baidu.com/hm.js?${baiduId}`, { async: true })
   }
 

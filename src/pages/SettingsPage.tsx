@@ -3,7 +3,7 @@
  * 提供完整的缓存管理功能
  */
 
-import { AlertTriangle, Database, HardDrive, Info, PieChart, RefreshCw, Settings, Sliders, Trash2, XCircle, Zap } from 'lucide-react'
+import { AlertTriangle, Database, HardDrive, History, Info, MonitorPlay, PieChart, RefreshCw, Settings, Sliders, Trash2, XCircle, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -11,6 +11,7 @@ import CollapsibleSection from '@/components/CollapsibleSection'
 import { ServiceWorkerSettings } from '@/components/ServiceWorkerSettings'
 import { useCache } from '@/hooks/useCache'
 import type { CacheType } from '@/lib/cache'
+import { type EmbedSettings, getEmbedSettings, setEmbedSettings, subscribeEmbedSettings } from '@/lib/embed'
 import { cn } from '@/lib/utils'
 
 /** 缓存支持情况 */
@@ -37,6 +38,15 @@ export default function SettingsPage() {
   const [localConcurrency, setLocalConcurrency] = useState(config.preloadConcurrency)
   const [localCacheType, setLocalCacheType] = useState<CacheType>(config.cacheType || 'indexeddb')
   const [cacheSupport, setCacheSupport] = useState<CacheSupport>({ indexeddb: false, pwa: false })
+  const [embedSettings, setEmbedSettingsState] = useState<EmbedSettings>(() => getEmbedSettings())
+
+  // 订阅嵌入设置变化（如其他页面修改）
+  useEffect(() => subscribeEmbedSettings(setEmbedSettingsState), [])
+
+  // 切换嵌入模式设置项
+  const toggleEmbedSetting = (key: keyof EmbedSettings) => {
+    setEmbedSettings({ [key]: !embedSettings[key] })
+  }
 
   // 处理清除缓存
   const handleClearCache = async () => {
@@ -442,6 +452,72 @@ export default function SettingsPage() {
               <p>{t('cache.info1')}</p>
               <p className="mt-2">{t('cache.info2')}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 嵌入模式设置卡片 */}
+      <div className="bg-white/80 dark:bg-slate-800/50 rounded-2xl shadow-xl backdrop-blur-sm overflow-hidden">
+        {/* 卡片头部 */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-200 dark:border-slate-700/50">
+          <MonitorPlay className="w-5 h-5 text-indigo-500" />
+          <div>
+            <span className="font-semibold text-slate-800 dark:text-white">{t('settings.embed.title')}</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t('settings.embed.description')}</p>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* embed 模式下是否自动记录历史记录 */}
+          <div className="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+            <div className="flex items-center gap-3">
+              <History className={cn('w-5 h-5 flex-shrink-0', embedSettings.recordHistory ? 'text-emerald-500' : 'text-slate-400')} />
+              <div>
+                <div className="font-medium text-slate-800 dark:text-white">{t('settings.embed.recordHistory')}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">{t('settings.embed.recordHistoryDesc')}</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggleEmbedSetting('recordHistory')}
+              className={cn(
+                'relative w-14 h-8 rounded-full transition-colors flex-shrink-0',
+                embedSettings.recordHistory ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600',
+              )}
+            >
+              <span
+                className={cn(
+                  'absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
+                  embedSettings.recordHistory ? 'translate-0' : '-translate-x-5.5',
+                )}
+              />
+            </button>
+          </div>
+
+          {/* embed 模式下是否开启缓存下载 */}
+          <div className="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Database className={cn('w-5 h-5 flex-shrink-0', embedSettings.enableCache ? 'text-emerald-500' : 'text-slate-400')} />
+              <div>
+                <div className="font-medium text-slate-800 dark:text-white">{t('settings.embed.enableCache')}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">{t('settings.embed.enableCacheDesc')}</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggleEmbedSetting('enableCache')}
+              className={cn(
+                'relative w-14 h-8 rounded-full transition-colors flex-shrink-0',
+                embedSettings.enableCache ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600',
+              )}
+            >
+              <span
+                className={cn(
+                  'absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
+                  embedSettings.enableCache ? 'translate-0' : '-translate-x-5.5',
+                )}
+              />
+            </button>
           </div>
         </div>
       </div>

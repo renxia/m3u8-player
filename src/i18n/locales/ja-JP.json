@@ -203,6 +203,7 @@
     "themeSystem": "システム"
   },
   "player": {
+    "embedNoUrl": "再生URLがありません",
     "placeholderPrompt": "M3U8 アドレスを入力して再生を開始",
     "playDemo": "サンプル動画を再生",
     "muted": "ミュート",
@@ -225,6 +226,14 @@
       "description": "M3U8オンラインプレーヤーのアプリ設定、キャッシュ構成、プレーヤー設定を管理して、使用体験を最適化。",
       "keywords": "M3U8プレーヤー設定, キャッシュ構成, プレーヤー構成, 設定",
       "title": "設定 - 無料M3U8ビデオプレーヤー"
+    },
+    "embed": {
+      "title": "埋め込みモード（iframe）",
+      "description": "プレーヤーが iframe で他のサイトに埋め込まれる場合（mode=embed）の動作設定",
+      "recordHistory": "履歴を自動記録",
+      "recordHistoryDesc": "埋め込みモードで再生した動画を履歴に自動保存します",
+      "enableCache": "キャッシュダウンロードを有効化",
+      "enableCacheDesc": "埋め込みモードで再生済みの動画セグメントをキャッシュし、再読み込みを高速化します"
     },
     "title": "設定"
   },

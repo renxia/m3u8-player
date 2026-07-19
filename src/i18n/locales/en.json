@@ -203,6 +203,7 @@
     "themeSystem": "System"
   },
   "player": {
+    "embedNoUrl": "Missing playback URL",
     "placeholderPrompt": "Enter M3U8 URL to start playing",
     "playDemo": "Play demo video",
     "muted": "Muted",
@@ -225,6 +226,14 @@
       "description": "Manage M3U8 Online Player app settings, cache configuration, and player preferences to optimize your experience.",
       "keywords": "M3U8 player settings, cache configuration, player configuration, preferences",
       "title": "Settings - Free M3U8 Video Player"
+    },
+    "embed": {
+      "title": "Embed Mode (iframe)",
+      "description": "Behavior settings when the player is embedded in other websites via iframe (mode=embed)",
+      "recordHistory": "Auto-record history",
+      "recordHistoryDesc": "Automatically save played videos to history in embed mode",
+      "enableCache": "Enable cache download",
+      "enableCacheDesc": "Cache played video segments in embed mode for faster loading on replay"
     },
     "title": "Settings"
   },

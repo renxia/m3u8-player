@@ -51,6 +51,11 @@ export function getUrlParams(): Record<string, string> {
   return params
 }
 
+// 校验是否为合法的 http(s) 链接
+export function isValidHttpUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url)
+}
+
 // 复制到剪贴板
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {

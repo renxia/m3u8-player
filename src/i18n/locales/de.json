@@ -203,6 +203,7 @@
     "themeSystem": "System"
   },
   "player": {
+    "embedNoUrl": "Wiedergabe-URL fehlt",
     "placeholderPrompt": "M3U8-URL eingeben zum Abspielen",
     "playDemo": "Demo-Video abspielen",
     "muted": "Stummgeschaltet",
@@ -225,6 +226,14 @@
       "description": "Verwalten Sie die App-Einstellungen des M3U8-Online-Players, die Cache-Konfiguration und die Player-Einstellungen, um Ihre Erfahrung zu optimieren.",
       "keywords": "M3U8-Player-Einstellungen, Cache-Konfiguration, Player-Konfiguration, Einstellungen",
       "title": "Einstellungen - Kostenloser M3U8-Videoplayer"
+    },
+    "embed": {
+      "title": "Einbettungsmodus (iframe)",
+      "description": "Verhaltenseinstellungen, wenn der Player per iframe in andere Websites eingebettet ist (mode=embed)",
+      "recordHistory": "Verlauf automatisch aufzeichnen",
+      "recordHistoryDesc": "Abgespielte Videos im Einbettungsmodus automatisch im Verlauf speichern",
+      "enableCache": "Cache-Download aktivieren",
+      "enableCacheDesc": "Abgespielte Videosegmente im Einbettungsmodus zwischenspeichern für schnelleres Laden"
     },
     "title": "Einstellungen"
   },

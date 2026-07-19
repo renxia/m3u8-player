@@ -203,6 +203,7 @@
     "themeSystem": "Système"
   },
   "player": {
+    "embedNoUrl": "URL de lecture manquante",
     "placeholderPrompt": "Entrez l'URL M3U8 pour commencer la lecture",
     "playDemo": "Lire la vidéo de démonstration",
     "muted": "Sourdine",
@@ -225,6 +226,14 @@
       "description": "Gérez les paramètres de l'application du lecteur M3U8 en ligne, la configuration du cache et les préférences du lecteur pour optimiser votre expérience.",
       "keywords": "paramètres du lecteur M3U8, configuration du cache, configuration du lecteur, préférences",
       "title": "Paramètres - Lecteur vidéo M3U8 gratuit"
+    },
+    "embed": {
+      "title": "Mode intégré (iframe)",
+      "description": "Paramètres de comportement lorsque le lecteur est intégré à d'autres sites via iframe (mode=embed)",
+      "recordHistory": "Enregistrer automatiquement l'historique",
+      "recordHistoryDesc": "Enregistrer automatiquement les vidéos lues dans l'historique en mode intégré",
+      "enableCache": "Activer le téléchargement du cache",
+      "enableCacheDesc": "Mettre en cache les segments vidéo lus en mode intégré pour un chargement plus rapide"
     },
     "title": "Paramètres"
   },

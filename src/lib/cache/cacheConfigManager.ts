@@ -3,6 +3,7 @@
  * 负责全局缓存配置的统一管理，独立于具体的缓存实现
  */
 
+import { isCacheAllowed } from '@/lib/embed'
 import { logger } from '@/utils/logger'
 
 /** 缓存类型 */
@@ -235,9 +236,11 @@ class CacheConfigManager {
 
   /**
    * 检查缓存是否启用
+   * embed 模式下还需结合嵌入设置中的缓存开关（可在设置页配置）
    */
   isEnabled(): boolean {
-    return this.config.enabled
+    if (!this.config.enabled) return false
+    return isCacheAllowed()
   }
 
   /**

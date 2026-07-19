@@ -8,7 +8,7 @@ const EMBED_BASE = 'https://m3u8-player.lzw.me'
 export default function HlsDescription() {
   const { t } = useTranslation()
   const langPrefix = getLangPrefix()
-  const embedUrl = `${EMBED_BASE}${langPrefix}/?showHeader=0&url=https://****.com/****/index.m3u8`
+  const embedUrl = `${EMBED_BASE}${langPrefix}/?mode=embed&url=https://****.com/****/index.m3u8`
 
   return (
     <CollapsibleSection

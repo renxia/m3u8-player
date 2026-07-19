@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useCache } from '@/hooks/useCache'
+import { useViewMode } from '@/hooks/useViewMode'
 import { cacheConfigManager, getCurrentCacheAdapter, idbCacheManager, preloader } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,7 @@ interface CacheIndicatorProps {
 
 export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicatorProps) {
   const { t } = useTranslation()
+  const isEmbed = useViewMode() === 'embed'
   const [expanded, setExpanded] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const {
@@ -295,6 +297,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
               </button>
               <a
                 href="/settings"
+                {...(isEmbed ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-700/50 text-slate-300 hover:bg-slate-700 rounded-lg text-xs sm:text-sm transition-colors"
               >
                 <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

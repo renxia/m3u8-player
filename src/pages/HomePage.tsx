@@ -1,3 +1,4 @@
+import { Link2Off } from 'lucide-react'
 import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -8,11 +9,27 @@ import InputForm from '@/components/Player/InputForm'
 import PlayerControls from '@/components/Player/PlayerControls'
 import { PLAYER_SHORTCUTS, useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useFavorites, useHistory, usePlaylist } from '@/hooks/useStorage'
+import { useViewMode } from '@/hooks/useViewMode'
 import { PLAYBACK_RATES } from '@/lib/constants'
-import { getUrlParams } from '@/lib/utils'
+import { shouldRecordHistory } from '@/lib/embed'
+import { getUrlParams, isValidHttpUrl } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
 
 const DEMO_URL = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
+
+/** embed 模式下 url 参数缺失或非法时的提示卡片 */
+function EmbedUrlTip({ message }: { message: string }) {
+  return (
+    <div className="bg-white/80 dark:bg-slate-800/50 rounded-2xl shadow-xl backdrop-blur-sm overflow-hidden">
+      <div className="flex flex-col items-center justify-center text-center px-4 py-10 md:py-16 text-slate-600 dark:text-slate-400">
+        <div className="p-3 bg-amber-500/10 rounded-xl mb-3">
+          <Link2Off className="w-8 h-8 text-amber-500" />
+        </div>
+        <p className="text-base md:text-lg font-medium text-slate-800 dark:text-white">{message}</p>
+      </div>
+    </div>
+  )
+}
 
 // 格式化时间显示
 const formatTime = (seconds: number): string => {
@@ -34,6 +51,8 @@ const getNextPlaybackRate = (current: number, increase: boolean): number => {
 
 export default function HomePage() {
   const { t } = useTranslation()
+  const mode = useViewMode()
+  const isEmbed = mode === 'embed'
   const playerRef = useRef<PlayerRef>(null)
   const [currentIndex, setCurrentIndex] = useState(-1)
   const [currentPlayingUrl, setCurrentPlayingUrl] = useState('')
@@ -53,7 +72,10 @@ export default function HomePage() {
 
         // 使用 startTransition 延迟非紧急的状态更新，避免阻塞播放器初始化
         startTransition(() => {
-          addHistory(url, name)
+          // embed 模式下按设置决定是否记录历史
+          if (shouldRecordHistory(mode)) {
+            addHistory(url, name)
+          }
 
           // 更新当前播放索引
           const idx = playlist.findIndex((item) => item.url === url)
@@ -76,7 +98,7 @@ export default function HomePage() {
         toast.info(t('common.startPlaying'))
       }
     },
-    [addHistory, playlist, t],
+    [addHistory, playlist, t, mode],
   )
 
   // 播放结束回调
@@ -117,6 +139,9 @@ export default function HomePage() {
     const title = params.name ? decodeURIComponent(params.name) : params.title ? decodeURIComponent(params.title) : ''
 
     if (uri) {
+      // embed 模式下 url 必须以 http(s) 开头，非法时不播放（界面会显示对应提示）
+      if (isEmbed && !isValidHttpUrl(uri)) return
+
       // 检查 HTTP 协议
       if (uri.startsWith('http:') && location.protocol === 'https:') {
         if (!uri.startsWith('http://localhost')) {
@@ -127,11 +152,11 @@ export default function HomePage() {
       if (params.autoplay !== '0') {
         handlePlay(uri, undefined, 'artplayer', title)
       }
-    } else if (playlist.length && params.autoplay) {
+    } else if (!isEmbed && playlist.length && params.autoplay) {
       handlePlay(DEMO_URL)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handlePlay, playlist.length])
+  }, [handlePlay, playlist.length, isEmbed])
 
   // 键盘快捷键处理
   const handleShortcut = useCallback(
@@ -205,6 +230,29 @@ export default function HomePage() {
       callback: (e) => handleShortcut(shortcut.name, e),
     })),
   })
+
+  // embed 模式：仅显示播放器，隐藏输入表单、控制面板、历史记录等周边模块
+  if (isEmbed) {
+    // url 参数必传，且必须以 http(s) 开头，否则显示对应提示
+    const embedUrlParam = getUrlParams().url
+    const embedUrl = embedUrlParam ? decodeURIComponent(embedUrlParam) : ''
+
+    if (!embedUrl || !isValidHttpUrl(embedUrl)) {
+      return <EmbedUrlTip message={t('player.embedNoUrl')} />
+    }
+
+    return (
+      <div className="space-y-2">
+        <Player
+          ref={playerRef}
+          playlist={playlist}
+          currentIndex={currentIndex}
+          onPlaylistItemClick={handlePlaylistItemClick}
+          onEnded={handleEnded}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3 md:space-y-6">

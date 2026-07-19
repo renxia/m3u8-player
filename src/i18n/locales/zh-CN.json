@@ -199,6 +199,7 @@
     "themeSystem": "跟随系统"
   },
   "player": {
+    "embedNoUrl": "缺少 url 播放地址",
     "placeholderPrompt": "输入 M3U8 地址开始播放",
     "playDemo": "播放示例视频",
     "muted": "已静音",
@@ -221,6 +222,14 @@
       "description": "管理M3U8在线播放器的应用设置、缓存配置和播放器偏好设置，优化您的使用体验。",
       "keywords": "M3U8播放器设置, 缓存配置, 播放器配置, 偏好设置",
       "title": "设置 - M3U8视频在线播放器"
+    },
+    "embed": {
+      "title": "嵌入模式（iframe）",
+      "description": "当播放器以 iframe 形式嵌入其他网站时（mode=embed）的行为设置",
+      "recordHistory": "自动记录历史记录",
+      "recordHistoryDesc": "嵌入模式下播放视频时自动保存到历史记录",
+      "enableCache": "开启缓存下载",
+      "enableCacheDesc": "嵌入模式下缓存已播放的视频片段，提升重复播放时的加载速度"
     },
     "title": "设置"
   },

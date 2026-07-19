@@ -203,6 +203,7 @@
     "themeSystem": "Sistema"
   },
   "player": {
+    "embedNoUrl": "Falta la URL de reproducción",
     "placeholderPrompt": "Introduce la URL M3U8 para empezar a reproducir",
     "playDemo": "Reproducir video de demostración",
     "muted": "Silenciado",
@@ -225,6 +226,14 @@
       "description": "Administre la configuración de la aplicación del Reproductor M3U8 en línea, la configuración de caché y las preferencias del reproductor para optimizar su experiencia.",
       "keywords": "configuración del reproductor M3U8, configuración de caché, configuración del reproductor, preferencias",
       "title": "Configuración - Reproductor de video M3U8 gratuito"
+    },
+    "embed": {
+      "title": "Modo incrustado (iframe)",
+      "description": "Configuración de comportamiento cuando el reproductor está incrustado en otros sitios web mediante iframe (mode=embed)",
+      "recordHistory": "Registrar historial automáticamente",
+      "recordHistoryDesc": "Guardar automáticamente los videos reproducidos en el historial en modo incrustado",
+      "enableCache": "Habilitar descarga de caché",
+      "enableCacheDesc": "Almacenar en caché los segmentos de video reproducidos en modo incrustado para una carga más rápida"
     },
     "title": "Configuración"
   },
