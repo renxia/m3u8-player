@@ -3,7 +3,7 @@
  * 显示缓存开关、缓存进度、命中率等信息
  */
 
-import { Database, Download, Pause, Play, RefreshCw, Settings, Trash2, X, Zap } from 'lucide-react'
+import { AlertTriangle, Database, Download, Pause, Play, RefreshCw, Settings, Trash2, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -39,6 +39,14 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
     resumePreload,
     formatSize,
   } = useCache()
+
+  // 运行时缓存支持情况：
+  // - effectiveCacheType：考虑 PWA 自动回退后的实际生效类型
+  // - isCacheSupported：生效类型的适配器是否真的可用（极旧浏览器两者皆无时为 false）
+  // PWA 自动回退为 indexeddb 时无需提示（缓存仍可用，对用户透明）
+  const effectiveCacheType = cacheConfigManager.getCacheType()
+  const isCacheSupported =
+    effectiveCacheType === 'pwa' ? cacheConfigManager.isPWACacheSupported() : typeof indexedDB !== 'undefined'
 
   // 当前视频的缓存信息
   const [currentVideoStats, setCurrentVideoStats] = useState<{ count: number; size: number }>({ count: 0, size: 0 })
@@ -86,9 +94,8 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
     // 监听 IndexedDB 缓存变化（仅当使用 IndexedDB 模式时有效）
     const unsubscribeIdb = idbCacheManager.addEventListener(async (event) => {
       if (event === 'add' || event === 'remove' || event === 'clear') {
-        // 检查当前是否使用 IndexedDB 模式
-        const config = cacheConfigManager.getConfig()
-        if (config.cacheType === 'indexeddb') {
+        // 检查当前是否使用 IndexedDB 模式（PWA 不支持时自动回退为 indexeddb）
+        if (cacheConfigManager.getCacheType() === 'indexeddb') {
           await updateCurrentVideoStats()
         }
       }
@@ -120,121 +127,134 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
         onClick={() => setExpanded(!expanded)}
         className={cn(
           'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
-          enabled ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-slate-500/20 text-slate-400 hover:bg-slate-500/30',
+          !isCacheSupported
+            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+            : enabled
+              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+              : 'bg-slate-500/20 text-slate-400 hover:bg-slate-500/30',
         )}
         title={t('cache.title')}
       >
-        {enabled ? <Zap className="w-3.5 h-3.5" /> : <Database className="w-3.5 h-3.5" />}
-        <span className="hidden sm:inline">{currentVideoStats.count}</span>
-        {enabled && hitRatePercent > 0 && <span className="text-emerald-300">{hitRatePercent}%</span>}
+        {!isCacheSupported ? (
+          <AlertTriangle className="w-3.5 h-3.5" />
+        ) : enabled ? (
+          <Zap className="w-3.5 h-3.5" />
+        ) : (
+          <Database className="w-3.5 h-3.5" />
+        )}
+        {isCacheSupported && <span className="hidden sm:inline">{currentVideoStats.count}</span>}
+        {isCacheSupported && enabled && hitRatePercent > 0 && <span className="text-emerald-300">{hitRatePercent}%</span>}
       </button>
 
       {/* 展开面板 */}
       {expanded && (
-        <div className="absolute right-0 top-full mt-2 w-64 sm:w-72 bg-slate-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-slate-700/50 z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1.5 w-60 bg-slate-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-slate-700/50 z-[100] overflow-hidden">
           {/* 头部 */}
-          <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 border-b border-slate-700/50">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
-              <span className="text-sm sm:text-base font-medium text-white">{t('cache.title')}</span>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700/50">
+            <div className="flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-sm font-medium text-white">{t('cache.title')}</span>
             </div>
             <button type="button" onClick={() => setExpanded(false)} className="p-1 hover:bg-slate-700/50 rounded-lg transition-colors">
-              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
+              <X className="w-3.5 h-3.5 text-slate-400" />
             </button>
           </div>
 
           {/* 内容 */}
-          <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+          <div className="p-2.5 space-y-2">
+            {/* 缓存不支持提示（紧凑单行） */}
+            {!isCacheSupported && (
+              <div className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span className="text-xs text-amber-300/90">{t('cache.notSupported')}</span>
+              </div>
+            )}
+
             {/* 启用开关 */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs sm:text-sm text-slate-300">{t('cache.enable')}</span>
+            <div className={cn('flex items-center justify-between', !isCacheSupported && 'opacity-50')}>
+              <span className="text-xs text-slate-300">{t('cache.enable')}</span>
               <button
                 type="button"
                 onClick={toggleEnabled}
+                disabled={!isCacheSupported}
                 className={cn(
-                  'relative w-10 h-5 sm:w-11 sm:h-6 rounded-full transition-colors',
-                  enabled ? 'bg-emerald-500' : 'bg-slate-600',
+                  'relative w-9 h-5 rounded-full transition-colors',
+                  !isCacheSupported ? 'bg-slate-700 cursor-not-allowed' : enabled ? 'bg-emerald-500' : 'bg-slate-600',
                 )}
               >
                 <span
                   className={cn(
-                    'absolute top-0.5 sm:top-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full transition-transform',
-                    enabled ? 'translate-x-0.5 sm:translate-x-1' : '-translate-x-4 sm:-translate-x-5',
+                    'absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform',
+                    enabled ? 'translate-x-1' : '-translate-x-4',
                   )}
                 />
               </button>
             </div>
 
-            {/* 统计信息 - 当前视频 */}
-            <div className="space-y-1.5 sm:space-y-2">
-              <div className="text-xs text-slate-400 px-1">{t('cache.currentVideo')}</div>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <div className="bg-slate-700/30 rounded-lg p-2 sm:p-3">
-                  <div className="text-xs text-slate-400 mb-0.5 sm:mb-1">{t('cache.count')}</div>
-                  <div className="text-base sm:text-lg font-semibold text-white">{currentVideoStats.count.toLocaleString()}</div>
+            {/* 统计信息 - 紧凑单行：数量 | 大小 | 命中率 */}
+            {isCacheSupported && (
+              <div className="flex items-center justify-between gap-1 px-2 py-1.5 bg-slate-700/30 rounded-lg">
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] text-slate-400 leading-none">{t('cache.count')}</span>
+                  <span className="text-sm font-semibold text-white leading-tight">{currentVideoStats.count.toLocaleString()}</span>
                 </div>
-                <div className="bg-slate-700/30 rounded-lg p-2 sm:p-3">
-                  <div className="text-xs text-slate-400 mb-0.5 sm:mb-1">{t('cache.size')}</div>
-                  <div className="text-base sm:text-lg font-semibold text-white">{formatSize(currentVideoStats.size)}</div>
+                <div className="w-px h-7 bg-slate-600/50" />
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] text-slate-400 leading-none">{t('cache.size')}</span>
+                  <span className="text-sm font-semibold text-white leading-tight">{formatSize(currentVideoStats.size)}</span>
+                </div>
+                <div className="w-px h-7 bg-slate-600/50" />
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] text-slate-400 leading-none">{t('cache.hitRate')}</span>
+                  <span className="text-sm font-semibold text-emerald-400 leading-tight">{hitRatePercent}%</span>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* 命中率 */}
-            <div className="bg-slate-700/30 rounded-lg p-2 sm:p-3">
-              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                <span className="text-xs text-slate-400">{t('cache.hitRate')}</span>
-                <span className="text-xs sm:text-sm font-medium text-emerald-400">{hitRatePercent}%</span>
-              </div>
-              <div className="w-full h-1 sm:h-1.5 bg-slate-600 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${hitRatePercent}%` }} />
-              </div>
-            </div>
-
-            {/* 预加载控制 */}
-            {enabled && (
-              <div className="space-y-1.5 sm:space-y-2">
+            {/* 预加载控制（缓存不支持时不展示） */}
+            {isCacheSupported && enabled && (
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm text-slate-300">{t('cache.preload')}</span>
-                  <div className="flex items-center gap-0.5 sm:gap-1">
+                  <span className="text-xs text-slate-300">{t('cache.preload')}</span>
+                  <div className="flex items-center gap-0.5">
                     {effectiveStatus === 'idle' && m3u8Url && (
                       <button
                         type="button"
                         onClick={() => startPreload(m3u8Url)}
-                        className="p-1 sm:p-1.5 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 rounded-lg transition-colors"
+                        className="p-1 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 rounded-lg transition-colors"
                         title={t('cache.startPreload')}
                       >
-                        <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <Download className="w-3.5 h-3.5" />
                       </button>
                     )}
                     {effectiveStatus === 'loading' && (
                       <button
                         type="button"
                         onClick={pausePreload}
-                        className="p-1 sm:p-1.5 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition-colors"
+                        className="p-1 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition-colors"
                         title={t('cache.pausePreload')}
                       >
-                        <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <Pause className="w-3.5 h-3.5" />
                       </button>
                     )}
                     {effectiveStatus === 'paused' && (
                       <button
                         type="button"
                         onClick={resumePreload}
-                        className="p-1 sm:p-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors"
+                        className="p-1 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors"
                         title={t('cache.resumePreload')}
                       >
-                        <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <Play className="w-3.5 h-3.5" />
                       </button>
                     )}
                     {(effectiveStatus === 'loading' || effectiveStatus === 'paused') && (
                       <button
                         type="button"
                         onClick={stopPreload}
-                        className="p-1 sm:p-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg transition-colors"
+                        className="p-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg transition-colors"
                         title={t('cache.stopPreload')}
                       >
-                        <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -243,14 +263,14 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                 {/* 预加载进度 */}
                 {(effectiveStatus === 'loading' || effectiveStatus === 'paused' || effectiveStatus === 'completed') &&
                   preloadProgress.total > 0 && (
-                    <div className="space-y-0.5 sm:space-y-1">
+                    <div className="space-y-0.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-400">
                           {preloadProgress.loaded} / {preloadProgress.total}
                         </span>
                         <span className="text-indigo-400">{preloadProgress.percent}%</span>
                       </div>
-                      <div className="w-full h-1 sm:h-1.5 bg-slate-600 rounded-full overflow-hidden">
+                      <div className="w-full h-1 bg-slate-600 rounded-full overflow-hidden">
                         <div
                           className={cn(
                             'h-full rounded-full transition-all',
@@ -267,30 +287,35 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                   )}
 
                 {effectiveStatus === 'completed' && preloadProgress.total > 0 && (
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-emerald-400">
-                    <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <div className="flex items-center gap-1 text-xs text-emerald-400">
+                    <Zap className="w-3 h-3" />
                     <span>{t('cache.preloadComplete')}</span>
                   </div>
                 )}
               </div>
             )}
 
-            {/* 操作按钮 */}
-            <div className="flex items-center gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-slate-700/50">
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(true)}
-                className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs sm:text-sm transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>{t('cache.clear')}</span>
-              </button>
+            {/* 操作按钮（缓存不支持时隐藏清除按钮，仅保留设置入口） */}
+            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-700/50">
+              {isCacheSupported && (
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(true)}
+                  className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{t('cache.clear')}</span>
+                </button>
+              )}
               <a
                 href="/settings"
                 {...(isEmbed ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-700/50 text-slate-300 hover:bg-slate-700 rounded-lg text-xs sm:text-sm transition-colors"
+                className={cn(
+                  'flex items-center justify-center gap-1 px-2 py-1.5 bg-slate-700/50 text-slate-300 hover:bg-slate-700 rounded-lg text-xs transition-colors',
+                  !isCacheSupported && 'flex-1',
+                )}
               >
-                <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Settings className="w-3.5 h-3.5" />
                 <span>{t('cache.settings')}</span>
               </a>
             </div>
@@ -300,7 +325,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
 
       {/* 清除确认对话框 */}
       {showClearConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">

@@ -68,6 +68,7 @@
     "preload": "Vorladen",
     "preloadComplete": "Vorladen abgeschlossen",
     "preloadCount": "Automatisch vorladen Segmente",
+    "pwaNotSupportedFallback": "PWA Cache wird in dieser Umgebung nicht unterstützt (nicht-HTTPS-Kontext oder veralteter Browser). Automatisch auf IndexedDB-Modus umgeschaltet.",
     "resetConfig": "Auf Standard zurücksetzen",
     "resumePreload": "Vorladen fortsetzen",
     "saveConfig": "Konfiguration speichern",

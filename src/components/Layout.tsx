@@ -15,7 +15,7 @@ export default function Layout() {
   if (isEmbed) {
     return (
       <div className="min-h-screen flex flex-col layout-bg transition-colors duration-300">
-        <main className="flex-1 w-full p-1 sm:p-2">
+        <main className="flex-1 w-full p-0">
           <Outlet />
         </main>
       </div>

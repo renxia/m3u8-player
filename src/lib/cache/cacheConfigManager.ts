@@ -5,6 +5,7 @@
 
 import { isCacheAllowed } from '@/lib/embed'
 import { logger } from '@/utils/logger'
+import { PWACacheManager } from './pwaCache'
 
 /** 缓存类型 */
 export type CacheType = 'indexeddb' | 'pwa'
@@ -65,6 +66,8 @@ export type ConfigEventListener = (event: ConfigEventType, config: CacheConfig) 
 class CacheConfigManager {
   private config: CacheConfig = { ...DEFAULT_CONFIG }
   private listeners: Set<ConfigEventListener> = new Set()
+  /** PWA 回退警告是否已打印过（避免在 HLS 分片加载等热路径中刷屏） */
+  private pwaFallbackWarned = false
 
   constructor() {
     this.loadConfig()
@@ -244,9 +247,30 @@ class CacheConfigManager {
   }
 
   /**
-   * 获取当前缓存类型
+   * 检测 PWA Cache API 是否可用
+   * 同时受浏览器支持情况和安全上下文（HTTPS）影响
+   */
+  isPWACacheSupported(): boolean {
+    return PWACacheManager.isSupported()
+  }
+
+  /**
+   * 获取当前实际生效的缓存类型
+   * 当配置为 pwa 但运行环境不支持（如非 HTTPS 上下文、低版本浏览器）时，自动回退到 indexeddb
+   * 注意：不会修改持久化保存的用户偏好，仅在运行时返回有效类型
+   *       保留 pwa 偏好可使后续在 HTTPS 环境下自动恢复 PWA 模式
    */
   getCacheType(): CacheType {
+    if (this.config.cacheType === 'pwa' && !this.isPWACacheSupported()) {
+      // 仅在首次进入回退分支时打印一次警告，避免 HLS 分片加载等热路径刷屏
+      if (!this.pwaFallbackWarned) {
+        this.pwaFallbackWarned = true
+        logger.warn('[CacheConfigManager] PWA cache not supported (non-secure context or unsupported browser), falling back to indexeddb at runtime')
+      }
+      return 'indexeddb'
+    }
+    // 回退条件不再满足时重置标记，便于后续再次进入回退时重新警告
+    this.pwaFallbackWarned = false
     return this.config.cacheType
   }
 

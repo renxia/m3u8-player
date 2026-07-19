@@ -90,10 +90,12 @@ export default function HomePage() {
           window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`)
         }
 
-        // 使用 requestAnimationFrame 延迟滚动，确保播放器已渲染
-        requestAnimationFrame(() => {
-          document.getElementById('player')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        })
+        // 使用 requestAnimationFrame 延迟滚动，确保播放器已渲染（embed 模式下无需滚动）
+        if (!isEmbed) {
+          requestAnimationFrame(() => {
+            document.getElementById('player')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          })
+        }
       } else if (url.startsWith('blob:')) {
         toast.info(t('common.startPlaying'))
       }

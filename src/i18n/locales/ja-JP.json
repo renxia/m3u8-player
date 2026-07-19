@@ -68,6 +68,7 @@
     "preload": "プリロード",
     "preloadComplete": "プリロード完了",
     "preloadCount": "自動プリロードセグメント数",
+    "pwaNotSupportedFallback": "現在の環境では PWA Cache がサポートされていません（非 HTTPS コンテキストまたはブラウザが古い）。IndexedDB モードに自動切り替えされました。",
     "resetConfig": "デフォルトにリセット",
     "resumePreload": "プリロード再開",
     "saveConfig": "設定を保存",

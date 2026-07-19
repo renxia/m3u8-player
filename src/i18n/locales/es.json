@@ -68,6 +68,7 @@
     "preload": "Precarga",
     "preloadComplete": "Precarga completa",
     "preloadCount": "Segmentos de precarga automática",
+    "pwaNotSupportedFallback": "PWA Cache no es compatible en este entorno (contexto no HTTPS o navegador desactualizado). Se cambió automáticamente al modo IndexedDB.",
     "resetConfig": "Restablecer a predeterminado",
     "resumePreload": "Reanudar precarga",
     "saveConfig": "Guardar configuración",

@@ -68,6 +68,7 @@
     "preload": "Preload",
     "preloadComplete": "Preload Complete",
     "preloadCount": "Auto Preload Segments",
+    "pwaNotSupportedFallback": "PWA Cache is not supported in this environment (non-HTTPS context or outdated browser). Automatically switched to IndexedDB mode.",
     "resetConfig": "Reset to Default",
     "resumePreload": "Resume Preload",
     "saveConfig": "Save Configuration",

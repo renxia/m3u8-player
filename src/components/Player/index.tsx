@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef, 
 import { useTranslation } from 'react-i18next'
 import { loadArtPlayerDependencies, loadDPlayerDependencies } from '@/hooks/player/playerUtils'
 import { usePlayer } from '@/hooks/usePlayer'
+import { useViewMode } from '@/hooks/useViewMode'
 import { type CacheConfig, cacheConfigManager, fetchAndParseM3U8 } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
@@ -44,6 +45,7 @@ export interface PlayerRef {
 
 const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], currentIndex = -1, onPlaylistItemClick, onEnded }, ref) => {
   const { t } = useTranslation()
+  const isEmbed = useViewMode() === 'embed'
   const containerRef = useRef<HTMLDivElement>(null)
   const [showPlaceholder, setShowPlaceholder] = useState(true)
   const [isDependenciesLoaded, setIsDependenciesLoaded] = useState(false)
@@ -384,7 +386,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
   }))
 
   return (
-    <div className={cn('bg-white/80 dark:bg-slate-800/50 rounded-2xl shadow-xl backdrop-blur-sm overflow-hidden', className)}>
+    <div className={cn('bg-white/80 dark:bg-slate-800/50 shadow-xl backdrop-blur-sm overflow-hidden', !isEmbed && 'rounded-2xl', className)}>
       {/* 播放器容器 */}
       <div className="relative min-h-[200px]">
         {/* 占位符 - 绝对定位覆盖 */}
@@ -402,7 +404,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
         )}
 
         {/* 缓存状态指示器 */}
-        {!showPlaceholder && <CacheIndicator m3u8Url={currentM3U8Url} className="absolute top-2 right-2 z-20" />}
+        {!showPlaceholder && <CacheIndicator m3u8Url={currentM3U8Url} className="absolute top-2 right-2 z-[9999]" />}
 
         {/* 播放器实际容器 - 始终存在且可见 */}
         <div ref={containerRef} id="player" className="w-full min-h-[300px] md:min-h-[450px]" />

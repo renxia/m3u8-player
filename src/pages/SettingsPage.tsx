@@ -44,7 +44,9 @@ interface CacheSupport {
 function checkCacheSupport(): CacheSupport {
   return {
     indexeddb: typeof indexedDB !== 'undefined' && indexedDB !== null,
-    pwa: typeof caches !== 'undefined' && 'open' in caches,
+    // PWA Cache API 需同时满足：API 可用 + 安全上下文（HTTPS/localhost）
+    // 非 HTTPS 环境（如 HTTP 父页面嵌入的 iframe）下 Cache API 不可用
+    pwa: typeof caches !== 'undefined' && 'open' in caches && window.isSecureContext,
   }
 }
 
@@ -115,9 +117,11 @@ export default function SettingsPage() {
   const [localMaxCount, setLocalMaxCount] = useState(config.maxCount)
   const [localPreloadCount, setLocalPreloadCount] = useState(config.preloadCount)
   const [localConcurrency, setLocalConcurrency] = useState(config.preloadConcurrency)
-  const [localCacheType, setLocalCacheType] = useState<CacheType>(config.cacheType || 'indexeddb')
   // 惰性初始化，避免首帧闪烁「不支持缓存」提示
   const [cacheSupport] = useState<CacheSupport>(() => checkCacheSupport())
+  // 计算当前生效的缓存类型：PWA 不支持时自动回退 indexeddb（与运行时 cacheConfigManager.getCacheType 行为一致）
+  const effectiveCacheType: CacheType = cacheSupport.pwa ? config.cacheType || 'indexeddb' : 'indexeddb'
+  const [localCacheType, setLocalCacheType] = useState<CacheType>(effectiveCacheType)
   const [storageEstimate, setStorageEstimate] = useState<{ usage: number; quota: number } | null>(null)
   const [embedSettings, setEmbedSettingsState] = useState<EmbedSettings>(() => getEmbedSettings())
 
@@ -126,7 +130,7 @@ export default function SettingsPage() {
     localMaxCount !== config.maxCount ||
     localPreloadCount !== config.preloadCount ||
     localConcurrency !== config.preloadConcurrency ||
-    localCacheType !== (config.cacheType || 'indexeddb')
+    localCacheType !== effectiveCacheType
 
   // 全局配置变化时同步本地编辑值（仅在无未保存修改时，避免覆盖用户输入）
   useEffect(() => {
@@ -134,9 +138,9 @@ export default function SettingsPage() {
       setLocalMaxCount(config.maxCount)
       setLocalPreloadCount(config.preloadCount)
       setLocalConcurrency(config.preloadConcurrency)
-      setLocalCacheType(config.cacheType || 'indexeddb')
+      setLocalCacheType(cacheSupport.pwa ? config.cacheType || 'indexeddb' : 'indexeddb')
     }
-  }, [config, isDirty])
+  }, [config, isDirty, cacheSupport.pwa])
 
   // 订阅嵌入设置变化（如其他页面修改）
   useEffect(() => subscribeEmbedSettings(setEmbedSettingsState), [])
@@ -463,6 +467,14 @@ export default function SettingsPage() {
                         </button>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* PWA Cache 不支持提示：当前环境（非安全上下文/低版本浏览器）已自动切换为 IndexedDB */}
+                {!cacheSupport.pwa && config.cacheType === 'pwa' && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700 dark:text-amber-300/80">{t('cache.pwaNotSupportedFallback')}</p>
                   </div>
                 )}
 

@@ -68,6 +68,7 @@
     "preload": "预加载",
     "preloadComplete": "预加载完成",
     "preloadCount": "自动预加载片段数",
+    "pwaNotSupportedFallback": "当前环境不支持 PWA Cache（非 HTTPS 安全上下文或浏览器版本过低），已自动切换为 IndexedDB 模式",
     "resetConfig": "恢复默认",
     "resumePreload": "继续预加载",
     "saveConfig": "保存配置",

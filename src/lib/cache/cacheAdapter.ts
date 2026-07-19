@@ -206,7 +206,8 @@ let cachedCacheType: CacheType | null = null
  */
 export function getCurrentCacheAdapter(): UnifiedCacheAdapter {
   const config = cacheConfigManager.getConfig()
-  const cacheType = config.cacheType
+  // 使用 effective 缓存类型：PWA 不支持时自动回退 indexeddb
+  const cacheType = cacheConfigManager.getCacheType()
 
   // 同步 IndexedDB 缓存管理器的启用状态
   idbCacheManager.setEnabled(config.enabled)

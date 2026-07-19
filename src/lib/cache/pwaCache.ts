@@ -40,9 +40,11 @@ class PWACacheManager {
 
   /**
    * 检查浏览器是否支持 Cache API
+   * 需同时满足：caches API 可用 + 当前为安全上下文（HTTPS/localhost）
+   * 非 HTTPS 环境下（如 HTTP 页面或被 HTTP 父页面嵌入的 iframe）Cache API 不可用
    */
   static isSupported(): boolean {
-    return typeof caches !== 'undefined' && 'open' in caches
+    return typeof caches !== 'undefined' && 'open' in caches && window.isSecureContext
   }
 
   /**
