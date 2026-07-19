@@ -1,9 +1,29 @@
 /**
  * 设置页面
  * 提供完整的缓存管理功能
+ *
+ * 设计要点：
+ * - 配置项统一为「本地暂存 + 保存/重置」编辑模型（含缓存类型），通过 dirty 检测
+ *   禁用无变更保存并提示未保存更改，避免「即时生效/手动保存」混用造成的困惑
+ * - 滑块与数字输入联动，支持精确设置
+ * - 统计区展示浏览器存储配额占用，帮助用户判断缓存空间
  */
 
-import { AlertTriangle, Database, HardDrive, History, Info, MonitorPlay, PieChart, RefreshCw, Settings, Sliders, Trash2, XCircle, Zap } from 'lucide-react'
+import {
+  AlertTriangle,
+  Database,
+  HardDrive,
+  History,
+  Info,
+  MonitorPlay,
+  PieChart,
+  RefreshCw,
+  Settings,
+  Sliders,
+  Trash2,
+  XCircle,
+  Zap,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -28,20 +48,118 @@ function checkCacheSupport(): CacheSupport {
   }
 }
 
+/** 配置滑块（滑块 + 数字输入联动） */
+function ConfigSlider({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  minHint,
+  maxHint,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  onChange: (value: number) => void
+  minHint?: React.ReactNode
+  maxHint?: React.ReactNode
+}) {
+  const handleNumberChange = (raw: string) => {
+    const num = Number(raw)
+    if (Number.isFinite(num)) {
+      onChange(Math.min(max, Math.max(min, Math.round(num))))
+    }
+  }
+
+  return (
+    <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => handleNumberChange(e.target.value)}
+          className="w-24 px-2 py-1 text-sm font-mono text-right text-indigo-500 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:border-indigo-500 transition-colors"
+        />
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-full appearance-none cursor-pointer accent-indigo-500"
+      />
+      <div className="flex justify-between text-xs text-slate-400 mt-1">
+        <span>{minHint ?? min.toLocaleString()}</span>
+        <span>{maxHint ?? max.toLocaleString()}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const { t } = useTranslation()
   const { enabled, config, stats, loading, toggleEnabled, updateConfig, clearCache, refreshStats, formatSize } = useCache()
 
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const [localMaxCount, setLocalMaxCount] = useState(config.maxCount)
   const [localPreloadCount, setLocalPreloadCount] = useState(config.preloadCount)
   const [localConcurrency, setLocalConcurrency] = useState(config.preloadConcurrency)
   const [localCacheType, setLocalCacheType] = useState<CacheType>(config.cacheType || 'indexeddb')
-  const [cacheSupport, setCacheSupport] = useState<CacheSupport>({ indexeddb: false, pwa: false })
+  // 惰性初始化，避免首帧闪烁「不支持缓存」提示
+  const [cacheSupport] = useState<CacheSupport>(() => checkCacheSupport())
+  const [storageEstimate, setStorageEstimate] = useState<{ usage: number; quota: number } | null>(null)
   const [embedSettings, setEmbedSettingsState] = useState<EmbedSettings>(() => getEmbedSettings())
+
+  // 是否有未保存的配置修改
+  const isDirty =
+    localMaxCount !== config.maxCount ||
+    localPreloadCount !== config.preloadCount ||
+    localConcurrency !== config.preloadConcurrency ||
+    localCacheType !== (config.cacheType || 'indexeddb')
+
+  // 全局配置变化时同步本地编辑值（仅在无未保存修改时，避免覆盖用户输入）
+  useEffect(() => {
+    if (!isDirty) {
+      setLocalMaxCount(config.maxCount)
+      setLocalPreloadCount(config.preloadCount)
+      setLocalConcurrency(config.preloadConcurrency)
+      setLocalCacheType(config.cacheType || 'indexeddb')
+    }
+  }, [config, isDirty])
 
   // 订阅嵌入设置变化（如其他页面修改）
   useEffect(() => subscribeEmbedSettings(setEmbedSettingsState), [])
+
+  // 获取浏览器存储配额估算（缓存统计变化时重新估算，间接反映缓存写入）
+  // biome-ignore lint/correctness/useExhaustiveDependencies: stats.totalSize 仅用作缓存写入后重新估算配额的触发时机
+  useEffect(() => {
+    let mounted = true
+    if (!navigator.storage?.estimate) return
+
+    navigator.storage
+      .estimate()
+      .then((est) => {
+        if (mounted && est.quota) {
+          setStorageEstimate({ usage: est.usage ?? 0, quota: est.quota })
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
+  }, [stats.totalSize])
 
   // 切换嵌入模式设置项
   const toggleEmbedSetting = (key: keyof EmbedSettings) => {
@@ -50,19 +168,28 @@ export default function SettingsPage() {
 
   // 处理清除缓存
   const handleClearCache = async () => {
-    await clearCache()
-    setShowClearConfirm(false)
-    toast.success(t('cache.clearSuccess'))
+    if (isClearing) return
+    setIsClearing(true)
+    try {
+      await clearCache()
+      setShowClearConfirm(false)
+      toast.success(t('cache.clearSuccess'))
+    } finally {
+      setIsClearing(false)
+    }
   }
 
-  // 保存配置
+  // 保存配置（含缓存类型，统一本地暂存后保存）
   const handleSaveConfig = () => {
+    if (!isDirty) return
     updateConfig({
       maxCount: localMaxCount,
       preloadCount: localPreloadCount,
       preloadConcurrency: localConcurrency,
       cacheType: localCacheType,
     })
+    // 缓存类型变更后统计口径变化，立即刷新统计
+    refreshStats()
     toast.success(t('cache.configSaved'))
   }
 
@@ -82,25 +209,11 @@ export default function SettingsPage() {
     toast.success(t('cache.configReset'))
   }
 
-  // 切换缓存类型后立即刷新统计
-  const handleCacheTypeChange = (newType: CacheType) => {
-    setLocalCacheType(newType)
-    updateConfig({ cacheType: newType })
-    // 立即刷新统计
-    setTimeout(() => {
-      refreshStats()
-    }, 100)
-  }
-
   const hitRatePercent = Math.round(stats.hitRate * 100)
-
-  // 检测缓存支持情况
-  useEffect(() => {
-    setCacheSupport(checkCacheSupport())
-  }, [])
+  const quotaPercent =
+    storageEstimate && storageEstimate.quota > 0 ? Math.min(100, Math.round((storageEstimate.usage / storageEstimate.quota) * 100)) : 0
 
   // 计算是否显示缓存类型选择
-  const showCacheTypeSelect = (cacheSupport.indexeddb && cacheSupport.pwa) || cacheSupport.indexeddb || cacheSupport.pwa
   const cacheNotSupported = !cacheSupport.indexeddb && !cacheSupport.pwa
   const availableCacheTypes = [
     ...(cacheSupport.pwa ? [{ value: 'pwa' as const, label: 'PWA Cache', desc: '性能更优' }] : []),
@@ -243,6 +356,24 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* 浏览器存储配额占用（支持时显示） */}
+              {storageEstimate && (
+                <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-2 text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">{t('cache.storageQuota')}</span>
+                    <span className="font-mono text-slate-600 dark:text-slate-300">
+                      {formatSize(storageEstimate.usage)} / {formatSize(storageEstimate.quota)} ({quotaPercent}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full transition-all', quotaPercent > 90 ? 'bg-red-500' : 'bg-emerald-500')}
+                      style={{ width: `${quotaPercent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </CollapsibleSection>
           )}
 
@@ -259,6 +390,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <Sliders className="w-4 h-4 text-slate-500" />
                     <span>{t('cache.configuration')}</span>
+                    {isDirty && <span className="w-2 h-2 rounded-full bg-amber-400" title={t('cache.unsavedChanges')} />}
                   </div>
                   <span
                     className="flex-shrink-0 text-slate-400 transition-transform duration-200"
@@ -307,9 +439,10 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              <div className="space-y-4 mt-4">
-                {/* 缓存类型选择 - 仅在有多种选择时显示 */}
-                {showCacheTypeSelect && availableCacheTypes.length > 1 && (
+              {/* 缓存关闭时禁用配置编辑，避免「修改不生效」的误解 */}
+              <div className={cn('space-y-4 mt-4 transition-opacity', !enabled && 'opacity-50 pointer-events-none select-none')}>
+                {/* 缓存类型选择 - 仅在有多种选择时显示（本地暂存，随保存生效） */}
+                {availableCacheTypes.length > 1 && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-3">{t('cache.cacheType')}</label>
                     <div className={cn('grid gap-2', availableCacheTypes.length === 2 ? 'grid-cols-2' : 'grid-cols-1')}>
@@ -317,7 +450,7 @@ export default function SettingsPage() {
                         <button
                           key={option.value}
                           type="button"
-                          onClick={() => handleCacheTypeChange(option.value)}
+                          onClick={() => setLocalCacheType(option.value)}
                           className={cn(
                             'p-3 rounded-xl border-2 transition-all text-left',
                             localCacheType === option.value
@@ -334,85 +467,62 @@ export default function SettingsPage() {
                 )}
 
                 {/* 最大缓存数量 */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('cache.maxCount')}</label>
-                    <span className="text-sm font-mono text-indigo-500">{localMaxCount.toLocaleString()}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="10000"
-                    step="100"
-                    value={localMaxCount}
-                    onChange={(e) => setLocalMaxCount(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-full appearance-none cursor-pointer accent-indigo-500"
-                  />
-                  <div className="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>100</span>
-                    <span>10,000</span>
-                  </div>
-                </div>
+                <ConfigSlider
+                  label={t('cache.maxCount')}
+                  value={localMaxCount}
+                  min={100}
+                  max={10000}
+                  step={100}
+                  onChange={setLocalMaxCount}
+                />
 
                 {/* 自动预加载片段数 */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('cache.preloadCount')}</label>
-                    <span className="text-sm font-mono text-indigo-500">{localPreloadCount}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    step="1"
-                    value={localPreloadCount}
-                    onChange={(e) => setLocalPreloadCount(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-full appearance-none cursor-pointer accent-indigo-500"
-                  />
-                  <div className="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>0 ({t('cache.disabled')})</span>
-                    <span>20</span>
-                  </div>
-                </div>
+                <ConfigSlider
+                  label={t('cache.preloadCount')}
+                  value={localPreloadCount}
+                  min={0}
+                  max={20}
+                  step={1}
+                  onChange={setLocalPreloadCount}
+                  minHint={`0 (${t('cache.disabled')})`}
+                />
 
                 {/* 预加载并发数 */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('cache.concurrency')}</label>
-                    <span className="text-sm font-mono text-indigo-500">{localConcurrency}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    step="1"
-                    value={localConcurrency}
-                    onChange={(e) => setLocalConcurrency(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-full appearance-none cursor-pointer accent-indigo-500"
-                  />
-                  <div className="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>1</span>
-                    <span>10</span>
+                <ConfigSlider
+                  label={t('cache.concurrency')}
+                  value={localConcurrency}
+                  min={1}
+                  max={10}
+                  step={1}
+                  onChange={setLocalConcurrency}
+                />
+
+                {/* 配置操作按钮 */}
+                <div className="pt-1">
+                  {isDirty && <p className="text-xs text-amber-500 mb-2">{t('cache.unsavedChanges')}</p>}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveConfig}
+                      disabled={!isDirty}
+                      className={cn(
+                        'flex-1 px-4 py-2.5 font-medium rounded-xl transition-colors',
+                        isDirty
+                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed',
+                      )}
+                    >
+                      {t('cache.saveConfig')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetConfig}
+                      className="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors"
+                    >
+                      {t('cache.resetConfig')}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* 配置操作按钮 */}
-              <div className="flex items-center gap-3 mt-4">
-                <button
-                  type="button"
-                  onClick={handleSaveConfig}
-                  className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors"
-                >
-                  {t('cache.saveConfig')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResetConfig}
-                  className="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors"
-                >
-                  {t('cache.resetConfig')}
-                </button>
               </div>
             </CollapsibleSection>
           ) : (
@@ -537,15 +647,18 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
-                className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors"
+                disabled={isClearing}
+                className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors disabled:opacity-50"
               >
                 {t('common.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleClearCache}
-                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors"
+                disabled={isClearing}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
+                {isClearing && <RefreshCw className="w-4 h-4 animate-spin" />}
                 {t('cache.confirmClear')}
               </button>
             </div>

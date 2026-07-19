@@ -3,7 +3,7 @@
  * 显示缓存开关、缓存进度、命中率等信息
  */
 
-import { Database, Download, Pause, Play, Settings, Trash2, X, Zap } from 'lucide-react'
+import { Database, Download, Pause, Play, RefreshCw, Settings, Trash2, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -24,6 +24,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
   const isEmbed = useViewMode() === 'embed'
   const [expanded, setExpanded] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const {
     enabled,
     stats,
@@ -49,11 +50,17 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
   const isProgressMatched = !!preloadUrl && preloadUrl === m3u8Url
   const effectiveStatus = isProgressMatched ? preloadStatus : 'idle'
 
-  // 处理清除缓存
+  // 处理清除缓存（带加载态，防止大量删除时重复点击）
   const handleClearCache = async () => {
-    await clearCache()
-    setShowClearConfirm(false)
-    toast.success(t('cache.clearSuccess'))
+    if (isClearing) return
+    setIsClearing(true)
+    try {
+      await clearCache()
+      setShowClearConfirm(false)
+      toast.success(t('cache.clearSuccess'))
+    } finally {
+      setIsClearing(false)
+    }
   }
 
   // 获取当前视频的缓存信息（兼容 IndexedDB 和 PWA 缓存模式）
@@ -306,15 +313,18 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
-                className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors"
+                disabled={isClearing}
+                className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors disabled:opacity-50"
               >
                 {t('common.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleClearCache}
-                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors"
+                disabled={isClearing}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
+                {isClearing && <RefreshCw className="w-4 h-4 animate-spin" />}
                 {t('cache.confirmClear')}
               </button>
             </div>

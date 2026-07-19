@@ -76,8 +76,10 @@
     "startPreload": "开始预加载",
     "statistics": "缓存统计",
     "stopPreload": "停止预加载",
+    "storageQuota": "浏览器存储配额",
     "title": "视频缓存",
-    "totalStorage": "总存储空间"
+    "totalStorage": "总存储空间",
+    "unsavedChanges": "有未保存的更改"
   },
   "common": {
     "cancel": "取消",

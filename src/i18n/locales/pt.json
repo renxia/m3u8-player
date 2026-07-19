@@ -76,8 +76,10 @@
     "startPreload": "Iniciar pré-carregamento",
     "statistics": "Estatísticas de cache",
     "stopPreload": "Parar pré-carregamento",
+    "storageQuota": "Cota de armazenamento do navegador",
     "title": "Cache de vídeo",
-    "totalStorage": "Armazenamento total"
+    "totalStorage": "Armazenamento total",
+    "unsavedChanges": "Você tem alterações não salvas"
   },
   "common": {
     "cancel": "Cancelar",

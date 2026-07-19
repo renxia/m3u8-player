@@ -76,8 +76,10 @@
     "startPreload": "Vorladen starten",
     "statistics": "Cache-Statistiken",
     "stopPreload": "Vorladen stoppen",
+    "storageQuota": "Browser-Speicherkontingent",
     "title": "Video-Cache",
-    "totalStorage": "Gesamtspeicher"
+    "totalStorage": "Gesamtspeicher",
+    "unsavedChanges": "Sie haben ungespeicherte Änderungen"
   },
   "common": {
     "cancel": "Abbrechen",

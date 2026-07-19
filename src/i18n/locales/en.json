@@ -76,8 +76,10 @@
     "startPreload": "Start Preload",
     "statistics": "Cache Statistics",
     "stopPreload": "Stop Preload",
+    "storageQuota": "Browser storage quota",
     "title": "Video Cache",
-    "totalStorage": "Total Storage"
+    "totalStorage": "Total Storage",
+    "unsavedChanges": "You have unsaved changes"
   },
   "common": {
     "cancel": "Cancel",
