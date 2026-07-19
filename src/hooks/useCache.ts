@@ -1,9 +1,12 @@
 /**
  * 缓存状态管理 Hook
  * 提供缓存配置、统计信息、预加载控制等功能
+ *
+ * 设计要点：预加载状态/进度通过 preloader 事件订阅实时推送（事件负载携带任务 URL），
+ * 不再使用轮询，避免空闲时的全量 IndexedDB 查询与状态不同步问题
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   type CacheConfig,
   type CacheStats,
@@ -44,12 +47,18 @@ const initialState: CacheState = {
   currentM3U8Url: '',
 }
 
+/** 获取当前适配器的运行时命中率（口径与统计数据一致） */
+function getAdapterHitRate(): number {
+  const adapter = getCurrentCacheAdapter()
+  const runtimeStats = adapter.getRuntimeStats?.() ?? idbCacheManager.getRuntimeStats()
+  return runtimeStats.hitRate
+}
+
 /**
  * 缓存管理 Hook
  */
 export function useCache() {
   const [state, setState] = useState<CacheState>(initialState)
-  const isUpdatingProgressRef = useRef(false)
 
   // 刷新统计信息
   const refreshStats = useCallback(async () => {
@@ -58,20 +67,18 @@ export function useCache() {
       // 根据缓存类型从正确的适配器获取统计
       const adapter = getCurrentCacheAdapter()
       const dbStats = await adapter.getStats()
+      const hitRate = getAdapterHitRate()
 
-      const totalRequests = idbCacheManager.getRuntimeStats().hits + idbCacheManager.getRuntimeStats().misses
-      const hitRate = totalRequests > 0 ? idbCacheManager.getRuntimeStats().hits / totalRequests : 0
-
-      const currentM3U8Url = preloader.getCurrentM3U8Url()
-      const progress = currentM3U8Url
-        ? await preloader.getProgress(currentM3U8Url)
+      const taskInfo = preloader.getTaskInfo()
+      const progress = taskInfo.url
+        ? await preloader.getProgress(taskInfo.url)
         : { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 }
       setState((prev) => ({
         ...prev,
         stats: { ...dbStats, hitRate },
         preloadProgress: progress,
-        preloadStatus: preloader.getStatus(),
-        currentM3U8Url,
+        preloadStatus: taskInfo.status,
+        currentM3U8Url: taskInfo.url,
         loading: false,
       }))
     } catch (error) {
@@ -107,65 +114,29 @@ export function useCache() {
       refreshStats()
     })
 
-    // 定期更新预加载状态（每 3000ms）
-    const progressInterval = setInterval(async () => {
-      // 防止并发执行，避免异步操作积压
-      if (isUpdatingProgressRef.current) {
-        return
+    // 订阅预加载事件（事件驱动，替代轮询）
+    const unsubscribePreload = preloader.addEventListener((event, payload) => {
+      if (event === 'status') {
+        setState((prev) => ({
+          ...prev,
+          preloadStatus: payload.status,
+          currentM3U8Url: payload.url || prev.currentM3U8Url,
+        }))
+      } else if (event === 'progress' && payload.progress) {
+        setState((prev) => ({
+          ...prev,
+          currentM3U8Url: payload.url,
+          preloadProgress: payload.progress as PreloadProgress,
+        }))
+      } else if (event === 'urlchange') {
+        setState((prev) => ({ ...prev, currentM3U8Url: payload.url }))
       }
-
-      isUpdatingProgressRef.current = true
-
-      try {
-        const currentStatus = preloader.getStatus()
-        const currentM3U8Url = preloader.getCurrentM3U8Url()
-
-        // 如果有当前 M3U8 URL，获取进度
-        if (currentM3U8Url) {
-          if (currentStatus !== 'loading' && state.currentM3U8Url === currentM3U8Url) return
-
-          const currentProgress = await preloader.getProgress(currentM3U8Url)
-
-          setState((prev) => {
-            // 如果状态或进度发生变化，更新状态
-            if (
-              prev.preloadStatus !== currentStatus ||
-              prev.preloadProgress.loaded !== currentProgress.loaded ||
-              prev.preloadProgress.total !== currentProgress.total
-            ) {
-              return {
-                ...prev,
-                currentM3U8Url,
-                preloadStatus: currentStatus,
-                preloadProgress: currentProgress,
-              }
-            }
-            return prev
-          })
-        } else {
-          // 如果没有当前 M3U8 URL，但状态不是 idle，重置状态
-          setState((prev) => {
-            if (prev.preloadStatus !== 'idle') {
-              return {
-                ...prev,
-                preloadStatus: 'idle',
-                preloadProgress: { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 },
-              }
-            }
-            return prev
-          })
-        }
-      } catch (error) {
-        logger.warn('[useCache] Failed to get preload progress:', error)
-      } finally {
-        isUpdatingProgressRef.current = false
-      }
-    }, 3000)
+    })
 
     return () => {
       unsubscribeConfig()
       unsubscribeCache()
-      clearInterval(progressInterval)
+      unsubscribePreload()
     }
   }, [refreshStats])
 
@@ -190,22 +161,22 @@ export function useCache() {
   // 开始预加载
   const startPreload = useCallback(
     async (m3u8Url: string) => {
-      setState((prev) => ({ ...prev, preloadStatus: 'loading' }))
-
-      await preloader.preloadAll(m3u8Url, {
+      const started = await preloader.preloadAll(m3u8Url, {
         concurrency: state.config.preloadConcurrency,
-        onProgress: (progress) => {
-          setState((prev) => ({ ...prev, preloadProgress: progress }))
-        },
         onComplete: () => {
-          setState((prev) => ({ ...prev, preloadStatus: 'completed' }))
           refreshStats()
         },
         onError: (error) => {
           logger.error('Preload error:', error)
-          setState((prev) => ({ ...prev, preloadStatus: 'error' }))
         },
       })
+
+      // preloadAll 在缓存关闭或锁竞争失败时返回 false（状态/进度由事件推送），
+      // 此时同步一次真实状态，避免 UI 停留在过期的 loading 状态
+      if (!started) {
+        const taskInfo = preloader.getTaskInfo()
+        setState((prev) => ({ ...prev, preloadStatus: taskInfo.status, currentM3U8Url: taskInfo.url || prev.currentM3U8Url }))
+      }
     },
     [state.config.preloadConcurrency, refreshStats],
   )
@@ -213,32 +184,28 @@ export function useCache() {
   // 停止预加载
   const stopPreload = useCallback(() => {
     preloader.stop()
-    setState((prev) => ({ ...prev, preloadStatus: 'idle' }))
   }, [])
 
   // 暂停预加载
   const pausePreload = useCallback(() => {
     preloader.pause()
-    setState((prev) => ({ ...prev, preloadStatus: 'paused' }))
   }, [])
 
   // 恢复预加载
   const resumePreload = useCallback(async () => {
-    setState((prev) => ({ ...prev, preloadStatus: 'loading' }))
-
-    await preloader.resume({
-      onProgress: (progress) => {
-        setState((prev) => ({ ...prev, preloadProgress: progress }))
-      },
+    const started = await preloader.resume({
       onComplete: () => {
-        setState((prev) => ({ ...prev, preloadStatus: 'completed' }))
         refreshStats()
       },
       onError: (error) => {
         logger.error('Preload resume error:', error)
-        setState((prev) => ({ ...prev, preloadStatus: 'error' }))
       },
     })
+
+    if (!started) {
+      const taskInfo = preloader.getTaskInfo()
+      setState((prev) => ({ ...prev, preloadStatus: taskInfo.status }))
+    }
   }, [refreshStats])
 
   // 格式化文件大小
@@ -279,9 +246,7 @@ export function useCacheStatus() {
     const loadStats = async () => {
       const adapter = getCurrentCacheAdapter()
       const dbStats = await adapter.getStats()
-      const totalRequests = idbCacheManager.getRuntimeStats().hits + idbCacheManager.getRuntimeStats().misses
-      const hitRate = totalRequests > 0 ? idbCacheManager.getRuntimeStats().hits / totalRequests : 0
-      setStats({ ...dbStats, hitRate })
+      setStats({ ...dbStats, hitRate: getAdapterHitRate() })
     }
 
     loadStats()

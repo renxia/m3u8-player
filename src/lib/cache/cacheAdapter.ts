@@ -40,6 +40,9 @@ export interface UnifiedCacheAdapter {
 
   /** 获取最旧的缓存键（用于 LRU 淘汰） */
   getOldestKeys(limit: number): Promise<string[]>
+
+  /** 获取运行时命中率统计（可选，各实现自行统计缓存读取命中情况） */
+  getRuntimeStats?(): { hits: number; misses: number; hitRate: number }
 }
 
 /**
@@ -91,24 +94,42 @@ class IndexedDBCacheAdapter implements UnifiedCacheAdapter {
     const oldestEntries = await indexedDBStore.getOldestEntries(limit)
     return oldestEntries.map((entry) => entry.originalUrl)
   }
+
+  getRuntimeStats(): { hits: number; misses: number; hitRate: number } {
+    return idbCacheManager.getRuntimeStats()
+  }
 }
 
 /**
  * PWA Cache API 适配器
  */
 class PWACacheAdapter implements UnifiedCacheAdapter {
+  /** 运行时命中率统计（PWA Cache 本身不统计，在适配器层按读取结果计数） */
+  private runtimeStats = { hits: 0, misses: 0 }
+
   async get(url: string): Promise<ArrayBuffer | undefined> {
     const response = await pwaCacheManager.get(url)
-    if (!response) return undefined
+    if (!response) {
+      this.runtimeStats.misses++
+      return undefined
+    }
 
     // 将 Response 转换为 ArrayBuffer
     try {
       const arrayBuffer = await response.arrayBuffer()
+      this.runtimeStats.hits++
       return arrayBuffer
     } catch (error) {
+      this.runtimeStats.misses++
       logger.error('[PWACacheAdapter] Failed to convert Response to ArrayBuffer:', error)
       return undefined
     }
+  }
+
+  getRuntimeStats(): { hits: number; misses: number; hitRate: number } {
+    const totalRequests = this.runtimeStats.hits + this.runtimeStats.misses
+    const hitRate = totalRequests > 0 ? this.runtimeStats.hits / totalRequests : 0
+    return { ...this.runtimeStats, hitRate }
   }
 
   async set(url: string, data: ArrayBuffer, m3u8Url: string): Promise<boolean> {

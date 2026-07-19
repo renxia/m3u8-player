@@ -48,7 +48,11 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
   const [showPlaceholder, setShowPlaceholder] = useState(true)
   const [isDependenciesLoaded, setIsDependenciesLoaded] = useState(false)
   const pendingPlayRef = useRef<{ url: string; type?: string; player?: PlayerType } | null>(null)
+  /** 播放流程进行中来新请求时，记录最新请求（latest-wins），结束后补播 */
+  const queuedPlayRef = useRef<{ url: string; type?: string; player?: PlayerType } | null>(null)
   const playFnRef = useRef<((url: string, type?: string, player?: PlayerType) => Promise<boolean>) | null>(null)
+  /** 保存最新的 handlePlay，避免异步回调中引用过期闭包 */
+  const handlePlayRef = useRef<(url: string, type?: string, player?: PlayerType) => Promise<boolean>>(async () => false)
   const isPlayingRef = useRef(false)
   const pendingFrameRef = useRef<number | null>(null)
 
@@ -109,6 +113,8 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
         setCurrentM3U8Url(url)
         currentM3U8UrlRef.current = url
       } else {
+        // 非 M3U8 播放时同步清空 state，避免 CacheIndicator 展示/预加载上一个视频
+        setCurrentM3U8Url('')
         currentM3U8UrlRef.current = ''
       }
     }
@@ -168,67 +174,34 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
     }
   }, [getCurrentUrl, isDependenciesLoaded, loadPlayerDependencies])
 
-  // 当占位符隐藏后执行待播放任务
-  useLayoutEffect(() => {
-    if (!showPlaceholder && pendingPlayRef.current && playFnRef.current && !isPlayingRef.current) {
-      const { url, type, player } = pendingPlayRef.current
-      const playFn = playFnRef.current
-      const playerType = player || 'artplayer'
-      pendingPlayRef.current = null
-      isPlayingRef.current = true
-
-      // 取消之前的待执行动画帧
-      if (pendingFrameRef.current !== null) {
-        cancelAnimationFrame(pendingFrameRef.current)
-      }
-
-      // 使用 requestAnimationFrame 确保 DOM 完全更新，比 setTimeout 更高效
-      const frameId = requestAnimationFrame(async () => {
-        const frameId2 = requestAnimationFrame(async () => {
-          try {
-            // 确保依赖已加载
-            if (!isDependenciesLoaded) {
-              logger.log('[Player] Waiting for dependencies to load...')
-              await loadPlayerDependencies(playerType)
-              setIsDependenciesLoaded(true)
-            }
-
-            await playFn(url, type, player)
-          } catch (error) {
-            logger.error('[Player] Playback failed:', error)
-          } finally {
-            isPlayingRef.current = false
-            pendingFrameRef.current = null
-          }
-        })
-        pendingFrameRef.current = frameId2
-      })
-      pendingFrameRef.current = frameId
-    }
-  }, [showPlaceholder, isDependenciesLoaded, loadPlayerDependencies])
-
   // 包装播放函数，隐藏占位符后播放
   const handlePlay = async (url: string, type?: string, player?: PlayerType): Promise<boolean> => {
     const playerType = player || 'artplayer'
 
-    // 如果正在播放，直接返回
+    // 如果正在播放，记录最新请求（latest-wins），待当前播放流程结束后补播，避免快速切集丢请求
     if (isPlayingRef.current) {
-      logger.log('[Player] Already playing, ignoring request')
+      logger.log('[Player] Already playing, keeping latest request')
+      queuedPlayRef.current = { url, type, player }
       return false
     }
 
     // preview url to full
     if (/\/\d+_i_preview\.m3u8$/.test(url)) {
-      const result = await fetchAndParseM3U8(url)
+      try {
+        const result = await fetchAndParseM3U8(url)
 
-      if (result.segments.length) {
-        const arr = result.segments[0].url.split('/')
-        const tsBasename = arr[arr.length - 1] // arr.at(-1)
-        if (tsBasename.endsWith('_i0.ts')) {
-          const nUrl = url.replace(/\d+_i_preview.m3u8$/, tsBasename.replace('_i0.ts', '_i.m3u8'))
-          const r = await fetchAndParseM3U8(nUrl)
-          if (r.segments.length > result.segments.length) url = nUrl
+        if (result.segments.length) {
+          const arr = result.segments[0].url.split('/')
+          const tsBasename = arr[arr.length - 1] // arr.at(-1)
+          if (tsBasename.endsWith('_i0.ts')) {
+            const nUrl = url.replace(/\d+_i_preview.m3u8$/, tsBasename.replace('_i0.ts', '_i.m3u8'))
+            const r = await fetchAndParseM3U8(nUrl)
+            if (r.segments.length > result.segments.length) url = nUrl
+          }
         }
+      } catch (error) {
+        // 预览地址转换失败时回退为原始地址继续播放
+        logger.warn('[Player] Failed to convert preview m3u8 url, fallback to original:', error)
       }
     }
 
@@ -261,17 +234,70 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
       return result
     } finally {
       isPlayingRef.current = false
+      // 补播播放流程期间收到的最新请求
+      const queued = queuedPlayRef.current
+      queuedPlayRef.current = null
+      if (queued) {
+        void handlePlayRef.current(queued.url, queued.type, queued.player)
+      }
     }
   }
 
+  // 保存最新的 handlePlay 引用（每次渲染更新，避免异步回调中使用过期闭包）
+  handlePlayRef.current = handlePlay
+
+  // 当占位符隐藏后执行待播放任务
+  useLayoutEffect(() => {
+    if (!showPlaceholder && pendingPlayRef.current && playFnRef.current && !isPlayingRef.current) {
+      const { url, type, player } = pendingPlayRef.current
+      const playFn = playFnRef.current
+      const playerType = player || 'artplayer'
+      pendingPlayRef.current = null
+      isPlayingRef.current = true
+
+      // 取消之前的待执行动画帧
+      if (pendingFrameRef.current !== null) {
+        cancelAnimationFrame(pendingFrameRef.current)
+      }
+
+      // 使用 requestAnimationFrame 确保 DOM 完全更新，比 setTimeout 更高效
+      const frameId = requestAnimationFrame(async () => {
+        const frameId2 = requestAnimationFrame(async () => {
+          try {
+            // 确保依赖已加载
+            if (!isDependenciesLoaded) {
+              logger.log('[Player] Waiting for dependencies to load...')
+              await loadPlayerDependencies(playerType)
+              setIsDependenciesLoaded(true)
+            }
+
+            await playFn(url, type, player)
+          } catch (error) {
+            logger.error('[Player] Playback failed:', error)
+          } finally {
+            isPlayingRef.current = false
+            pendingFrameRef.current = null
+            // 补播播放流程期间收到的最新请求
+            const queued = queuedPlayRef.current
+            queuedPlayRef.current = null
+            if (queued) {
+              void handlePlayRef.current(queued.url, queued.type, queued.player)
+            }
+          }
+        })
+        pendingFrameRef.current = frameId2
+      })
+      pendingFrameRef.current = frameId
+    }
+  }, [showPlaceholder, isDependenciesLoaded, loadPlayerDependencies])
+
   useImperativeHandle(ref, () => ({
-    play: handlePlay,
+    play: (url: string, type?: string, player?: PlayerType) => handlePlayRef.current(url, type, player),
     rotate,
     destroy: () => {
       destroyAll()
       setShowPlaceholder(true)
-      // 重置依赖加载状态，确保下次播放时重新检查
-      setIsDependenciesLoaded(false)
+      // 依赖脚本加载后常驻页面，不重置 isDependenciesLoaded，避免下次播放重复注入/等待
     },
     containerRef,
     getVideoElement: () => containerRef.current?.querySelector('video') || null,

@@ -72,7 +72,15 @@ export default function HlsDescription() {
           <h3 className="text-base md:text-lg font-semibold text-slate-900 dark:text-white">{t('index.hlsDesc.embedTitle')}</h3>
         </div>
         <pre className="bg-slate-100 dark:bg-slate-900/80 rounded-xl p-4 text-sm text-emerald-600 dark:text-emerald-400 overflow-x-auto font-mono">
-          {`<iframe src="${embedUrl}"></iframe>`}
+          {`<iframe
+  src="${embedUrl}"
+  frameborder="0"
+  width="100%"
+  height="100%"
+  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+  allowfullscreen
+  style="border: 0; width: 100%; height: 100%;"
+></iframe>`}
         </pre>
       </div>
 

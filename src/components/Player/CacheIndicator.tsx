@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useCache } from '@/hooks/useCache'
 import { useViewMode } from '@/hooks/useViewMode'
-import { cacheConfigManager, getCurrentCacheAdapter, idbCacheManager, preloader } from '@/lib/cache'
+import { cacheConfigManager, getCurrentCacheAdapter, idbCacheManager } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 
 interface CacheIndicatorProps {
@@ -29,6 +29,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
     stats,
     preloadStatus,
     preloadProgress,
+    currentM3U8Url: preloadUrl,
     toggleEnabled,
     clearCache,
     startPreload,
@@ -38,33 +39,15 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
     formatSize,
   } = useCache()
 
-  // 从 preloader 获取当前 M3U8 URL 作为后备
-  const [preloaderM3U8Url, setPreloaderM3U8Url] = useState('')
-
   // 当前视频的缓存信息
   const [currentVideoStats, setCurrentVideoStats] = useState<{ count: number; size: number }>({ count: 0, size: 0 })
 
-  useEffect(() => {
-    const updatePreloaderUrl = () => {
-      const url = preloader.getCurrentM3U8Url()
-      if (url) {
-        setPreloaderM3U8Url(url)
-      }
-    }
-
-    // 立即更新一次
-    updatePreloaderUrl()
-
-    // 定期更新（每 500ms）
-    const interval = setInterval(updatePreloaderUrl, 500)
-
-    return () => {
-      clearInterval(interval)
-    }
-  }, [])
-
-  // 优先使用 prop 传入的 URL，否则使用 preloader 的 URL
-  const m3u8Url = propM3U8Url || preloaderM3U8Url
+  // 优先使用 prop 传入的 URL；后备复用 useCache 事件推送的 preloader URL（URL 单一数据源，无需额外轮询）
+  const m3u8Url = propM3U8Url || preloadUrl
+  // 预加载进度/状态仅在 preloader 的任务 URL 与当前视频一致时才可信，
+  // 避免把上一个（或其他）视频的进度展示给当前视频
+  const isProgressMatched = !!preloadUrl && preloadUrl === m3u8Url
+  const effectiveStatus = isProgressMatched ? preloadStatus : 'idle'
 
   // 处理清除缓存
   const handleClearCache = async () => {
@@ -207,7 +190,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-sm text-slate-300">{t('cache.preload')}</span>
                   <div className="flex items-center gap-0.5 sm:gap-1">
-                    {preloadStatus === 'idle' && m3u8Url && (
+                    {effectiveStatus === 'idle' && m3u8Url && (
                       <button
                         type="button"
                         onClick={() => startPreload(m3u8Url)}
@@ -217,7 +200,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                         <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     )}
-                    {preloadStatus === 'loading' && (
+                    {effectiveStatus === 'loading' && (
                       <button
                         type="button"
                         onClick={pausePreload}
@@ -227,7 +210,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                         <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     )}
-                    {preloadStatus === 'paused' && (
+                    {effectiveStatus === 'paused' && (
                       <button
                         type="button"
                         onClick={resumePreload}
@@ -237,7 +220,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                         <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     )}
-                    {(preloadStatus === 'loading' || preloadStatus === 'paused') && (
+                    {(effectiveStatus === 'loading' || effectiveStatus === 'paused') && (
                       <button
                         type="button"
                         onClick={stopPreload}
@@ -251,7 +234,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                 </div>
 
                 {/* 预加载进度 */}
-                {(preloadStatus === 'loading' || preloadStatus === 'paused' || preloadStatus === 'completed') &&
+                {(effectiveStatus === 'loading' || effectiveStatus === 'paused' || effectiveStatus === 'completed') &&
                   preloadProgress.total > 0 && (
                     <div className="space-y-0.5 sm:space-y-1">
                       <div className="flex items-center justify-between text-xs">
@@ -264,9 +247,9 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                         <div
                           className={cn(
                             'h-full rounded-full transition-all',
-                            preloadStatus === 'loading'
+                            effectiveStatus === 'loading'
                               ? 'bg-indigo-500'
-                              : preloadStatus === 'completed'
+                              : effectiveStatus === 'completed'
                                 ? 'bg-emerald-500'
                                 : 'bg-amber-500',
                           )}
@@ -276,7 +259,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                     </div>
                   )}
 
-                {preloadStatus === 'completed' && preloadProgress.total > 0 && (
+                {effectiveStatus === 'completed' && preloadProgress.total > 0 && (
                   <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-emerald-400">
                     <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     <span>{t('cache.preloadComplete')}</span>
