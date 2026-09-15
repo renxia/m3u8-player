@@ -42,16 +42,8 @@ async function build(env = 'production', outDirName = 'm3u8-player') {
 
   if (puppeteerExecutablePath) process.env.SEO_PRERENDER = '1'
 
-  execSync('pnpm vite build', { stdio: 'inherit', env: process.env, cwd: webRoot })
-
-  // 优化预渲染的 HTML 文件（移除内联 SVG 和 CSS）
-  console.log('\n优化预渲染 HTML 文件...')
-  try {
-    const { optimizePrerenderedHTML } = await import('./optimize-prerendered-html.js')
-    await optimizePrerenderedHTML(false)
-  } catch (error) {
-    console.warn('HTML 优化失败，继续构建:', error)
-  }
+  // 预渲染与 HTML 优化（optimize）由 @lzwme/prerender-kit 在 vite build 阶段一并完成
+  execSync('pnpm exec vite build', { stdio: 'inherit', env: process.env, cwd: webRoot })
 
   // 生成 sitemap.xml
   // await generateSitemap(outDir)

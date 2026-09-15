@@ -247,7 +247,7 @@ export default function SettingsPage() {
           </div>
           <button
             type="button"
-            onClick={refreshStats}
+            onClick={() => refreshStats(true)}
             disabled={loading}
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors"
             title={t('common.refresh')}

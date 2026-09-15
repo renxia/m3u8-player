@@ -262,5 +262,20 @@
     "togglePlay": "Play / Pause",
     "volumeDown": "Volume down 10%",
     "volumeUp": "Volume up 10%"
+  },
+  "share": {
+    "title": "Share",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied",
+    "qrCode": "QR Code",
+    "qrHint": "Scan to open the playback link",
+    "qrFailed": "Failed to load QR code",
+    "systemShare": "Share",
+    "shareSuccess": "Shared",
+    "saveImage": "Save Image",
+    "imageFailed": "Failed to generate image",
+    "imageSaved": "Image saved",
+    "nothingToShare": "Nothing to share",
+    "copyFailed": "Copy failed"
   }
 }

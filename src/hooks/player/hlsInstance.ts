@@ -64,6 +64,9 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
   hls.loadSource(url)
   hls.attachMedia(video)
 
+  // 跟踪实际使用的 level（用于自动模式），供 getCurrentPlaylistUrl 使用
+  let actualLevelIndex = -1
+
   const cleanupFunctions: Array<() => void> = []
 
   // 监听播放事件，记录到智能预加载器
@@ -92,6 +95,25 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
       playbackRate: video.playbackRate,
       m3u8Url: url,
     })
+
+    // 拖动后：中止旧位置的预加载，从新位置开始预加载
+    // 注意：preloadFromSeek 内部有 300ms 延迟去抖，避免频繁拖动反复重启
+    if (enableAutoPreload && cacheConfigManager.isEnabled() && cacheConfigManager.getPreloadConfig().preloadCount > 0) {
+      const playlistUrl = getCurrentPlaylistUrl()
+      preloader.preloadFromSeek(playlistUrl, video.currentTime)
+    }
+  }
+
+  // 获取当前实际的 M3U8 URL（可能是子播放列表 URL）
+  const getCurrentPlaylistUrl = (): string => {
+    if (hls.levels && hls.levels.length > 0) {
+      // 优先使用实际使用的 level（自动模式下 actualLevelIndex 更准确）
+      let levelIndex = actualLevelIndex >= 0 ? actualLevelIndex : hls.currentLevel
+      if (levelIndex < 0) levelIndex = 0
+      const currentLevel = hls.levels[levelIndex]
+      if (currentLevel?.url) return currentLevel.url
+    }
+    return url
   }
 
   const handleRateChange = () => {
@@ -130,29 +152,8 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
   if (enableAutoPreload && cacheConfigManager.isEnabled()) {
     const config = cacheConfigManager.getPreloadConfig()
     if (config.preloadCount > 0) {
-      // 跟踪实际使用的 level（用于自动模式）
-      let actualLevelIndex = -1
       // 预加载任务去重：防止多个预加载任务同时运行
       let preloadTaskTimer: ReturnType<typeof setTimeout> | null = null
-
-      // 获取当前实际的 M3U8 URL（可能是子播放列表 URL）
-      const getCurrentPlaylistUrl = (): string => {
-        // 如果 HLS 已经加载了 level，使用当前 level 的 URL
-        if (hls.levels && hls.levels.length > 0) {
-          // 优先使用实际使用的 level（自动模式下）
-          let levelIndex = actualLevelIndex >= 0 ? actualLevelIndex : hls.currentLevel
-          // 如果 currentLevel 为 -1（自动模式）且没有记录实际 level，使用第一个 level
-          if (levelIndex < 0) {
-            levelIndex = 0
-          }
-          const currentLevel = hls.levels[levelIndex]
-          if (currentLevel?.url) {
-            return currentLevel.url
-          }
-        }
-        // 否则使用原始 URL
-        return url
-      }
 
       // 启动预加载任务（带去重和延迟）
       const startPreloadTask = async (playlistUrl: string, delay = 500) => {
@@ -192,6 +193,8 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
         const currentIndex = data.frag.sn
         if (typeof currentIndex === 'number') {
           const currentPlaylistUrl = getCurrentPlaylistUrl()
+          // 同步当前播放位置，供预加载排序使用
+          preloader.setCurrentSegmentIndex(currentIndex)
           // 使用自动预加载（只预加载少量后续片段）
           preloader.startAutoPreload(currentPlaylistUrl, currentIndex)
         }

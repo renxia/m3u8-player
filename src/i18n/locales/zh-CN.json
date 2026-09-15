@@ -258,5 +258,20 @@
     "togglePlay": "播放/暂停",
     "volumeDown": "音量减少 10%",
     "volumeUp": "音量增加 10%"
+  },
+  "share": {
+    "title": "分享",
+    "copyLink": "复制链接",
+    "linkCopied": "链接已复制",
+    "qrCode": "二维码",
+    "qrHint": "扫码打开播放链接",
+    "qrFailed": "二维码加载失败",
+    "systemShare": "系统分享",
+    "shareSuccess": "分享成功",
+    "saveImage": "保存分享图",
+    "imageFailed": "生成图片失败",
+    "imageSaved": "图片已保存",
+    "nothingToShare": "暂无可分享的内容",
+    "copyFailed": "复制失败"
   }
 }

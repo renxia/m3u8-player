@@ -50,8 +50,18 @@ export interface PreloadOptions {
 /** 预加载状态 */
 export type PreloadStatus = 'idle' | 'loading' | 'paused' | 'completed' | 'error'
 
-/** 预加载任务类型 */
-export type PreloadTaskType = 'manual' | 'auto'
+/** 预加载任务类型（数值越小优先级越高，用于抢占判断） */
+export enum PreloadTaskPriority {
+  /** 用户手动全量预加载（最高优先级，不可被抢占） */
+  MANUAL = 0,
+  /** 拖动播放位置后的预加载（可抢占 auto） */
+  SEEK = 1,
+  /** 播放时自动预加载后续片段 */
+  AUTO = 2,
+}
+
+/** 预加载任务类型（兼容旧字段） */
+export type PreloadTaskType = 'manual' | 'auto' | 'seek'
 
 /** 预加载任务信息 */
 export interface PreloadTaskInfo {
@@ -89,6 +99,12 @@ class Preloader {
   private segments: TSSegment[] = []
   private status: PreloadStatus = 'idle'
   private taskType: PreloadTaskType | null = null
+  /** 当前播放位置对应的片段索引（用于优先级排序） */
+  private currentSegmentIndex = 0
+  /** 当前预加载任务已完成的片段数（用于快速返回进度，避免重复 IO） */
+  private preloadLoadedCount = 0
+  /** 当前预加载任务的总片段数 */
+  private preloadTotalCount = 0
   private abortController: AbortController | null = null
   /** 中止原因：区分 stop 与 pause，使任务 catch 能收敛到正确状态 */
   private abortReason: 'stop' | 'pause' | null = null
@@ -160,6 +176,13 @@ class Preloader {
   }
 
   /**
+   * 设置当前播放位置对应的片段索引（用于预加载优先级排序）
+   */
+  setCurrentSegmentIndex(index: number): void {
+    this.currentSegmentIndex = index
+  }
+
+  /**
    * 获取自适应预加载配置
    * 结合用户配置、网络状态、资源状态和智能预测动态调整
    */
@@ -220,9 +243,20 @@ class Preloader {
 
   /**
    * 预加载指定范围的片段
+   * @param m3u8Url M3U8 地址
+   * @param startIndex 起始片段索引
+   * @param count 预加载数量
+   * @param options 预加载选项
+   * @param taskType 任务类型（auto 或 seek，seek 可抢占 auto）
    * @returns 是否真正启动了预加载
    */
-  async preloadRange(m3u8Url: string, startIndex: number, count: number, options: PreloadOptions = {}): Promise<boolean> {
+  async preloadRange(
+    m3u8Url: string,
+    startIndex: number,
+    count: number,
+    options: PreloadOptions = {},
+    taskType: PreloadTaskType = 'auto',
+  ): Promise<boolean> {
     return this.runPreloadTask(
       async () => {
         // 解析 M3U8 获取片段列表
@@ -233,7 +267,7 @@ class Preloader {
       },
       m3u8Url,
       options,
-      'auto',
+      taskType,
     )
   }
 
@@ -274,6 +308,63 @@ class Preloader {
   }
 
   /**
+   * 从指定时间位置开始预加载（用于拖动播放位置后）
+   * 会中止当前正在运行的自动预加载任务，优先下载新位置附近的片段
+   *
+   * @param m3u8Url M3U8 地址
+   * @param currentTime 当前播放时间（秒）
+   */
+  preloadFromSeek(m3u8Url: string, currentTime: number): void {
+    if (!getCurrentCacheAdapter().isEnabled()) return
+
+    const config = cacheConfigManager.getPreloadConfig()
+    if (config.preloadCount <= 0) return
+
+    // 清除自动预加载定时器，避免旧位置的自动预加载在延迟后启动
+    if (this.autoPreloadTimer) {
+      clearTimeout(this.autoPreloadTimer)
+      this.autoPreloadTimer = null
+    }
+
+    // 延迟 300ms 启动，避免频繁拖动时反复重启预加载
+    this.autoPreloadTimer = setTimeout(async () => {
+      this.autoPreloadTimer = null
+
+      // 确保片段列表已就绪（prepare 会更新 this.segments 和 this.currentM3U8Url）
+      if (m3u8Url !== this.currentM3U8Url || this.segments.length === 0) {
+        try {
+          await this.prepare(m3u8Url)
+        } catch (error) {
+          logger.warn('[Preloader] Seek preload prepare failed:', error)
+          return
+        }
+      }
+
+      // 时间 → 片段索引（各级别片段时间线一致，直接用当前解析的 segments）
+      let segmentIndex = 0
+      let accumulated = 0
+      for (let i = 0; i < this.segments.length; i++) {
+        accumulated += this.segments[i].duration
+        if (accumulated > currentTime) {
+          segmentIndex = i
+          break
+        }
+      }
+
+      // 更新当前播放位置，供 preloadSegments 排序使用
+      this.currentSegmentIndex = segmentIndex
+
+      const concurrency = Math.max(1, Math.floor(config.preloadConcurrency / 2))
+      // 使用 'seek' 优先级，可抢占正在运行的 'auto' 任务
+      this.preloadRange(m3u8Url, segmentIndex + 1, config.preloadCount, {
+        concurrency,
+      }, 'seek').catch((err) => {
+        logger.warn('[Preloader] Seek preload error:', err)
+      })
+    }, 300)
+  }
+
+  /**
    * 停止预加载（对手动/自动任务均生效）
    */
   stop(): void {
@@ -284,6 +375,8 @@ class Preloader {
       clearTimeout(this.autoPreloadTimer)
       this.autoPreloadTimer = null
     }
+    this.preloadLoadedCount = 0
+    this.preloadTotalCount = 0
     // 立即反馈 UI；运行中的任务 catch 后也会按 abortReason 收敛到 idle（幂等）
     this.setStatus('idle')
   }
@@ -365,12 +458,19 @@ class Preloader {
       return false
     }
 
-    // 锁被占用时：自动任务直接放弃（避免与手动全量预加载重复下载）；
-    // 手动任务优先级更高——中止当前任务（通常是自动预加载）并等待锁释放后抢占
+    // 锁被占用时按优先级决定是否抢占：
+    // - auto 任务优先级最低，直接放弃，避免与正在运行的任务重复下载；
+    // - seek 任务可抢占正在运行的 auto 任务，但不会抢占 manual；
+    // - manual 任务优先级最高，可抢占任何正在运行的任务。
     if (this.preloadTaskLock) {
-      if (taskType === 'auto') {
-        logger.log('[Preloader] Another preload task is running, skip auto preload')
-        return false
+      const runningType = this.taskType
+      if (runningType) {
+        const currentPriority = PreloadTaskPriority[runningType.toUpperCase() as keyof typeof PreloadTaskPriority] ?? PreloadTaskPriority.AUTO
+        const newPriority = PreloadTaskPriority[taskType.toUpperCase() as keyof typeof PreloadTaskPriority] ?? PreloadTaskPriority.AUTO
+        if (newPriority >= currentPriority) {
+          logger.log(`[Preloader] Task priority ${taskType} not higher than running ${runningType}, skip`)
+          return false
+        }
       }
       this.abortActiveTask('stop')
       const released = await this.waitForLockRelease(2000)
@@ -402,10 +502,14 @@ class Preloader {
 
     try {
       const segments = await segmentsLoader()
+      // 记录预加载任务总量，供 getCachedProgress 快速返回
+      this.preloadTotalCount = segments.length
+      this.preloadLoadedCount = 0
       await this.preloadSegments(segments, m3u8Url, {
         ...options,
         signal: controller.signal,
         onProgress: (progress) => {
+          this.preloadLoadedCount = progress.loaded
           options.onProgress?.(progress)
           this.emit('progress', { status: this.status, url: m3u8Url, type: this.taskType, progress })
         },
@@ -430,6 +534,22 @@ class Preloader {
       }
       this.taskType = null
       this.preloadTaskLock = false
+    }
+  }
+
+  /**
+   * 获取预加载进度（O(1) 直接返回内部计数器，无需 IO 查询）
+   * 适用于 UI 频繁刷新场景，避免重复查询缓存适配器
+   */
+  getCachedProgress(_m3u8Url: string): PreloadProgress {
+    const total = this.preloadTotalCount
+    const loaded = this.preloadLoadedCount
+    return {
+      loaded,
+      total,
+      currentUrl: '',
+      loadedBytes: 0,
+      percent: total > 0 ? Math.round((loaded / total) * 100) : 0,
     }
   }
 
@@ -468,7 +588,16 @@ class Preloader {
       return
     }
 
-    // 并发下载队列
+    // 按距当前播放位置的远近排序：越近的片段优先级越高，拖动后优先下载新位置附近的分片
+    const curIdx = this.currentSegmentIndex
+    const indexByUrl = new Map(segmentUrls.map((u, i) => [u, i]))
+    uncachedSegments.sort((a, b) => {
+      const idxA = indexByUrl.get(a.url) ?? 0
+      const idxB = indexByUrl.get(b.url) ?? 0
+      return Math.abs(idxA - curIdx) - Math.abs(idxB - curIdx)
+    })
+
+    // 并发下载队列（已按距离排序）
     const queue = [...uncachedSegments]
     const activePromises: Promise<void>[] = []
 

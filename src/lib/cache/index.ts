@@ -33,6 +33,7 @@ export {
 } from './preloader'
 export { pwaCacheManager, PWACacheManager } from './pwaCache'
 export type { PWACacheItem, PWACacheStats, PWACacheQueryOptions, PWACacheOperationResult } from './pwaCache.types'
+export type { PWACacheEventListener, PWACacheEventType } from './pwaCache'
 export { getCurrentCacheAdapter, type UnifiedCacheAdapter } from './cacheAdapter'
 export { cacheWriteQueue } from './cacheWriteQueue'
 export {

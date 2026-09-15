@@ -3,7 +3,7 @@
  * 提供播放速度控制、截图、旋转等额外控制功能
  */
 
-import { Camera, Keyboard, RotateCw } from 'lucide-react'
+import { Camera, Keyboard, RotateCw, Share2 } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -21,6 +21,8 @@ interface PlayerControlsProps {
   showRotate?: boolean
   /** 是否显示快捷键帮助 */
   showShortcutsHelp?: boolean
+  /** 分享回调 */
+  onShare?: () => void
   /** 自定义类名 */
   className?: string
 }
@@ -30,6 +32,7 @@ export default function PlayerControls({
   showScreenshot = true,
   showRotate = true,
   showShortcutsHelp = true,
+  onShare,
   className,
 }: PlayerControlsProps) {
   const { t } = useTranslation()
@@ -176,6 +179,23 @@ export default function PlayerControls({
           >
             <Keyboard className="w-4 h-4" />
             <span className="hidden sm:inline">{t('player.shortcuts', { defaultValue: '快捷键' })}</span>
+          </button>
+        )}
+
+        {/* 分享按钮 */}
+        {onShare && (
+          <button
+            type="button"
+            onClick={onShare}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg',
+              'bg-cyan-600 hover:bg-cyan-700 text-white',
+              'transition-all',
+            )}
+            title={t('share.title', { defaultValue: '分享' })}
+          >
+            <Share2 className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('share.title', { defaultValue: '分享' })}</span>
           </button>
         )}
       </div>

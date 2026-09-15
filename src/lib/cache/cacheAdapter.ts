@@ -32,11 +32,11 @@ export interface UnifiedCacheAdapter {
   /** 是否启用 */
   isEnabled(): boolean
 
-  /** 获取统计信息 */
-  getStats(): Promise<{ count: number; totalSize: number }>
+  /** 获取统计信息（同步返回增量统计，避免全量扫描） */
+  getStats(): { count: number; totalSize: number }
 
-  /** 获取 M3U8 统计 */
-  getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }>
+  /** 获取 M3U8 统计（同步返回增量统计） */
+  getM3U8Stats(m3u8Url: string): { count: number; size: number }
 
   /** 获取最旧的缓存键（用于 LRU 淘汰） */
   getOldestKeys(limit: number): Promise<string[]>
@@ -80,13 +80,12 @@ class IndexedDBCacheAdapter implements UnifiedCacheAdapter {
     return idbCacheManager.isEnabled()
   }
 
-  async getStats(): Promise<{ count: number; totalSize: number }> {
-    const stats = await idbCacheManager.getStats()
-    return { count: stats.count, totalSize: stats.totalSize }
+  getStats(): { count: number; totalSize: number } {
+    return idbCacheManager.getStats()
   }
 
-  async getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }> {
-    return idbCacheManager.getM3U8CacheInfo(m3u8Url)
+  getM3U8Stats(m3u8Url: string): { count: number; size: number } {
+    return idbCacheManager.getM3U8Stats(m3u8Url)
   }
 
   async getOldestKeys(limit: number): Promise<string[]> {
@@ -166,12 +165,12 @@ class PWACacheAdapter implements UnifiedCacheAdapter {
     return PWACacheManager.isSupported()
   }
 
-  async getStats(): Promise<{ count: number; totalSize: number }> {
-    const stats = await pwaCacheManager.getStats()
+  getStats(): { count: number; totalSize: number } {
+    const stats = pwaCacheManager.getStats()
     return { count: stats.count, totalSize: stats.totalSize }
   }
 
-  async getM3U8Stats(m3u8Url: string): Promise<{ count: number; size: number }> {
+  getM3U8Stats(m3u8Url: string): { count: number; size: number } {
     return pwaCacheManager.getM3U8Stats(m3u8Url)
   }
 

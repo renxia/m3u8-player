@@ -386,7 +386,9 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
   }))
 
   return (
-    <div className={cn('bg-white/80 dark:bg-slate-800/50 shadow-xl backdrop-blur-sm overflow-hidden', !isEmbed && 'rounded-2xl', className)}>
+    <div
+      className={cn('bg-white/80 dark:bg-slate-800/50 shadow-xl backdrop-blur-sm overflow-hidden', !isEmbed && 'rounded-2xl', className)}
+    >
       {/* 播放器容器 */}
       <div className="relative min-h-[200px]">
         {/* 占位符 - 绝对定位覆盖 */}

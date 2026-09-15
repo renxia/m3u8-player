@@ -7,11 +7,13 @@ import HistoryList from '@/components/Player/HistoryList'
 import HlsDescription from '@/components/Player/HlsDescription'
 import InputForm from '@/components/Player/InputForm'
 import PlayerControls from '@/components/Player/PlayerControls'
+import ShareDialog from '@/components/ShareDialog'
 import { PLAYER_SHORTCUTS, useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useFavorites, useHistory, usePlaylist } from '@/hooks/useStorage'
 import { useViewMode } from '@/hooks/useViewMode'
 import { PLAYBACK_RATES } from '@/lib/constants'
 import { shouldRecordHistory } from '@/lib/embed'
+import type { ShareContent } from '@/lib/share'
 import { getUrlParams, isValidHttpUrl } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
 
@@ -56,25 +58,33 @@ export default function HomePage() {
   const playerRef = useRef<PlayerRef>(null)
   const [currentIndex, setCurrentIndex] = useState(-1)
   const [currentPlayingUrl, setCurrentPlayingUrl] = useState('')
+  const [currentPlayingTitle, setCurrentPlayingTitle] = useState('')
   const [currentPlaybackRate, setCurrentPlaybackRate] = useState(1)
+  const [shareContent, setShareContent] = useState<ShareContent | null>(null)
 
   const { history, addHistory, removeHistory, clearHistory, updateHistoryName } = useHistory()
   const { favorites, addFavorite, removeFavorite, clearFavorites, updateFavoriteName } = useFavorites()
   const { playlist, setPlaylist, clearPlaylist } = usePlaylist()
+  // 用 ref 保持最新的 history，避免 handlePlay 闭包中引用过期历史
+  const historyRef = useRef(history)
+  historyRef.current = history
 
   // 播放视频
   const handlePlay = useCallback(
     async (url: string, type?: string, player: PlayerType = 'artplayer', name?: string) => {
       const success = await playerRef.current?.play(url, type, player)
       if (success && !url.startsWith('blob:')) {
-        // 更新当前播放的 URL（用于更新输入框）
+        // 更新当前播放的 URL 与标题（用于更新输入框、分享等）
         setCurrentPlayingUrl(url)
+        // 兼容复用：新 name 为空时尝试从历史记录中恢复已有 title
+        const resolvedName = name || historyRef.current.find((i) => i.url === url)?.name
+        setCurrentPlayingTitle(resolvedName || '')
 
         // 使用 startTransition 延迟非紧急的状态更新，避免阻塞播放器初始化
         startTransition(() => {
           // embed 模式下按设置决定是否记录历史
           if (shouldRecordHistory(mode)) {
-            addHistory(url, name)
+            addHistory(url, resolvedName)
           }
 
           // 更新当前播放索引
@@ -82,11 +92,13 @@ export default function HomePage() {
           setCurrentIndex(idx)
         })
 
-        // 更新 URL 参数（同步操作，不影响渲染）
+        // 更新 URL 参数（同步操作，不影响渲染），保留 name 参数以支持分享带标题的播放地址
         const params = new URLSearchParams(location.search)
-        if (params.get('url') !== encodeURIComponent(url)) {
+        // URLSearchParams.get 返回的是已解码的值，应与解码后的 url 直接比较
+        if (params.get('url') !== url) {
           params.set('url', encodeURIComponent(url))
-          params.delete('name')
+          if (resolvedName) params.set('name', resolvedName)
+          else params.delete('name')
           window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`)
         }
 
@@ -116,6 +128,20 @@ export default function HomePage() {
     },
     [playlist, handlePlay],
   )
+
+  // 分享当前播放的视频
+  const handleShareCurrent = useCallback(() => {
+    if (!currentPlayingUrl) {
+      toast.info(t('share.nothingToShare'))
+      return
+    }
+    setShareContent({ url: currentPlayingUrl, title: currentPlayingTitle || undefined })
+  }, [currentPlayingUrl, currentPlayingTitle, t])
+
+  // 分享任意视频项（历史/收藏）
+  const handleShareItem = useCallback((url: string, name?: string) => {
+    setShareContent({ url, title: name || undefined })
+  }, [])
 
   // 播放列表项点击
   const handlePlaylistItemClick = useCallback(
@@ -277,7 +303,7 @@ export default function HomePage() {
       />
 
       {/* 播放器控制面板 */}
-      <PlayerControls playerRef={playerRef} showScreenshot showRotate showShortcutsHelp />
+      <PlayerControls playerRef={playerRef} showScreenshot showRotate showShortcutsHelp onShare={handleShareCurrent} />
 
       {/* 历史记录和收藏夹 */}
       <HistoryList
@@ -294,10 +320,14 @@ export default function HomePage() {
         onAddFavorite={addFavorite}
         onUpdateHistoryName={updateHistoryName}
         onUpdateFavoriteName={updateFavoriteName}
+        onShare={handleShareItem}
       />
 
       {/* HLS 说明 */}
       <HlsDescription />
+
+      {/* 分享弹窗 */}
+      <ShareDialog show={!!shareContent} onClose={() => setShareContent(null)} content={shareContent || { url: '' }} />
     </div>
   )
 }

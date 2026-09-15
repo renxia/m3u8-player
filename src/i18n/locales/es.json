@@ -262,5 +262,20 @@
     "togglePlay": "Reproducir / Pausar",
     "volumeDown": "Bajar volumen 10%",
     "volumeUp": "Subir volumen 10%"
+  },
+  "share": {
+    "title": "Compartir",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "qrCode": "Código QR",
+    "qrHint": "Escanea para abrir el enlace",
+    "qrFailed": "Error al cargar el código QR",
+    "systemShare": "Compartir del sistema",
+    "shareSuccess": "Compartido",
+    "saveImage": "Guardar imagen",
+    "imageFailed": "Error al generar la imagen",
+    "imageSaved": "Imagen guardada",
+    "nothingToShare": "Nada que compartir",
+    "copyFailed": "Error al copiar"
   }
 }

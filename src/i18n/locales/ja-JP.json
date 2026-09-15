@@ -262,5 +262,20 @@
     "togglePlay": "再生 / 一時停止",
     "volumeDown": "音量 10% ダウン",
     "volumeUp": "音量 10% アップ"
+  },
+  "share": {
+    "title": "共有",
+    "copyLink": "リンクをコピー",
+    "linkCopied": "リンクをコピーしました",
+    "qrCode": "QRコード",
+    "qrHint": "スキャンして再生リンクを開く",
+    "qrFailed": "QRコードの読み込みに失敗しました",
+    "systemShare": "システム共有",
+    "shareSuccess": "共有しました",
+    "saveImage": "画像を保存",
+    "imageFailed": "画像の生成に失敗しました",
+    "imageSaved": "画像を保存しました",
+    "nothingToShare": "共有するコンテンツがありません",
+    "copyFailed": "コピーに失敗しました"
   }
 }

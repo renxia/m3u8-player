@@ -1,4 +1,4 @@
-import { Check, Copy, Edit2, History, Play, Star, Trash2, X } from 'lucide-react'
+import { Check, Copy, Edit2, History, Play, Share2, Star, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -17,6 +17,8 @@ interface HistoryListProps {
   onAddFavorite: (url: string, name?: string) => boolean
   onUpdateHistoryName?: (index: number, name: string) => void
   onUpdateFavoriteName?: (index: number, name: string) => void
+  /** 分享回调，按播放地址形式构造分享 URL */
+  onShare?: (url: string, name?: string) => void
 }
 
 export default function HistoryList({
@@ -30,6 +32,7 @@ export default function HistoryList({
   onAddFavorite,
   onUpdateHistoryName,
   onUpdateFavoriteName,
+  onShare,
 }: HistoryListProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'history' | 'fav'>('history')
@@ -227,6 +230,15 @@ export default function HistoryList({
                           title={t('common.fav')}
                         >
                           <Star className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {onShare && (
+                        <button
+                          onClick={() => onShare(item.url, item.name)}
+                          className="p-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-600 dark:text-cyan-400 hover:text-white transition-all"
+                          title={t('share.title', { defaultValue: '分享' })}
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>

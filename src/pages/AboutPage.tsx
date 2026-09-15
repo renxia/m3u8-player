@@ -1,7 +1,16 @@
-import { CheckCircle, Download, ExternalLink, Github, Target } from 'lucide-react'
+import { CheckCircle, Download, ExternalLink, Target } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { getLangPrefix } from '@/lib/utils'
+
+/** GitHub 品牌图标（lucide v1 已移除品牌图标，此处使用内联 SVG 替代） */
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M12 .5C5.73.5.5 5.73.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.79 2.73 1.27 3.4.97.1-.76.41-1.27.74-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.41-5.25 5.69.42.36.79 1.08.79 2.18v3.23c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z" />
+    </svg>
+  )
+}
 
 export default function AboutPage() {
   const { t } = useTranslation()
@@ -57,7 +66,7 @@ export default function AboutPage() {
       <div className="bg-white/80 dark:bg-slate-800/50 rounded-2xl shadow-xl backdrop-blur-sm p-4 md:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-purple-600/20 rounded-lg">
-            <Github className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <GithubIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           </div>
           <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{t('about.openSourceTitle')}</h2>
         </div>
@@ -70,7 +79,7 @@ export default function AboutPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg transition-colors text-sm md:text-base"
             >
-              <Github className="w-4 h-4" />
+              <GithubIcon className="w-4 h-4" />
               {t('about.githubUrl')}
               <ExternalLink className="w-3 h-3" />
             </a>

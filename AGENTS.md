@@ -7,10 +7,10 @@
 **M3U8 在线播放器** - 一个支持多语言的 M3U8 视频在线播放器
 
 ### 技术栈
-- **构建工具**: Vite 5.x
+- **构建工具**: Vite 8.x
 - **模板引擎**: Handlebars 4.x
-- **开发语言**: TypeScript 5.x
-- **包管理器**: Bun 1.x
+- **开发语言**: TypeScript 7.x
+- **包管理器**: pnpm 12.x（配置见 `.npmrc` / `pnpm-workspace.yaml`）
 - **项目类型**: 静态网站 + TypeScript 构建
 
 ### 项目特性
@@ -66,23 +66,21 @@ m3u8-player/
 
 ```bash
 # 安装依赖
-bun install
-# 或
-npm install
+pnpm install
 
 # 开发模式 (带热更新)
-bun run dev
+pnpm run dev
 
 # 生产构建
-bun run build
+pnpm run build
 
 # 预览构建结果
-bun run preview
+pnpm run preview
 ```
 
 ### 构建输出
 
-执行 `bun run build` 后：
+执行 `pnpm run build` 后：
 
 1. **Vite 编译** - 将 TypeScript 文件编译为 JavaScript
 2. **Handlebars 渲染** - 为所有语言生成 HTML 页面
@@ -176,7 +174,7 @@ rollupOptions: {
 
 3. 构建项目：
    ```bash
-   bun run build
+   pnpm run build
    ```
 
 4. 新语言版本自动生成在 `dist/m3u8-player/fr/`
@@ -223,19 +221,19 @@ rollupOptions: {
 
 1. 编辑 `src/assets/main.ts`
 2. 修改相关 TypeScript 代码（带类型提示）
-3. 运行 `bun run build` 测试
+3. 运行 `pnpm run build` 测试
 
 ### 修改页面 UI
 
 1. 编辑对应的 `.hbs` 模板文件
 2. 如需修改文案，编辑 `src/locales/*.json`
-3. 运行 `bun run build`
+3. 运行 `pnpm run build`
 
 ### 添加新页面
 
 1. 在 `src/pages/` 下创建 `.hbs` 文件
 2. 在各语言 JSON 中添加翻译
-3. 运行 `bun run build`
+3. 运行 `pnpm run build`
 4. 新页面自动生成在所有语言目录
 
 ### 修复构建错误
@@ -256,7 +254,7 @@ rollupOptions: {
 
 如需单独进行类型检查：
 ```bash
-bunx tsc --noEmit
+pnpm exec tsc --noEmit
 ```
 
 ### Git 忽略
@@ -264,7 +262,7 @@ bunx tsc --noEmit
 以下内容已被 `.gitignore`：
 - `dist/` - 构建输出目录
 - `node_modules/` - 依赖目录
-- 不包括 `bun.lock`（Bun 的 lockfile 保留）
+- `pnpm-lock.yaml` 需保留（pnpm 的 lockfile）
 
 ## 构建输出验证
 
@@ -295,15 +293,15 @@ ls dist/m3u8-player-*.zip
 
 ## 技术栈版本
 
-- Bun: 1.3.4+
-- TypeScript: 5.9.3+
-- Vite: 5.4.21+
+- pnpm: 12.x
+- TypeScript: 7.0+
+- Vite: 8.0+
 - Handlebars: 4.7.8+
-- Node.js: 18+ (兼容性)
+- Node.js: 20.19+（`@lzwme/prerender-kit` 要求）
 
 ## 开发环境要求
 
-- Bun 1.x 或 Node.js 18+
+- Node.js 20.19+ 与 pnpm 12.x
 - 支持的操作系统: Windows, macOS, Linux
 - 推荐的 IDE: VS Code + TypeScript 插件
 

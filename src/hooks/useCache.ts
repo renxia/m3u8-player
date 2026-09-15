@@ -6,7 +6,7 @@
  * 不再使用轮询，避免空闲时的全量 IndexedDB 查询与状态不同步问题
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   type CacheConfig,
   type CacheStats,
@@ -16,8 +16,12 @@ import {
   type PreloadProgress,
   type PreloadStatus,
   preloader,
+  pwaCacheManager,
 } from '@/lib/cache'
 import { logger } from '@/utils/logger'
+
+/** 刷新节流间隔（ms），避免高频写入时反复刷新 */
+const REFRESH_THROTTLE_MS = 800
 
 /** 缓存状态 */
 export interface CacheState {
@@ -60,30 +64,52 @@ function getAdapterHitRate(): number {
 export function useCache() {
   const [state, setState] = useState<CacheState>(initialState)
 
-  // 刷新统计信息
-  const refreshStats = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true }))
-    try {
-      // 根据缓存类型从正确的适配器获取统计
-      const adapter = getCurrentCacheAdapter()
-      const dbStats = await adapter.getStats()
-      const hitRate = getAdapterHitRate()
+  // 节流刷新统计信息（避免高频写入时反复全量刷新）
+  const refreshThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const refreshStats = useCallback((immediate = false) => {
+    if (refreshThrottleRef.current) {
+      if (immediate) {
+        clearTimeout(refreshThrottleRef.current)
+      } else {
+        return // 节流中，跳过本次调用
+      }
+    }
 
-      const taskInfo = preloader.getTaskInfo()
-      const progress = taskInfo.url
-        ? await preloader.getProgress(taskInfo.url)
-        : { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 }
-      setState((prev) => ({
-        ...prev,
-        stats: { ...dbStats, hitRate },
-        preloadProgress: progress,
-        preloadStatus: taskInfo.status,
-        currentM3U8Url: taskInfo.url,
-        loading: false,
-      }))
-    } catch (error) {
-      logger.error('Failed to refresh cache stats:', error)
-      setState((prev) => ({ ...prev, loading: false }))
+    const doRefresh = () => {
+      refreshThrottleRef.current = null
+      try {
+        const adapter = getCurrentCacheAdapter()
+        // getStats 现在是同步 O(1)，无需 await
+        const dbStats = adapter.getStats()
+        const hitRate = getAdapterHitRate()
+        const taskInfo = preloader.getTaskInfo()
+
+        // 进度信息：当前视频已有预加载进度时复用，避免重复扫描
+        const preloadUrl = taskInfo.url
+        let progress: PreloadProgress = { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 }
+        if (preloadUrl && preloader.getStatus() !== 'idle') {
+          // 使用 preloader 内部缓存的 segments 快速估算进度，避免重复 IO
+          progress = preloader.getCachedProgress(preloadUrl)
+        }
+
+        setState((prev) => ({
+          ...prev,
+          stats: { ...dbStats, hitRate },
+          preloadProgress: progress,
+          preloadStatus: taskInfo.status,
+          currentM3U8Url: preloadUrl || prev.currentM3U8Url,
+          loading: false,
+        }))
+      } catch (error) {
+        logger.error('Failed to refresh cache stats:', error)
+        setState((prev) => ({ ...prev, loading: false }))
+      }
+    }
+
+    if (immediate) {
+      doRefresh()
+    } else {
+      refreshThrottleRef.current = setTimeout(doRefresh, REFRESH_THROTTLE_MS)
     }
   }, [])
 
@@ -108,11 +134,9 @@ export function useCache() {
       }))
     })
 
-    // 监听 IndexedDB 缓存事件
-    const unsubscribeCache = idbCacheManager.addEventListener(() => {
-      // 其他事件刷新统计（节流）
-      refreshStats()
-    })
+    // 监听缓存写入事件（IndexedDB 或 PWA Cache API）
+    const unsubscribeIdb = idbCacheManager.addEventListener(() => refreshStats())
+    const unsubscribePwa = pwaCacheManager.addEventListener(() => refreshStats())
 
     // 订阅预加载事件（事件驱动，替代轮询）
     const unsubscribePreload = preloader.addEventListener((event, payload) => {
@@ -135,7 +159,8 @@ export function useCache() {
 
     return () => {
       unsubscribeConfig()
-      unsubscribeCache()
+      unsubscribeIdb()
+      unsubscribePwa()
       unsubscribePreload()
     }
   }, [refreshStats])

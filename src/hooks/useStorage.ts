@@ -25,7 +25,9 @@ export function useHistory() {
     if (!url) return
     setHistory((prev) => {
       const list = prev.filter((i) => i.url !== url).slice(0, 199)
-      list.unshift({ url, time: Date.now(), name })
+      // 兼容复用：新 name 为空时保留已有的 title，避免重复播放相同 url 时覆盖为空
+      const resolvedName = name || prev.find((i) => i.url === url)?.name
+      list.unshift({ url, time: Date.now(), name: resolvedName })
       storage.set(StorageKeys.history, list)
       return list
     })

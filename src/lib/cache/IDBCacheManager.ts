@@ -30,10 +30,58 @@ class IdbCacheManager {
   private enabled: boolean
   private runtimeStats: RuntimeStats = { hits: 0, misses: 0 }
   private listeners: Set<IDBCacheEventListener> = new Set()
+  /** 增量统计：缓存总数（避免每次 getStats 全量扫描） */
+  private _count = 0
+  /** 增量统计：缓存总大小 */
+  private _totalSize = 0
+  /** 增量统计：按 M3U8 URL 分组 */
+  private _byM3U8: Record<string, { count: number; size: number }> = {}
 
   constructor(config: IndexedDBCacheConfig, enabled: boolean) {
     this.config = config
     this.enabled = enabled
+    // 初始化时从 IndexedDB 加载一次统计
+    this.initStats()
+  }
+
+  /**
+   * 初始化增量统计（从 IndexedDB 加载当前 count/size，byM3U8 按需构建）
+   */
+  private async initStats(): Promise<void> {
+    try {
+      const stats = await indexedDBStore.getStats()
+      this._count = stats.count
+      this._totalSize = stats.totalSize
+    } catch (error) {
+      logger.warn('[IDBCacheManager] initStats failed:', error)
+    }
+  }
+
+  /**
+   * 增量添加统计（内部调用）
+   */
+  private addToStats(_url: string, size: number, m3u8Url?: string): void {
+    this._count++
+    this._totalSize += size
+    if (m3u8Url) {
+      if (!this._byM3U8[m3u8Url]) this._byM3U8[m3u8Url] = { count: 0, size: 0 }
+      this._byM3U8[m3u8Url].count++
+      this._byM3U8[m3u8Url].size += size
+    }
+  }
+
+  /**
+   * 增量移除统计（内部调用）
+   */
+  private removeFromStats(_url: string, size: number, m3u8Url?: string): void {
+    this._count = Math.max(0, this._count - 1)
+    this._totalSize = Math.max(0, this._totalSize - size)
+    if (m3u8Url && this._byM3U8[m3u8Url]) {
+      const g = this._byM3U8[m3u8Url]
+      g.count = Math.max(0, g.count - 1)
+      g.size = Math.max(0, g.size - size)
+      if (g.count === 0) delete this._byM3U8[m3u8Url]
+    }
   }
 
   /**
@@ -129,6 +177,7 @@ class IdbCacheManager {
       m3u8Url,
     })
     if (success) {
+      this.addToStats(url, data.byteLength, m3u8Url)
       this.emit('add', url)
     }
     return success
@@ -138,8 +187,11 @@ class IdbCacheManager {
    * 删除缓存
    */
   async delete(url: string): Promise<boolean> {
+    // 先查元数据以获取 size/m3u8Url 用于增量统计
+    const metadata = await indexedDBStore.getMetadata(url)
     const success = await indexedDBStore.delete(url)
     if (success) {
+      if (metadata) this.removeFromStats(url, metadata.size, metadata.m3u8Url)
       this.emit('remove', url)
     }
     return success
@@ -149,10 +201,14 @@ class IdbCacheManager {
    * 清空所有缓存
    */
   async clear(): Promise<boolean> {
+    const prevCount = this._count
     const success = await indexedDBStore.clear()
     if (success) {
+      this._count = 0
+      this._totalSize = 0
+      this._byM3U8 = {}
       this.runtimeStats = { hits: 0, misses: 0 }
-      this.emit('clear')
+      if (prevCount > 0) this.emit('clear')
     }
     return success
   }
@@ -161,8 +217,8 @@ class IdbCacheManager {
    * 确保有足够空间（LRU 淘汰）
    */
   private async ensureCapacity(): Promise<void> {
-    const stats = await indexedDBStore.getStats()
-    if (stats.count < this.config.maxCount) return
+    // 使用增量统计判断是否需要淘汰（O(1)）
+    if (this._count < this.config.maxCount) return
 
     // 计算需要删除的数量（使用配置的淘汰比例）
     const deleteCount = Math.max(1, Math.floor(this.config.maxCount * this.config.lruEvictionRatio))
@@ -170,23 +226,23 @@ class IdbCacheManager {
     const urlsToDelete = oldestEntries.map((entry) => entry.originalUrl)
 
     if (urlsToDelete.length > 0) {
-      await indexedDBStore.deleteMany(urlsToDelete)
-      logger.warn(`[idbCacheManager] LRU evicted ${urlsToDelete.length} entries`)
+      // 删除并更新增量统计
+      for (const url of urlsToDelete) {
+        const metadata = await indexedDBStore.getMetadata(url)
+        const deleted = await indexedDBStore.delete(url)
+        if (deleted && metadata) {
+          this.removeFromStats(url, metadata.size, metadata.m3u8Url)
+        }
+      }
+      logger.warn(`[IDBCacheManager] LRU evicted ${urlsToDelete.length} entries`)
     }
   }
 
   /**
-   * 获取缓存统计信息
+   * 获取缓存统计信息（O(1) 直接返回增量统计）
    */
-  async getStats(): Promise<CacheStats & { hitRate: number }> {
-    const dbStats = await indexedDBStore.getStats()
-    const totalRequests = this.runtimeStats.hits + this.runtimeStats.misses
-    const hitRate = totalRequests > 0 ? this.runtimeStats.hits / totalRequests : 0
-
-    return {
-      ...dbStats,
-      hitRate,
-    }
+  getStats(): CacheStats {
+    return { count: this._count, totalSize: this._totalSize }
   }
 
   /**
@@ -209,7 +265,15 @@ class IdbCacheManager {
   }
 
   /**
-   * 获取指定 M3U8 的缓存信息
+   * 获取指定 M3U8 的缓存统计（O(1) 直接返回增量统计）
+   */
+  getM3U8Stats(m3u8Url: string): { count: number; size: number } {
+    const group = this._byM3U8[m3u8Url]
+    return group ? { ...group } : { count: 0, size: 0 }
+  }
+
+  /**
+   * 获取指定 M3U8 的缓存信息（兼容旧接口，按需查询）
    */
   async getM3U8CacheInfo(m3u8Url: string): Promise<{ count: number; size: number }> {
     const entries = await indexedDBStore.getByM3U8(m3u8Url)

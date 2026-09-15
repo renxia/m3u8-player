@@ -15,31 +15,25 @@
 - 支持中文、英文、日文多语言界面
 - 组件化架构，易于维护和扩展
 - 使用 TypeScript 开发，类型安全
-- 使用 Bun 作为包管理器，构建速度更快
+- 使用 pnpm 作为包管理器
 
 ## 快速开始
 
 ### 安装依赖
 
 ```bash
-bun install
-# 或
 pnpm install
 ```
 
 ### 开发模式
 
 ```bash
-bun run dev
-# 或
 pnpm run dev
 ```
 
 ### 构建生产版本
 
 ```bash
-bun run build
-# 或
 pnpm run build
 ```
 

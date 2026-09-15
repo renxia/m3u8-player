@@ -12,19 +12,30 @@ export default defineConfig(async ({ mode }) => {
 
   console.log('SEO_PRERENDER', process.env.SEO_PRERENDER)
   if (process.env.SEO_PRERENDER) {
-    const { default: seoPrerender } = await import('vite-plugin-seo-prerender')
+    const { createVitePlugin, createPuppeteerRenderer } = await import('@lzwme/prerender-kit')
     const allRoutes = ['', 'about', 'download']
-    const seoPrerenderPlugin = seoPrerender({
+    const prerenderPlugin = createVitePlugin({
       routes: ['/', ...['', 'en/', 'ja-JP/', 'fr/', 'de/', 'pt/', 'es/'].flatMap((lang) => allRoutes.map((route) => `/${lang}${route}`))],
-      puppeteer: {
+      renderer: createPuppeteerRenderer({
         // headless: 'false',
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-      },
+        launchOptions: {
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+        },
+      }),
       delay: 300,
       concurrency: process.env.PRENDER_CONCURRENCY ? Number(process.env.PRENDER_CONCURRENCY) : 50,
+      // HTML 瘦身：等价于原 scripts/optimize-prerendered-html.ts（移除内联 SVG / 大段内联样式 / class，压缩并注入首屏 loading）
+      optimize: {
+        removeInlineSvg: true,
+        removeInlineStyles: true,
+        inlineStylesMinLength: 1000,
+        removeClassAttributes: true,
+        minify: true,
+        loadingIndicator: { target: '<div id="app">' },
+      },
     })
 
-    plugins.push(seoPrerenderPlugin)
+    plugins.push(prerenderPlugin)
   }
 
   // 放在最后一个位置
@@ -39,19 +50,24 @@ export default defineConfig(async ({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': path.resolve(import.meta.dirname, './src'),
       },
     },
     build: {
       outDir: 'dist/m3u8-player',
       emptyOutDir: true,
       target: 'es2020',
-      rollupOptions: {
+      // Vite 8 底层改用 Rolldown：manualChunks（对象形式）已不再支持，改用 codeSplitting.groups。
+      // 同时把已弃用的 rollupOptions 替换为 rolldownOptions。
+      rolldownOptions: {
         output: {
-          manualChunks: {
-            react: ['react', 'react-dom'],
-            router: ['react-router'],
-            i18n: ['react-i18next'],
+          codeSplitting: {
+            // 正则统一使用 [\\/] 以兼容 Windows 的路径分隔符
+            groups: [
+              { name: 'react', test: /node_modules[\\/]react(-dom)?[\\/]/ },
+              { name: 'router', test: /node_modules[\\/]react-router[\\/]/ },
+              { name: 'i18n', test: /node_modules[\\/](i18next|react-i18next)[\\/]/ },
+            ],
           },
         },
       },
@@ -63,5 +79,5 @@ export default defineConfig(async ({ mode }) => {
     preview: {
       port: 4171,
     },
-  } as UserConfig
+  } as unknown as UserConfig
 })

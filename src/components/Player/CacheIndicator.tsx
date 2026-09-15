@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useCache } from '@/hooks/useCache'
 import { useViewMode } from '@/hooks/useViewMode'
-import { cacheConfigManager, getCurrentCacheAdapter, idbCacheManager } from '@/lib/cache'
+import { cacheConfigManager, getCurrentCacheAdapter, idbCacheManager, pwaCacheManager } from '@/lib/cache'
 import { cn } from '@/lib/utils'
 
 interface CacheIndicatorProps {
@@ -45,8 +45,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
   // - isCacheSupported：生效类型的适配器是否真的可用（极旧浏览器两者皆无时为 false）
   // PWA 自动回退为 indexeddb 时无需提示（缓存仍可用，对用户透明）
   const effectiveCacheType = cacheConfigManager.getCacheType()
-  const isCacheSupported =
-    effectiveCacheType === 'pwa' ? cacheConfigManager.isPWACacheSupported() : typeof indexedDB !== 'undefined'
+  const isCacheSupported = effectiveCacheType === 'pwa' ? cacheConfigManager.isPWACacheSupported() : typeof indexedDB !== 'undefined'
 
   // 当前视频的缓存信息
   const [currentVideoStats, setCurrentVideoStats] = useState<{ count: number; size: number }>({ count: 0, size: 0 })
@@ -73,12 +72,12 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
 
   // 获取当前视频的缓存信息（兼容 IndexedDB 和 PWA 缓存模式）
   useEffect(() => {
-    const updateCurrentVideoStats = async () => {
+    const updateCurrentVideoStats = () => {
       if (m3u8Url) {
         try {
-          // 使用统一缓存适配器，自动适配当前缓存类型
+          // getM3U8Stats 现在是同步 O(1)，直接读取增量统计
           const adapter = getCurrentCacheAdapter()
-          const info = await adapter.getM3U8Stats(m3u8Url)
+          const info = adapter.getM3U8Stats(m3u8Url)
           setCurrentVideoStats(info)
         } catch (error) {
           console.error('Failed to get current video cache info:', error)
@@ -91,26 +90,21 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
 
     updateCurrentVideoStats()
 
-    // 监听 IndexedDB 缓存变化（仅当使用 IndexedDB 模式时有效）
-    const unsubscribeIdb = idbCacheManager.addEventListener(async (event) => {
-      if (event === 'add' || event === 'remove' || event === 'clear') {
-        // 检查当前是否使用 IndexedDB 模式（PWA 不支持时自动回退为 indexeddb）
-        if (cacheConfigManager.getCacheType() === 'indexeddb') {
-          await updateCurrentVideoStats()
-        }
-      }
-    })
+    // 监听缓存写入事件（IndexedDB 或 PWA Cache API 均触发）
+    const unsubscribeIdb = idbCacheManager.addEventListener(() => updateCurrentVideoStats())
+    const unsubscribePwa = pwaCacheManager.addEventListener(() => updateCurrentVideoStats())
 
     // 监听配置变化（当缓存类型改变时刷新统计）
     const unsubscribeConfig = cacheConfigManager.addEventListener(() => {
       updateCurrentVideoStats()
     })
 
-    // 定期更新（每 10 秒）
-    const interval = setInterval(updateCurrentVideoStats, 10000)
+    // 定期兜底更新（每 30 秒，事件驱动为主）
+    const interval = setInterval(updateCurrentVideoStats, 30000)
 
     return () => {
       unsubscribeIdb()
+      unsubscribePwa()
       unsubscribeConfig()
       clearInterval(interval)
     }

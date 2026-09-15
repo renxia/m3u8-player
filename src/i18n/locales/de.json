@@ -262,5 +262,20 @@
     "togglePlay": "Wiedergabe / Pause",
     "volumeDown": "Lautstärke -10 %",
     "volumeUp": "Lautstärke +10 %"
+  },
+  "share": {
+    "title": "Teilen",
+    "copyLink": "Link kopieren",
+    "linkCopied": "Link kopiert",
+    "qrCode": "QR-Code",
+    "qrHint": "Scannen, um den Link zu öffnen",
+    "qrFailed": "QR-Code konnte nicht geladen werden",
+    "systemShare": "System-Teilen",
+    "shareSuccess": "Geteilt",
+    "saveImage": "Bild speichern",
+    "imageFailed": "Bildgenerierung fehlgeschlagen",
+    "imageSaved": "Bild gespeichert",
+    "nothingToShare": "Nichts zum Teilen",
+    "copyFailed": "Kopieren fehlgeschlagen"
   }
 }

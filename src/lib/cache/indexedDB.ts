@@ -714,6 +714,26 @@ class IndexedDBStore {
   }
 
   /**
+   * 获取单个缓存条目的元数据（不含 data）
+   * 用于删除时获取 size/m3u8Url 以维护增量统计
+   */
+  async getMetadata(url: string): Promise<CacheMetadata | undefined> {
+    try {
+      const db = await this.getDB()
+      const hash = await this.getUrlHash(url)
+      return new Promise<CacheMetadata | undefined>((resolve, reject) => {
+        const transaction = db.transaction(METADATA_STORE_NAME, 'readonly')
+        const store = transaction.objectStore(METADATA_STORE_NAME)
+        const request = store.get(hash)
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => resolve(request.result as CacheMetadata | undefined)
+      })
+    } catch {
+      return undefined
+    }
+  }
+
+  /**
    * 检查缓存是否存在
    * 优化：使用 LRU 缓存已查询过的 URL，避免重复 IO
    * 只查询 metadata store

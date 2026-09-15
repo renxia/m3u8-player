@@ -262,5 +262,20 @@
     "togglePlay": "Lecture / Pause",
     "volumeDown": "Volume -10 %",
     "volumeUp": "Volume +10 %"
+  },
+  "share": {
+    "title": "Partager",
+    "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié",
+    "qrCode": "QR Code",
+    "qrHint": "Scannez pour ouvrir le lien",
+    "qrFailed": "Échec du chargement du QR code",
+    "systemShare": "Partage système",
+    "shareSuccess": "Partagé",
+    "saveImage": "Enregistrer l'image",
+    "imageFailed": "Échec de la génération de l'image",
+    "imageSaved": "Image enregistrée",
+    "nothingToShare": "Rien à partager",
+    "copyFailed": "Échec de la copie"
   }
 }

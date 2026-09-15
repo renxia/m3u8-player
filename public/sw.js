@@ -26,12 +26,12 @@ const CACHE_STRATEGIES = {
     strategy: networkFirst,
     maxAge: 5 * 60 * 1000, // 5分钟
   },
-  // M3U8 媒体资源：Network First with Cache
+  // M3U8 媒体资源：Cache First（媒体片段 URL 通常不变，缓存命中可直接复用）
   // 注意：使用与 pwaCache.ts 相同的缓存名称，确保缓存共享
   media: {
     cacheName: M3U8_CACHE,
-    strategy: cacheFirst, // networkFirst
-    maxAge: 3 * 24 * 60 * 60 * 1000, // 3 天
+    strategy: cacheFirst,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 天
   },
   // 离线页面：Cache Only
   offline: {
@@ -143,7 +143,8 @@ async function cleanExpiredCache(cacheName, maxAge) {
     const response = await cache.match(cacheKey)
     if (response) {
       const cacheTime = parseInt(response.headers.get('sw-cache-time') || '0')
-      if (now - cacheTime > maxAge) {
+      // 无 sw-cache-time 头（pwaCache 写入）不清理，避免误删应用侧缓存
+      if (cacheTime !== 0 && now - cacheTime > maxAge) {
         await cache.delete(cacheKey)
       }
     }
@@ -166,7 +167,9 @@ async function cacheFirst(request, cacheName, maxAge) {
   if (cached) {
     // 检查是否过期
     const cacheTime = parseInt(cached.headers.get('sw-cache-time') || '0')
-    if (Date.now() - cacheTime < maxAge) {
+    // pwaCache 写入的条目不含 sw-cache-time 头，视为未过期（生命周期由 pwaCache 自行管理），
+    // 避免 SW 将应用侧缓存误判为过期而反复删除/重新下载，导致缓存抖动与离线失效
+    if (cacheTime === 0 || Date.now() - cacheTime < maxAge) {
       return cached
     }
     // 过期则删除缓存
@@ -369,7 +372,7 @@ self.addEventListener('fetch', (event) => {
 })
 
 // 处理消息（用于手动更新缓存）
-self.addEventListener('message', async (event) => {
+self.addEventListener('message', (event) => {
   const { type, data } = event.data
 
   switch (type) {
@@ -379,26 +382,34 @@ self.addEventListener('message', async (event) => {
       break
 
     case 'CLEAR_CACHE':
-      console.log('[SW] Clearing cache:', data?.cacheName)
-      if (data?.cacheName) {
-        caches.delete(data.cacheName)
-      } else {
-        caches.keys().then((cacheNames) => {
-          cacheNames.forEach((name) => caches.delete(name))
-        })
-      }
+      // 用 waitUntil 保证异步清理完成前 SW 不会被终止
+      event.waitUntil(
+        (async () => {
+          console.log('[SW] Clearing cache:', data?.cacheName)
+          if (data?.cacheName) {
+            await caches.delete(data.cacheName)
+          } else {
+            const cacheNames = await caches.keys()
+            await Promise.all(cacheNames.map((name) => caches.delete(name)))
+          }
+        })(),
+      )
       break
 
     case 'CACHE_URL':
-      console.log('[SW] Caching URL:', data?.url)
-      if (data?.url) {
-        const cacheName = data?.cacheName || CACHE_NAME
-        const cache = await caches.open(cacheName)
-        const response = await fetch(data.url)
-        // 对于 M3U8_CACHE，使用 URL 字符串作为 key，确保与 pwaCache.ts 兼容
-        const cacheKey = cacheName === M3U8_CACHE ? data.url : new Request(data.url)
-        await cachePut(cache, cacheKey, response)
-      }
+      event.waitUntil(
+        (async () => {
+          console.log('[SW] Caching URL:', data?.url)
+          if (data?.url) {
+            const cacheName = data?.cacheName || CACHE_NAME
+            const cache = await caches.open(cacheName)
+            const response = await fetch(data.url)
+            // 对于 M3U8_CACHE，使用 URL 字符串作为 key，确保与 pwaCache.ts 兼容
+            const cacheKey = cacheName === M3U8_CACHE ? data.url : new Request(data.url)
+            await cachePut(cache, cacheKey, response)
+          }
+        })(),
+      )
       break
 
     default:

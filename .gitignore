@@ -5,9 +5,12 @@ dist/
 .DS_Store
 
 package-lock.json
-pnpm-lock.yaml
 yarn.lock
 bun.lock
+pnpm-lock.yaml
+
 docs/
 tmp/
 public/data/
+.tmp/
+

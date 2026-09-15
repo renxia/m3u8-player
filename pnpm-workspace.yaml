@@ -1,0 +1,12 @@
+minimumReleaseAgeExclude:
+  - lucide-react@1.46.0
+  - puppeteer-core@25.11.0
+  - puppeteer@25.11.0
+
+# pnpm v11+ 用 allowBuilds 管控依赖的生命周期脚本（旧的 ignoredBuiltDependencies/onlyBuiltDependencies 已移除）。
+allowBuilds:
+  # puppeteer 的 postinstall 会下载内置 Chromium；本项目预渲染使用系统已安装的 Chrome
+  # （通过 PUPPETEER_EXECUTABLE_PATH / 自动探测），故禁止该构建脚本。
+  puppeteer: false
+  # esbuild（tsx / vite 依赖）需要安装平台原生二进制，允许其构建脚本。
+  esbuild: true
