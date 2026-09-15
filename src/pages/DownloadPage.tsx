@@ -47,14 +47,16 @@ async function fetchRelease() {
       return data as Release
     }
   } catch (_error) {
-    // 使用本地 fallback
-    try {
-      const response = await fetch('/data/version.json')
-      const data = await response.json()
-      return data as Release
-    } catch {
-      console.error('Failed to fetch release info')
-    }
+    console.error('Failed to fetch release info')
+  }
+
+  // 使用本地 fallback
+  try {
+    const response = await fetch(`/data/version.json?_t=${Math.ceil(Date.now() / (1000 * 60 * 60 * 12))}`)
+    const data = await response.json()
+    return data as Release
+  } catch {
+    console.error('Failed to fetch release info')
   }
 }
 
