@@ -3,7 +3,7 @@
  * - 构造播放地址形式的分享 URL
  * - 调用系统分享 (Web Share API)
  * - 生成分享二维码（使用第三方 QR 服务，无需额外依赖）
- * - 生成包含标题的分享图 (Canvas)
+ * - 生成包含标题的分享图 (Canvas，WebP 优先)
  */
 
 import QRCode from 'qrcode'
@@ -11,6 +11,28 @@ import i18n from '@/i18n'
 import { copyToClipboard } from './utils'
 
 export { copyToClipboard } from './utils'
+
+/** 浏览器是否支持 WebP 编码（结果缓存） */
+let webpEncodeSupported: boolean | undefined
+function supportsWebpEncoding(): boolean {
+  if (webpEncodeSupported !== undefined) return webpEncodeSupported
+  try {
+    const c = document.createElement('canvas')
+    c.width = c.height = 1
+    webpEncodeSupported = c.toDataURL('image/webp', 0.8).startsWith('data:image/webp')
+  } catch {
+    webpEncodeSupported = false
+  }
+  return webpEncodeSupported
+}
+
+/** WebP 导出质量：兼顾体积与二维码模块边缘清晰度 */
+const WEBP_QUALITY = 0.94
+
+/** 导出画布：WebP 优先（体积远小于 PNG），不支持时回退 PNG */
+function toOptimizedDataUrl(canvas: HTMLCanvasElement): string {
+  return supportsWebpEncoding() ? canvas.toDataURL('image/webp', WEBP_QUALITY) : canvas.toDataURL('image/png')
+}
 
 /** 分享内容参数 */
 export interface ShareContent {
@@ -79,7 +101,7 @@ export async function systemShare(content: ShareContent, imageFile?: File): Prom
  * @param text 需要编码的内容
  * @param size 二维码像素尺寸
  * @param color 前景/背景色（海报场景使用深色模块 + 白色底）
- * @returns PNG 格式的 dataURL
+ * @returns WebP 格式的 dataURL（浏览器不支持时回退 PNG）
  */
 export async function getQrCodeDataUrl(
   text: string,
@@ -87,12 +109,14 @@ export async function getQrCodeDataUrl(
   color?: { dark?: string; light?: string },
   errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H' = 'M',
 ): Promise<string> {
-  return QRCode.toDataURL(text, {
+  const options = {
     width: size,
     margin: 1,
     errorCorrectionLevel,
     color: color ? { dark: color.dark ?? '#000000', light: color.light ?? '#FFFFFF' } : undefined,
-  })
+  }
+  if (!supportsWebpEncoding()) return QRCode.toDataURL(text, options)
+  return QRCode.toDataURL(text, { ...options, type: 'image/webp', rendererOpts: { quality: WEBP_QUALITY } })
 }
 
 /* -------------------------------------------------------------------------- */
@@ -245,7 +269,7 @@ export async function getStyledQrCodeDataUrl(text: string, options: StyledQrCode
     }
   }
 
-  return canvas.toDataURL('image/png')
+  return toOptimizedDataUrl(canvas)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -443,10 +467,10 @@ function paintStardust(ctx: CanvasRenderingContext2D, width: number, height: num
 }
 
 /**
- * 生成分享海报 (PNG DataURL)
- * 深色高级质感 + 金色点缀的 3:4 竖版海报，内含可扫描二维码
+ * 生成分享海报
+ * 深色高级质感 + 金色点缀的 4:5 竖版海报，内含可扫描二维码
  *
- * @returns PNG 格式的 dataURL
+ * @returns WebP 格式的 dataURL（浏览器不支持时回退 PNG）
  */
 export async function generateShareImage(content: ShareContent): Promise<string> {
   const { width: W, height: H, padding: PAD } = POSTER
@@ -780,17 +804,20 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   ctx.fillStyle = divider
   ctx.fillRect(textX - 22, cardY + 96, 2, cardH - 192)
 
-  return canvas.toDataURL('image/png')
+  return toOptimizedDataUrl(canvas)
 }
 
 /** 将 dataURL 转为 File 对象（用于系统分享图片） */
 export function dataUrlToFile(dataUrl: string, fileName = 'share.png'): File {
   const [header, base64] = dataUrl.split(',')
   const mime = /data:(.*?);/.exec(header)?.[1] || 'image/png'
+  // 扩展名跟随真实 MIME，避免 WebP 内容保存为 .png
+  const ext = mime === 'image/webp' ? 'webp' : mime === 'image/jpeg' ? 'jpg' : 'png'
+  const name = fileName.replace(/\.[a-z0-9]+$/i, `.${ext}`)
   const binary = atob(base64)
   const array = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i)
-  return new File([array], fileName, { type: mime })
+  return new File([array], name, { type: mime })
 }
 
 /**
