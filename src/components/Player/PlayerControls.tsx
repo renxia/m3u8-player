@@ -121,6 +121,7 @@ export default function PlayerControls({
               'focus:outline-none focus:ring-2 focus:ring-indigo-500',
               'cursor-pointer transition-all',
             )}
+            aria-label={t('player.playbackSpeed', { defaultValue: '播放速度' })}
             title={t('player.playbackSpeed', { defaultValue: '播放速度' })}
           >
             {PLAYBACK_RATES.map((speed) => (
@@ -141,6 +142,7 @@ export default function PlayerControls({
               'bg-amber-600 hover:bg-amber-700 text-white',
               'transition-all',
             )}
+            aria-label={t('player.screenshot', { defaultValue: '截图' })}
             title={t('player.screenshot', { defaultValue: '截图' })}
           >
             <Camera className="w-4 h-4" />
@@ -158,6 +160,7 @@ export default function PlayerControls({
               'bg-emerald-600 hover:bg-emerald-700 text-white',
               'transition-all',
             )}
+            aria-label={t('player.rotate', { defaultValue: '旋转' })}
             title={t('player.rotate', { defaultValue: '旋转' })}
           >
             <RotateCw className="w-4 h-4" />
@@ -175,6 +178,7 @@ export default function PlayerControls({
               'bg-slate-600 hover:bg-slate-700 text-white',
               'transition-all',
             )}
+            aria-label={t('player.shortcuts', { defaultValue: '键盘快捷键' })}
             title={t('player.shortcuts', { defaultValue: '键盘快捷键' })}
           >
             <Keyboard className="w-4 h-4" />
@@ -192,6 +196,7 @@ export default function PlayerControls({
               'bg-cyan-600 hover:bg-cyan-700 text-white',
               'transition-all',
             )}
+            aria-label={t('share.title', { defaultValue: '分享' })}
             title={t('share.title', { defaultValue: '分享' })}
           >
             <Share2 className="w-4 h-4" />

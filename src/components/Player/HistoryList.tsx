@@ -78,6 +78,7 @@ export default function HistoryList({
   return (
     <CollapsibleSection
       sectionKey="history-list"
+      aria-label={activeTab === 'history' ? t('index.history') : t('index.favorites')}
       title={activeTab === 'history' ? t('index.history') : t('index.favorites')}
       className="bg-white/80 dark:bg-slate-800/50 rounded-2xl shadow-xl backdrop-blur-sm overflow-hidden p-0"
       titleRender={(isExpanded, toggleExpanded) => (
@@ -167,6 +168,7 @@ export default function HistoryList({
                       <button
                         onClick={() => handleSaveEdit(idx)}
                         className="p-1 rounded bg-green-600 hover:bg-green-700 text-white transition-all"
+                        aria-label={t('common.save', { defaultValue: '保存' })}
                         title={t('common.save', { defaultValue: '保存' })}
                       >
                         <Check className="w-3.5 h-3.5" />
@@ -174,6 +176,7 @@ export default function HistoryList({
                       <button
                         onClick={handleCancelEdit}
                         className="p-1 rounded bg-slate-600 hover:bg-slate-700 text-white transition-all"
+                        aria-label={t('common.cancel', { defaultValue: '取消' })}
                         title={t('common.cancel', { defaultValue: '取消' })}
                       >
                         <X className="w-3.5 h-3.5" />
@@ -198,6 +201,7 @@ export default function HistoryList({
                       <button
                         onClick={() => currentRemove(idx)}
                         className="p-1.5 rounded-lg bg-red-600/20 hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white transition-all"
+                        aria-label={t('common.delete')}
                         title={t('common.delete')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -205,6 +209,7 @@ export default function HistoryList({
                       <button
                         onClick={() => onPlay(item.url, item.name)}
                         className="p-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white transition-all"
+                        aria-label={t('common.play')}
                         title={t('common.play')}
                       >
                         <Play className="w-3.5 h-3.5" />
@@ -212,6 +217,7 @@ export default function HistoryList({
                       <button
                         onClick={() => handleCopy(item.url)}
                         className="p-1.5 rounded-lg bg-slate-600/20 hover:bg-slate-600 text-slate-600 dark:text-slate-400 hover:text-white transition-all"
+                        aria-label={t('common.copy')}
                         title={t('common.copy')}
                       >
                         <Copy className="w-3.5 h-3.5" />
@@ -219,6 +225,7 @@ export default function HistoryList({
                       <button
                         onClick={() => handleStartEdit(idx, item.name || '')}
                         className="p-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-600 dark:text-cyan-400 hover:text-white transition-all"
+                        aria-label={t('common.edit', { defaultValue: '编辑名称' })}
                         title={t('common.edit', { defaultValue: '编辑名称' })}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -227,6 +234,7 @@ export default function HistoryList({
                         <button
                           onClick={() => handleAddFavorite(item.url, item.name)}
                           className="p-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white transition-all"
+                          aria-label={t('common.fav')}
                           title={t('common.fav')}
                         >
                           <Star className="w-3.5 h-3.5" />
@@ -236,6 +244,7 @@ export default function HistoryList({
                         <button
                           onClick={() => onShare(item.url, item.name)}
                           className="p-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-600 dark:text-cyan-400 hover:text-white transition-all"
+                          aria-label={t('share.title', { defaultValue: '分享' })}
                           title={t('share.title', { defaultValue: '分享' })}
                         >
                           <Share2 className="w-3.5 h-3.5" />

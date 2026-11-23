@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import CollapsibleSection from '@/components/CollapsibleSection'
 import { ServiceWorkerSettings } from '@/components/ServiceWorkerSettings'
+import Dialog from '@/components/ui/Dialog'
 import { useCache } from '@/hooks/useCache'
 import type { CacheType } from '@/lib/cache'
 import { type EmbedSettings, getEmbedSettings, setEmbedSettings, subscribeEmbedSettings } from '@/lib/embed'
@@ -428,6 +429,9 @@ export default function SettingsPage() {
                 </div>
                 <button
                   type="button"
+                  role="switch"
+                  aria-checked={enabled}
+                  aria-label={t('cache.enable')}
                   onClick={toggleEnabled}
                   className={cn(
                     'relative w-14 h-8 rounded-full transition-colors',
@@ -436,8 +440,8 @@ export default function SettingsPage() {
                 >
                   <span
                     className={cn(
-                      'absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
-                      enabled ? 'translate-0' : '-translate-x-5.5',
+                      'absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
+                      enabled ? 'translate-x-6' : 'translate-x-0',
                     )}
                   />
                 </button>
@@ -601,6 +605,9 @@ export default function SettingsPage() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={embedSettings.recordHistory}
+              aria-label={t('settings.embed.recordHistory')}
               onClick={() => toggleEmbedSetting('recordHistory')}
               className={cn(
                 'relative w-14 h-8 rounded-full transition-colors flex-shrink-0',
@@ -609,8 +616,8 @@ export default function SettingsPage() {
             >
               <span
                 className={cn(
-                  'absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
-                  embedSettings.recordHistory ? 'translate-0' : '-translate-x-5.5',
+                  'absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform',
+                  embedSettings.recordHistory ? 'translate-x-6' : 'translate-x-0',
                 )}
               />
             </button>
@@ -645,38 +652,41 @@ export default function SettingsPage() {
       </div>
 
       {/* 清除确认对话框 */}
-      {showClearConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
-                <Trash2 className="w-6 h-6 text-red-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">{t('cache.clearConfirmTitle')}</h3>
-            </div>
-            <p className="text-slate-600 dark:text-slate-300 mb-6">{t('cache.clearConfirmMessage')}</p>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(false)}
-                disabled={isClearing}
-                className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors disabled:opacity-50"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleClearCache}
-                disabled={isClearing}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isClearing && <RefreshCw className="w-4 h-4 animate-spin" />}
-                {t('cache.confirmClear')}
-              </button>
-            </div>
+      <Dialog
+        show={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        labelledBy="clear-cache-dialog-title"
+        panelClassName="max-w-md p-6"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+            <Trash2 className="w-6 h-6 text-red-500" />
           </div>
+          <h3 id="clear-cache-dialog-title" className="text-lg font-semibold text-slate-800 dark:text-white">
+            {t('cache.clearConfirmTitle')}
+          </h3>
         </div>
-      )}
+        <p className="text-slate-600 dark:text-slate-300 mb-6">{t('cache.clearConfirmMessage')}</p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowClearConfirm(false)}
+            disabled={isClearing}
+            className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-colors disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={handleClearCache}
+            disabled={isClearing}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isClearing && <RefreshCw className="w-4 h-4 animate-spin" />}
+            {t('cache.confirmClear')}
+          </button>
+        </div>
+      </Dialog>
     </div>
   )
 }

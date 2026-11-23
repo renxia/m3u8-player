@@ -140,6 +140,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
               ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
               : 'bg-slate-500/20 text-slate-400 hover:bg-slate-500/30',
         )}
+        aria-label={t('cache.title')}
         title={t('cache.title')}
       >
         {!isCacheSupported ? (
@@ -238,6 +239,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                             ? 'bg-indigo-500/20 text-indigo-300 cursor-wait'
                             : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30',
                         )}
+                        aria-label={t('cache.startPreload')}
                         title={t('cache.startPreload')}
                       >
                         {isStarting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
@@ -248,6 +250,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                         type="button"
                         onClick={pausePreload}
                         className="p-1 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg transition-colors"
+                        aria-label={t('cache.pausePreload')}
                         title={t('cache.pausePreload')}
                       >
                         <Pause className="w-3.5 h-3.5" />
@@ -258,6 +261,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                         type="button"
                         onClick={resumePreload}
                         className="p-1 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors"
+                        aria-label={t('cache.resumePreload')}
                         title={t('cache.resumePreload')}
                       >
                         <Play className="w-3.5 h-3.5" />
@@ -268,6 +272,7 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                         type="button"
                         onClick={stopPreload}
                         className="p-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg transition-colors"
+                        aria-label={t('cache.stopPreload')}
                         title={t('cache.stopPreload')}
                       >
                         <X className="w-3.5 h-3.5" />

@@ -32,6 +32,13 @@
   color-scheme: dark;
 }
 
+/* 键盘焦点可见性兜底：Tailwind 的 outline-none 会移除默认焦点环，
+   这里统一用 :focus-visible 保证键盘用户始终能看到焦点位置 */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 /* Layout 渐变背景 */
 .layout-bg {
   background: linear-gradient(to bottom right, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);

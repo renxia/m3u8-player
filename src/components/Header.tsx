@@ -104,6 +104,7 @@ export default function Header() {
                   'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all',
                   'hover:bg-white/20 text-xs lg:text-base',
                 )}
+                aria-label={t('nav.theme')}
                 title={t('nav.theme')}
               >
                 {resolvedTheme === 'dark' ? <Moon className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> : <Sun className="w-3.5 h-3.5 lg:w-4 lg:h-4" />}
