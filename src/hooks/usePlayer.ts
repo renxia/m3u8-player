@@ -5,10 +5,15 @@ import { logger } from '@/utils/logger'
 import { dialog } from '@/utils/toast'
 import { initArtPlayer } from './player/artplayerConfig'
 import { initDPlayer } from './player/dplayerConfig'
+import type { HlsFatalError } from './player/hlsInstance'
 import { detectVideoType } from './player/playerUtils'
 import { createResilientPlayer, ErrorClassifier } from './player/resilientPlayer'
 
-export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, onEnd?: (url: string) => void) {
+export function usePlayer(
+  containerRef: React.RefObject<HTMLDivElement | null>,
+  onEnd?: (url: string) => void,
+  onError?: (error: HlsFatalError) => void,
+) {
   const instances = useRef<PlayerInstances>({
     art: null,
     dp: null,
@@ -150,6 +155,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
           container: containerRef.current,
           url,
           type,
+          onFatalError: onError,
           onEnd: (endedUrl: string) => {
             isPlayingRef.current = false
             onEnd?.(endedUrl)
@@ -179,7 +185,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
         return false
       }
     },
-    [containerRef, onEnd],
+    [containerRef, onEnd, onError],
   )
 
   // DPlayer 播放器初始化（简化，移除冗余检查）
@@ -197,6 +203,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
           container: containerRef.current,
           url,
           type,
+          onFatalError: onError,
           onEnd: (endedUrl: string) => {
             isPlayingRef.current = false
             onEnd?.(endedUrl)
@@ -223,7 +230,7 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
         return false
       }
     },
-    [containerRef, onEnd],
+    [containerRef, onEnd, onError],
   )
 
   // 主播放函数 - 统一管理播放器生命周期

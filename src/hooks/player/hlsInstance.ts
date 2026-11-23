@@ -6,6 +6,18 @@
 import { cacheConfigManager, getSmartPreloader, HlsCachedFragmentLoader, preloader, setCurrentM3U8Url } from '@/lib/cache'
 import { fetchAndParseM3U8 } from '@/lib/cache/m3u8Parser'
 
+/** HLS fatal 错误（重试耗尽后上报给 UI） */
+export interface HlsFatalError {
+  /** hls.js 错误类型：networkError / mediaError / otherError */
+  type: string
+  /** hls.js 错误细节：manifestLoadError / fragLoadError / bufferAppendError ... */
+  details: string
+  /** HTTP 状态码（若有） */
+  statusCode?: number
+  /** 原始错误消息 */
+  message: string
+}
+
 /**
  * HLS 实例配置选项
  */
@@ -20,6 +32,8 @@ export interface HlsInstanceOptions {
   enableHoverPreload?: boolean
   /** 预加载回调 */
   onPreloadError?: (error: Error) => void
+  /** fatal 错误回调（自动重试耗尽后触发） */
+  onFatalError?: (error: HlsFatalError) => void
 }
 
 /**
@@ -36,7 +50,7 @@ export interface HlsInstanceResult {
  * 创建 HLS 实例（带缓存支持）
  */
 export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResult {
-  const { url, video, enableAutoPreload = true, onPreloadError } = options
+  const { url, video, enableAutoPreload = true, onPreloadError, onFatalError } = options
 
   const Hls = window.Hls
   if (!Hls?.isSupported()) {
@@ -67,6 +81,64 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
   let actualLevelIndex = -1
 
   const cleanupFunctions: Array<() => void> = []
+
+  // ——— fatal 错误处理：network / media 自动重试，其余（含 4xx）直接上报 UI ———
+  let networkRetries = 0
+  let mediaRetries = 0
+  const MAX_NETWORK_RETRIES = 2
+  const MAX_MEDIA_RETRIES = 2
+  const retryTimers: Array<ReturnType<typeof setTimeout>> = []
+
+  const handleHlsError = (_event: string, data: any) => {
+    if (!data?.fatal) return
+
+    const statusCode = data.response?.code as number | undefined
+    // 4xx 属鉴权失败/资源不存在，重试无意义
+    const isClientError = typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500
+    const isNetworkError = data.type === Hls.ErrorTypes?.NETWORK_ERROR
+    const isMediaError = data.type === Hls.ErrorTypes?.MEDIA_ERROR
+
+    if (!isClientError && isNetworkError && networkRetries < MAX_NETWORK_RETRIES) {
+      networkRetries++
+      const delay = networkRetries * 1000
+      console.warn(`[HLS] network error, retry ${networkRetries}/${MAX_NETWORK_RETRIES} in ${delay}ms: ${data.details}`)
+      retryTimers.push(
+        setTimeout(() => {
+          try {
+            hls.startLoad()
+          } catch (error) {
+            console.warn('[HLS] startLoad failed:', error)
+          }
+        }, delay),
+      )
+      return
+    }
+
+    if (!isClientError && isMediaError && mediaRetries < MAX_MEDIA_RETRIES) {
+      mediaRetries++
+      console.warn(`[HLS] media error, recover ${mediaRetries}/${MAX_MEDIA_RETRIES}: ${data.details}`)
+      try {
+        hls.recoverMediaError()
+      } catch (error) {
+        console.warn('[HLS] recoverMediaError failed:', error)
+      }
+      return
+    }
+
+    console.error('[HLS] fatal error:', data.type, data.details, statusCode ?? '')
+    onFatalError?.({
+      type: String(data.type ?? 'otherError'),
+      details: String(data.details ?? ''),
+      statusCode,
+      message: String(data.reason ?? data.error?.message ?? 'Unknown HLS error'),
+    })
+  }
+
+  hls.on(Hls.Events.ERROR, handleHlsError)
+  cleanupFunctions.push(() => {
+    retryTimers.forEach((timer) => clearTimeout(timer))
+    hls.off(Hls.Events.ERROR, handleHlsError)
+  })
 
   // 监听播放事件，记录到智能预加载器
   const handlePlay = () => {

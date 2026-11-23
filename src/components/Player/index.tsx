@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { HlsFatalError } from '@/hooks/player/hlsInstance'
 import { loadArtPlayerDependencies, loadDPlayerDependencies } from '@/hooks/player/playerUtils'
 import { usePlayer } from '@/hooks/usePlayer'
 import { useViewMode } from '@/hooks/useViewMode'
@@ -48,6 +49,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
   const isEmbed = useViewMode() === 'embed'
   const containerRef = useRef<HTMLDivElement>(null)
   const [showPlaceholder, setShowPlaceholder] = useState(true)
+  const [playerError, setPlayerError] = useState<HlsFatalError | null>(null)
   const [isDependenciesLoaded, setIsDependenciesLoaded] = useState(false)
   const pendingPlayRef = useRef<{ url: string; type?: string; player?: PlayerType } | null>(null)
   /** 播放流程进行中来新请求时，记录最新请求（latest-wins），结束后补播 */
@@ -58,7 +60,12 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
   const isPlayingRef = useRef(false)
   const pendingFrameRef = useRef<number | null>(null)
 
-  const { play, rotate, destroyAll, demoUrl, getCurrentUrl } = usePlayer(containerRef, onEnded)
+  // fatal 播放错误（hls.js 自动重试耗尽后）
+  const handleFatalError = useCallback((error: HlsFatalError) => {
+    setPlayerError(error)
+  }, [])
+
+  const { play, rotate, destroyAll, demoUrl, getCurrentUrl } = usePlayer(containerRef, onEnded, handleFatalError)
   const [currentM3U8Url, setCurrentM3U8Url] = useState('')
   const previousEnabledRef = useRef<boolean | null>(null)
   const currentM3U8UrlRef = useRef('')
@@ -179,6 +186,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
   // 包装播放函数，隐藏占位符后播放
   const handlePlay = async (url: string, type?: string, player?: PlayerType): Promise<boolean> => {
     const playerType = player || 'artplayer'
+    setPlayerError(null)
 
     // 如果正在播放，记录最新请求（latest-wins），待当前播放流程结束后补播，避免快速切集丢请求
     if (isPlayingRef.current) {
@@ -385,6 +393,23 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
     },
   }))
 
+  // 错误面板：重试当前地址
+  const handleRetry = () => {
+    const url = getCurrentUrl()
+    setPlayerError(null)
+    if (url) void handlePlay(url)
+  }
+
+  const errorReason = playerError
+    ? playerError.statusCode
+      ? t('player.errorHttp', { code: playerError.statusCode })
+      : playerError.type === 'networkError'
+        ? t('player.errorNetwork')
+        : playerError.type === 'mediaError'
+          ? t('player.errorMedia')
+          : t('player.errorOther')
+    : ''
+
   return (
     <div
       className={cn('bg-white/80 dark:bg-slate-800/50 shadow-xl backdrop-blur-sm overflow-hidden', !isEmbed && 'rounded-2xl', className)}
@@ -402,6 +427,33 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
             >
               {t('player.playDemo')}
             </button>
+          </div>
+        )}
+
+        {/* 播放失败面板 */}
+        {playerError && !showPlaceholder && (
+          <div
+            role="alert"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 px-4 text-center bg-slate-900/90 text-slate-100"
+          >
+            <p className="text-base md:text-lg font-medium">{t('player.errorTitle')}</p>
+            <p className="text-xs md:text-sm text-slate-300 break-all max-w-2xl">{errorReason}</p>
+            <div className="flex gap-2 mt-1">
+              <button
+                type="button"
+                onClick={handleRetry}
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm"
+              >
+                {t('player.errorRetry')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlayerError(null)}
+                className="px-4 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg transition-colors text-sm"
+              >
+                {t('common.close')}
+              </button>
+            </div>
           </div>
         )}
 

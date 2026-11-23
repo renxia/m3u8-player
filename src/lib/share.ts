@@ -86,13 +86,9 @@ export async function systemShare(content: ShareContent, imageFile?: File): Prom
     }
   }
 
-  try {
-    await navigator.share(shareData)
-    return true
-  } catch (error) {
-    // 用户取消分享：抛出 AbortError，由调用方回退到复制链接
-    throw error
-  }
+  // 用户取消分享时抛出 AbortError，由调用方回退到复制链接
+  await navigator.share(shareData)
+  return true
 }
 
 /**

@@ -6,7 +6,7 @@ import type React from 'react'
 import { cacheConfigManager, preloader } from '@/lib/cache'
 import { PLAYBACK_RATES } from '@/lib/constants'
 import type { VideoType } from '@/types'
-import { createHlsInstance, preloadSegmentForTime } from './hlsInstance'
+import { createHlsInstance, type HlsFatalError, preloadSegmentForTime } from './hlsInstance'
 import { loadArtPlayerDependencies } from './playerUtils'
 import { createCachedThumbnailPlugin } from './thumbnailPlugin'
 
@@ -38,13 +38,15 @@ export interface ArtPlayerInitOptions {
   onEnd?: (url: string) => void
   /** 当前 URL 引用（用于检查 URL 是否变化） */
   currentUrlRef: React.MutableRefObject<string>
+  /** fatal 播放错误（自动重试耗尽后） */
+  onFatalError?: (error: HlsFatalError) => void
 }
 
 /**
  * 初始化 ArtPlayer
  */
 export async function initArtPlayer(options: ArtPlayerInitOptions): Promise<any> {
-  const { container, url, type, onEnd, currentUrlRef } = options
+  const { container, url, type, onEnd, currentUrlRef, onFatalError } = options
 
   await loadArtPlayerDependencies()
 
@@ -129,6 +131,7 @@ export async function initArtPlayer(options: ArtPlayerInitOptions): Promise<any>
             onPreloadError: (error) => {
               console.warn('[ArtPlayer] Auto preload error:', error)
             },
+            onFatalError,
           })
 
           artInstance.hls = hls
