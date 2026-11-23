@@ -3,7 +3,7 @@
  * 用于根据路由和语言更新页面的 SEO 信息
  */
 
-import { useTranslation } from 'react-i18next'
+import { defaultLanguage, getLangPathPrefix, stripLangPrefix, supportedLanguages } from '@/i18n/languages'
 
 /**
  * 页面 SEO 配置类型
@@ -32,12 +32,11 @@ export interface SeoMeta {
 }
 
 /**
- * 页面路由到 SEO 配置的映射
+ * 页面路由到 SEO 配置的映射（按「去掉语言前缀」后的页面路径登记，
+ * 因此新增语言无需在此重复配置）
  */
 export const PAGE_SEO_CONFIG: Record<string, PageSeoConfig> = {
   '/': { path: '/', i18nKey: 'meta' },
-  '/en': { path: '/en', i18nKey: 'meta' },
-  '/ja-JP': { path: '/ja-JP', i18nKey: 'meta' },
   '/about': { path: '/about', i18nKey: 'about' },
   '/download': { path: '/download', i18nKey: 'download' },
   '/feedback': { path: '/feedback', i18nKey: 'feedback' },
@@ -45,21 +44,19 @@ export const PAGE_SEO_CONFIG: Record<string, PageSeoConfig> = {
 }
 
 /**
- * 根据 path 获取 SEO 配置
+ * 把页面命名空间映射到 SEO 文案的 key 前缀
+ * 首页的文案直接挂在 meta.* 下，其余页面的文案挂在 <page>.meta.* 下
+ */
+export function getSeoI18nPrefix(i18nKey: string): string {
+  return i18nKey === 'meta' ? 'meta' : `${i18nKey}.meta`
+}
+
+/**
+ * 根据 path 获取 SEO 配置（自动忽略语言前缀）
  */
 export function getSeoConfig(path: string): PageSeoConfig | undefined {
-  // 精确匹配
-  if (PAGE_SEO_CONFIG[path]) {
-    return PAGE_SEO_CONFIG[path]
-  }
-
-  // 尝试匹配子路径（如 /en/about -> /about 的配置）
-  const [, basePath] = path.match(/^(?:\/en|\/ja-JP)?(.+)$/) || []
-  if (basePath && PAGE_SEO_CONFIG[basePath]) {
-    return PAGE_SEO_CONFIG[basePath]
-  }
-
-  return undefined
+  const basePath = stripLangPrefix(path)
+  return PAGE_SEO_CONFIG[basePath]
 }
 
 /**
@@ -103,18 +100,54 @@ function updateMetaTag(attribute: 'name' | 'property', key: string, content: str
 }
 
 /**
- * 获取当前页面的 SEO 元数据
+ * 设置 canonical 与 hreflang（含 x-default），并同步 <html lang>
+ * 单页应用切换路由时 meta 会残留，因此每次都要重建 alternate 链接
  */
-export function getPageSeoMeta(i18nKey: string): SeoMeta {
-  const { t } = useTranslation()
+export function setLanguageLinks(pathname: string, currentLang?: string): void {
+  const basePath = stripLangPrefix(pathname)
+  const origin = window.location.origin
+  const langOf = (lang: string) => `${origin}${getLangPathPrefix(lang)}${basePath === '/' ? '' : basePath}` || `${origin}/`
+  const activeLang = currentLang || (pathname === basePath ? defaultLanguage : pathname.split('/')[1])
 
-  // 默认使用 meta 作为 SEO 配置
-  const seoKey = i18nKey || 'meta'
+  // canonical 指向当前语言版本
+  updateLinkTag('canonical', '', langOf(activeLang))
 
-  return {
-    title: t(`${seoKey}.title`),
-    description: t(`${seoKey}.description`),
-    keywords: t(`${seoKey}.keywords`),
-    author: t(`${seoKey}.author`),
+  // 清理旧的 alternate，避免切换路由后残留
+  for (const el of document.querySelectorAll('link[rel="alternate"][hreflang]')) {
+    el.remove()
   }
+
+  for (const lang of supportedLanguages) {
+    const link = document.createElement('link')
+    link.rel = 'alternate'
+    link.hreflang = lang
+    link.href = langOf(lang)
+    document.head.appendChild(link)
+  }
+
+  // x-default 指向默认语言版本
+  const xDefault = document.createElement('link')
+  xDefault.rel = 'alternate'
+  xDefault.hreflang = 'x-default'
+  xDefault.href = langOf(defaultLanguage)
+  document.head.appendChild(xDefault)
+
+  document.documentElement.lang = currentLang || defaultLanguage
+}
+
+/**
+ * 更新或创建 link 标签
+ */
+function updateLinkTag(rel: string, hreflang: string, href: string): void {
+  const selector = hreflang ? `link[rel="${rel}"][hreflang="${hreflang}"]` : `link[rel="${rel}"]`
+  let element = document.querySelector(selector) as HTMLLinkElement | null
+
+  if (!element) {
+    element = document.createElement('link')
+    element.rel = rel
+    if (hreflang) element.hreflang = hreflang
+    document.head.appendChild(element)
+  }
+
+  element.href = href
 }

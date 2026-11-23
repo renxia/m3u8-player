@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { supportedLanguages } from '@/i18n'
+import { defaultLanguage, detectLangFromPath, getLangPathPrefix } from '@/i18n/languages'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -56,6 +56,24 @@ export function isValidHttpUrl(url: string): boolean {
   return /^https?:\/\//i.test(url)
 }
 
+/**
+ * 解析 URL 查询参数中的播放地址。
+ * URLSearchParams 已经解码过一次，这里只在历史分享链接（曾被二次编码）时再解一次；
+ * 且解码失败（如地址中含非法 % 序列）时回退原值，避免 URIError 导致白屏。
+ */
+export function decodeUrlParam(value: string | undefined): string {
+  if (!value) return ''
+  const v = value.trim()
+  if (/^https?%3A/i.test(v)) {
+    try {
+      return decodeURIComponent(v)
+    } catch {
+      return v
+    }
+  }
+  return v
+}
+
 // 复制到剪贴板
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
@@ -75,12 +93,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-// 获取语言路由前缀
+// 获取语言路由前缀（当前路径 → '/en' / '/ja-JP' / '' 等）
 export function getLangPrefix(): string {
-  const pathname = window.location.pathname
-  for (const lang of supportedLanguages) {
-    if (pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`) return `/${lang}`
-  }
-
-  return ''
+  return getLangPathPrefix(detectLangFromPath(window.location.pathname) ?? defaultLanguage)
 }

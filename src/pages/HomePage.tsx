@@ -14,7 +14,7 @@ import { useViewMode } from '@/hooks/useViewMode'
 import { PLAYBACK_RATES } from '@/lib/constants'
 import { shouldRecordHistory } from '@/lib/embed'
 import type { ShareContent } from '@/lib/share'
-import { getUrlParams, isValidHttpUrl } from '@/lib/utils'
+import { decodeUrlParam, getUrlParams, isValidHttpUrl } from '@/lib/utils'
 import type { PlayerType, PlayListItem } from '@/types'
 
 const DEMO_URL = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
@@ -96,7 +96,8 @@ export default function HomePage() {
         const params = new URLSearchParams(location.search)
         // URLSearchParams.get 返回的是已解码的值，应与解码后的 url 直接比较
         if (params.get('url') !== url) {
-          params.set('url', encodeURIComponent(url))
+          // URLSearchParams 会自动编码，不能再手动 encodeURIComponent（会导致地址栏双重编码）
+          params.set('url', url)
           if (resolvedName) params.set('name', resolvedName)
           else params.delete('name')
           window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`)
@@ -112,7 +113,7 @@ export default function HomePage() {
         toast.info(t('common.startPlaying'))
       }
     },
-    [addHistory, playlist, t, mode],
+    [addHistory, playlist, t, mode, isEmbed],
   )
 
   // 播放结束回调
@@ -162,9 +163,9 @@ export default function HomePage() {
   // 从 URL 参数自动播放
   useEffect(() => {
     const params = getUrlParams()
-    const uri = params.url ? decodeURIComponent(params.url) : ''
+    const uri = decodeUrlParam(params.url)
     // 支持 name 和 title 参数作为视频名称
-    const title = params.name ? decodeURIComponent(params.name) : params.title ? decodeURIComponent(params.title) : ''
+    const title = decodeUrlParam(params.name) || decodeUrlParam(params.title)
 
     if (uri) {
       // embed 模式下 url 必须以 http(s) 开头，非法时不播放（界面会显示对应提示）
@@ -263,7 +264,7 @@ export default function HomePage() {
   if (isEmbed) {
     // url 参数必传，且必须以 http(s) 开头，否则显示对应提示
     const embedUrlParam = getUrlParams().url
-    const embedUrl = embedUrlParam ? decodeURIComponent(embedUrlParam) : ''
+    const embedUrl = decodeUrlParam(embedUrlParam)
 
     if (!embedUrl || !isValidHttpUrl(embedUrl)) {
       return <EmbedUrlTip message={t('player.embedNoUrl')} />

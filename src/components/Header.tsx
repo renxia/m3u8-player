@@ -1,8 +1,9 @@
 import { ChevronDown, Download, Globe, Home, Info, MessageSquare, Moon, Settings, Sun } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useLocation } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { useTheme } from '@/hooks/useTheme'
+import { stripLangPrefix } from '@/i18n/languages'
 import { cn, getLangPrefix } from '@/lib/utils'
 
 const languages = [
@@ -18,6 +19,7 @@ const languages = [
 export default function Header() {
   const { t, i18n } = useTranslation()
   const location = useLocation()
+  const navigate = useNavigate()
   const [isLangOpen, setIsLangOpen] = useState(false)
   const [isThemeOpen, setIsThemeOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
@@ -47,19 +49,16 @@ export default function Header() {
   ]
 
   const handleLanguageChange = (langPath: string, langCode: string) => {
-    // 获取当前页面路径（不含语言前缀）
-    let currentPath = location.pathname
-    currentPath = currentPath.replace(/^\/(en|ja-JP|fr|de|pt|es)/, '')
-    if (!currentPath || currentPath === '/') currentPath = ''
+    // 保留页面路径与查询串（?url=&mode=），避免切换语言后正在播放的视频丢失
+    const basePath = stripLangPrefix(location.pathname)
+    const search = location.search || ''
+    const newPath = `${langPath}${basePath === '/' ? '' : basePath}${search}` || '/'
 
-    // 构建新的路径
-    const newPath = langPath + currentPath || '/'
-
-    // 切换语言
     i18n.changeLanguage(langCode)
 
-    // 导航到新路径
-    window.location.href = newPath
+    // 客户端路由跳转，避免整页刷新
+    navigate(newPath)
+    setIsLangOpen(false)
   }
 
   return (

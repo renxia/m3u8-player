@@ -6,7 +6,7 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
-import { getSeoConfig, type SeoMeta, setMetaTags } from '@/lib/seo'
+import { getSeoConfig, getSeoI18nPrefix, type SeoMeta, setLanguageLinks, setMetaTags } from '@/lib/seo'
 import { logger } from '@/utils/logger'
 
 export interface UseSeoOptions {
@@ -67,12 +67,13 @@ export function useSeo(options: UseSeoOptions = {}) {
     }
 
     try {
-      // 获取默认的 SEO 元数据
+      // 获取默认的 SEO 元数据（首页在 meta.*，其余页面在 <page>.meta.*）
+      const prefix = getSeoI18nPrefix(seoConfig.i18nKey)
       const defaultMeta: SeoMeta = {
-        title: t(`${seoConfig.i18nKey}.title`),
-        description: t(`${seoConfig.i18nKey}.description`),
-        keywords: t(`${seoConfig.i18nKey}.keywords`),
-        author: t(`${seoConfig.i18nKey}.author`),
+        title: t(`${prefix}.title`),
+        description: t(`${prefix}.description`),
+        keywords: t(`${prefix}.keywords`),
+        author: t(`${prefix}.author`, { defaultValue: '' }),
       }
 
       // 合并自定义配置
@@ -83,8 +84,9 @@ export function useSeo(options: UseSeoOptions = {}) {
         author: defaultMeta.author,
       }
 
-      // 设置 meta 标签
+      // 设置 meta 标签、canonical / hreflang 与 <html lang>
       setMetaTags(finalMeta)
+      setLanguageLinks(currentPath, currentLang)
 
       logger.debug('[useSeo] Updated SEO meta:', {
         path: currentPath,
@@ -107,14 +109,16 @@ export function useSeo(options: UseSeoOptions = {}) {
     }
 
     try {
+      const prefix = getSeoI18nPrefix(seoConfig.i18nKey)
       const meta: SeoMeta = {
-        title: newOptions.customTitle || t(`${seoConfig.i18nKey}.title`),
-        description: newOptions.customDescription || t(`${seoConfig.i18nKey}.description`),
-        keywords: newOptions.customKeywords || t(`${seoConfig.i18nKey}.keywords`),
-        author: t(`${seoConfig.i18nKey}.author`),
+        title: newOptions.customTitle || t(`${prefix}.title`),
+        description: newOptions.customDescription || t(`${prefix}.description`),
+        keywords: newOptions.customKeywords || t(`${prefix}.keywords`),
+        author: t(`${prefix}.author`, { defaultValue: '' }),
       }
 
       setMetaTags(meta)
+      setLanguageLinks(currentPath, i18n.language)
       logger.debug('[useSeo] Manual SEO update:', meta)
     } catch (error) {
       logger.error('[useSeo] Failed to manually update SEO meta:', error)

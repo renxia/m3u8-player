@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import { ServiceWorkerUpdate } from './components/ServiceWorkerUpdate'
 import { useTheme } from './hooks/useTheme'
 import { supportedLanguages } from './i18n'
+import { getLangPathPrefix } from './i18n/languages'
 import AboutPage from './pages/AboutPage'
 import DownloadPage from './pages/DownloadPage'
 import FeedbackPage from './pages/FeedbackPage'
@@ -31,7 +32,7 @@ function App() {
       />
       <Routes>
         {supportedLanguages.map((lang) => {
-          const langPath = `/${lang === 'zh-CN' ? '' : lang}`
+          const langPath = getLangPathPrefix(lang)
 
           return (
             <Route key={langPath} path={langPath} element={<Layout />}>
