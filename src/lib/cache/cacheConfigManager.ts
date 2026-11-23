@@ -53,6 +53,54 @@ const DEFAULT_CONFIG: CacheConfig = {
 /** 缓存配置存储键 */
 const CONFIG_STORAGE_KEY = 'mp_cache_config'
 
+/** 配置备用存储：IndexedDB 库名与对象仓名 */
+const CONFIG_DB_NAME = 'm3u8_cache_config'
+const CONFIG_DB_STORE = 'config'
+
+/**
+ * 打开配置数据库，并确保 config 对象仓存在
+ *
+ * 历史问题：早期版本首次访问时用 `open(name, 1)` 且未注册 onupgradeneeded，
+ * 会创建一个没有任何对象仓的空库，随后 transaction('config') 抛 NotFoundError。
+ * 这里在打开后校验对象仓，缺失则升版本重建，兼容已存在的空库。
+ */
+function openConfigDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    let request: IDBOpenDBRequest
+    try {
+      request = indexedDB.open(CONFIG_DB_NAME)
+    } catch (error) {
+      reject(error)
+      return
+    }
+
+    request.onerror = () => reject(request.error)
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result
+      if (!db.objectStoreNames.contains(CONFIG_DB_STORE)) db.createObjectStore(CONFIG_DB_STORE)
+    }
+    request.onsuccess = () => {
+      const db = request.result
+      if (db.objectStoreNames.contains(CONFIG_DB_STORE)) {
+        resolve(db)
+        return
+      }
+
+      // 空库修复：关闭后升一个版本，触发 onupgradeneeded 重建对象仓
+      const nextVersion = db.version + 1
+      db.close()
+
+      const retry = indexedDB.open(CONFIG_DB_NAME, nextVersion)
+      retry.onerror = () => reject(retry.error)
+      retry.onupgradeneeded = () => {
+        const upgraded = retry.result
+        if (!upgraded.objectStoreNames.contains(CONFIG_DB_STORE)) upgraded.createObjectStore(CONFIG_DB_STORE)
+      }
+      retry.onsuccess = () => resolve(retry.result)
+    }
+  })
+}
+
 /** 缓存配置变化事件类型 */
 export type ConfigEventType = 'config'
 
@@ -309,28 +357,26 @@ class CacheConfigManager {
    * 保存配置到 IndexedDB（备用存储）
    */
   private async saveToIndexedDB(): Promise<void> {
+    const db = await openConfigDB()
+
     return new Promise((resolve, reject) => {
       try {
-        const request = indexedDB.open('m3u8_cache_config', 1)
-        
-        request.onerror = () => reject(request.error)
-        request.onsuccess = () => {
-          const db = request.result
-          const transaction = db.transaction('config', 'readwrite')
-          const store = transaction.objectStore('config')
-          const putRequest = store.put(this.config, CONFIG_STORAGE_KEY)
-          
-          putRequest.onerror = () => reject(putRequest.error)
-          putRequest.onsuccess = () => resolve()
+        const transaction = db.transaction(CONFIG_DB_STORE, 'readwrite')
+        transaction.objectStore(CONFIG_DB_STORE).put(this.config, CONFIG_STORAGE_KEY)
+        transaction.oncomplete = () => {
+          db.close()
+          resolve()
         }
-        
-        request.onupgradeneeded = (event) => {
-          const db = (event.target as IDBOpenDBRequest).result
-          if (!db.objectStoreNames.contains('config')) {
-            db.createObjectStore('config')
-          }
+        transaction.onerror = () => {
+          db.close()
+          reject(transaction.error)
+        }
+        transaction.onabort = () => {
+          db.close()
+          reject(transaction.error)
         }
       } catch (error) {
+        db.close()
         reject(error)
       }
     })
@@ -340,21 +386,29 @@ class CacheConfigManager {
    * 从 IndexedDB 加载配置（备用存储）
    */
   private async loadFromIndexedDB(): Promise<CacheConfig | null> {
+    let db: IDBDatabase
+    try {
+      db = await openConfigDB()
+    } catch {
+      // IndexedDB 不可用（隐私模式/被禁用）：静默回退到默认配置
+      return null
+    }
+
     return new Promise((resolve, reject) => {
       try {
-        const request = indexedDB.open('m3u8_cache_config', 1)
-        
-        request.onerror = () => reject(request.error)
-        request.onsuccess = () => {
-          const db = request.result
-          const transaction = db.transaction('config', 'readonly')
-          const store = transaction.objectStore('config')
-          const getRequest = store.get(CONFIG_STORAGE_KEY)
-          
-          getRequest.onerror = () => reject(getRequest.error)
-          getRequest.onsuccess = () => resolve(getRequest.result || null)
+        const transaction = db.transaction(CONFIG_DB_STORE, 'readonly')
+        const getRequest = transaction.objectStore(CONFIG_DB_STORE).get(CONFIG_STORAGE_KEY)
+        getRequest.onsuccess = () => {
+          const value = getRequest.result as CacheConfig | undefined
+          db.close()
+          resolve(value || null)
+        }
+        getRequest.onerror = () => {
+          db.close()
+          reject(getRequest.error)
         }
       } catch (error) {
+        db.close()
         reject(error)
       }
     })
