@@ -5,7 +5,6 @@
 
 import { cacheConfigManager, getSmartPreloader, HlsCachedFragmentLoader, preloader, setCurrentM3U8Url } from '@/lib/cache'
 import { fetchAndParseM3U8 } from '@/lib/cache/m3u8Parser'
-import { logger } from '@/utils/logger'
 
 /**
  * HLS 实例配置选项
@@ -148,55 +147,18 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
     video.removeEventListener('ended', handleEnded)
   })
 
-  // 监听片段加载事件，触发自动预加载
+  // 监听片段加载事件，按 preloadCount 预取后续片段（自动预加载的唯一入口）
+  // 说明：MANIFEST_PARSED 后不再做「整部视频全量预加载」——那是用户点击「预加载」才应触发的行为，
+  // 自动全量下载会远超「自动预加载片段数」的配置语义，并让手动预加载长期处于已完成/不可见状态
   if (enableAutoPreload && cacheConfigManager.isEnabled()) {
     const config = cacheConfigManager.getPreloadConfig()
     if (config.preloadCount > 0) {
-      // 预加载任务去重：防止多个预加载任务同时运行
-      let preloadTaskTimer: ReturnType<typeof setTimeout> | null = null
-
-      // 启动预加载任务（带去重和延迟）
-      const startPreloadTask = async (playlistUrl: string, delay = 500) => {
-        // 如果已有任务定时器，取消
-        if (preloadTaskTimer) {
-          clearTimeout(preloadTaskTimer)
-          preloadTaskTimer = null
-        }
-
-        preloadTaskTimer = setTimeout(async () => {
-          const currentStatus = preloader.getStatus()
-          const currentM3U8Url = preloader.getCurrentM3U8Url()
-
-          // 如果当前没有预加载任务，或者 URL 不匹配，开始预加载
-          // 注意：preloadAll 内部已通过 acquirePreloadLock() 防止并发
-          if (currentStatus === 'idle' || currentM3U8Url !== playlistUrl) {
-            try {
-              // 更新当前 M3U8 URL
-              setCurrentM3U8Url(playlistUrl)
-              // 预加载所有剩余片段（会自动跳过已缓存的）
-              // 降低并发数，避免与播放器竞争资源
-              const reducedConcurrency = Math.max(1, Math.floor(config.preloadConcurrency / 2))
-              await preloader.preloadAll(playlistUrl, {
-                concurrency: reducedConcurrency,
-                onError: (error) => {
-                  onPreloadError?.(error)
-                },
-              })
-            } catch (error) {
-              onPreloadError?.(error instanceof Error ? error : new Error(String(error)))
-            }
-          }
-        }, delay)
-      }
-
       const fragLoadedHandler = (_event: string, data: { frag: { sn: number } }) => {
         const currentIndex = data.frag.sn
         if (typeof currentIndex === 'number') {
-          const currentPlaylistUrl = getCurrentPlaylistUrl()
           // 同步当前播放位置，供预加载排序使用
           preloader.setCurrentSegmentIndex(currentIndex)
-          // 使用自动预加载（只预加载少量后续片段）
-          preloader.startAutoPreload(currentPlaylistUrl, currentIndex)
+          preloader.startAutoPreload(getCurrentPlaylistUrl(), currentIndex, { onError: onPreloadError })
         }
       }
       hls.on(Hls.Events.FRAG_LOADED, fragLoadedHandler)
@@ -204,58 +166,20 @@ export function createHlsInstance(options: HlsInstanceOptions): HlsInstanceResul
         hls.off(Hls.Events.FRAG_LOADED, fragLoadedHandler)
       })
 
-      // 当 HLS 准备好后，延迟开始预加载剩余片段（避免影响播放）
-      const manifestParsedHandler = async () => {
-        // 延迟更长时间，确保播放器已经开始播放并稳定
-        const currentPlaylistUrl = getCurrentPlaylistUrl()
-        await startPreloadTask(currentPlaylistUrl, 2000)
-      }
-      hls.on(Hls.Events.MANIFEST_PARSED, manifestParsedHandler)
-      cleanupFunctions.push(() => {
-        hls.off(Hls.Events.MANIFEST_PARSED, manifestParsedHandler)
-      })
-
-      // 监听画质切换事件，当切换画质时更新缓存逻辑
-      const levelSwitchedHandler = async (_event: string, data: { level: number }) => {
-        try {
-          // 更新实际使用的 level
-          actualLevelIndex = data.level
-
-          const currentLevel = hls.levels[data.level]
-          if (currentLevel?.url) {
-            const newPlaylistUrl = currentLevel.url
-            logger.log('[HLS] Level switched to', data.level, ', new playlist URL:', newPlaylistUrl)
-
-            // 停止之前的预加载
-            preloader.stop()
-            if (preloadTaskTimer) {
-              clearTimeout(preloadTaskTimer)
-              preloadTaskTimer = null
-            }
-
-            // 延迟更长时间，确保新的播放列表已经加载并开始播放
-            const newPlaylistUrlCopy = newPlaylistUrl
-            await startPreloadTask(newPlaylistUrlCopy, 1000)
-          }
-        } catch (error) {
-          logger.warn('[HLS] Level switched handler error:', error)
-        }
+      // 画质切换：只中止针对旧清晰度的自动/拖动预加载，用户手动发起的预加载不受影响
+      const levelSwitchedHandler = (_event: string, data: { level: number }) => {
+        actualLevelIndex = data.level
+        const taskType = preloader.getTaskInfo().type
+        if (taskType === 'auto' || taskType === 'seek') preloader.stop()
       }
       hls.on(Hls.Events.LEVEL_SWITCHED, levelSwitchedHandler)
       cleanupFunctions.push(() => {
         hls.off(Hls.Events.LEVEL_SWITCHED, levelSwitchedHandler)
       })
 
-      // 监听 MANIFEST_PARSED 事件，记录初始 level
+      // 记录初始 level（自动模式下 currentLevel 可能为 -1，需等 LEVEL_SWITCHED）
       const initialLevelHandler = () => {
-        // 记录初始 level（可能是自动选择的）
-        if (hls.levels && hls.levels.length > 0) {
-          // 如果 currentLevel 为 -1，等待 LEVEL_SWITCHED 事件
-          // 否则记录当前 level
-          if (hls.currentLevel >= 0) {
-            actualLevelIndex = hls.currentLevel
-          }
-        }
+        if (hls.currentLevel >= 0) actualLevelIndex = hls.currentLevel
       }
       hls.on(Hls.Events.MANIFEST_PARSED, initialLevelHandler)
       cleanupFunctions.push(() => {

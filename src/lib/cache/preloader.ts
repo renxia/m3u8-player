@@ -278,7 +278,7 @@ class Preloader {
    * 使用较低的并发数，避免与播放器竞争资源
    * 根据网络状态自适应调整预加载策略
    */
-  startAutoPreload(m3u8Url: string, currentIndex: number): void {
+  startAutoPreload(m3u8Url: string, currentIndex: number, options: PreloadOptions = {}): void {
     const adapter = getCurrentCacheAdapter()
     if (!adapter.isEnabled()) return
 
@@ -303,6 +303,7 @@ class Preloader {
       const reducedConcurrency = Math.max(1, Math.floor(adaptiveConfig.concurrency / 2))
       this.preloadRange(m3u8Url, currentIndex + 1, adaptiveConfig.preloadCount, {
         concurrency: reducedConcurrency,
+        onError: options.onError,
       }).catch((err) => {
         logger.warn('[Preloader] Auto preload error:', err)
       })
