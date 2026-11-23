@@ -623,6 +623,12 @@ class Preloader {
           throw new DOMException('Preload aborted', 'AbortError')
         }
 
+        // 预加载过程中用户关闭了缓存：立即停止，避免继续下载消耗流量
+        // 用 cacheConfigManager.isEnabled()（含 embed 设置）判断，PWA 适配器的 isEnabled 只反映环境支持
+        if (!cacheConfigManager.isEnabled() || !adapter.isEnabled()) {
+          throw new DOMException('Preload aborted: cache disabled', 'AbortError')
+        }
+
         const segment = queue.shift()
         if (!segment) break
 
