@@ -171,15 +171,17 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
         className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 头部 */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <Share2 className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
-            {t('share.title')}
+        {/* 头部：标题优先用资源名，为空回退为「分享」 */}
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="flex items-center gap-2 min-w-0 text-base font-semibold text-slate-900 dark:text-white">
+            <Share2 className="w-4.5 h-4.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <span className="truncate" title={content.title || t('share.title')}>
+              {content.title || t('share.title')}
+            </span>
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="shrink-0 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             title={t('common.close')}
             type="button"
           >
@@ -189,13 +191,6 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
 
         {/* 内容 */}
         <div className="p-5 space-y-4">
-          {/* 标题（如有） */}
-          {content.title && (
-            <div className="text-sm font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-700/40 rounded-lg px-3 py-2 break-words">
-              {content.title}
-            </div>
-          )}
-
           {/* 模式切换：海报预览 / 扫码 */}
           <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-slate-700/40 rounded-xl p-1">
             <button
@@ -288,19 +283,19 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
           </div>
         </div>
 
-        {/* 操作按钮 */}
-        <div className="px-5 pb-5 flex flex-wrap gap-2">
+        {/* 操作按钮：一行三等分，压缩弹窗高度 */}
+        <div className="px-5 pb-5 flex gap-2">
           <button
             type="button"
             onClick={handleCopy}
             className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-xl transition-all',
+              'flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap transition-all',
               status === 'copied'
                 ? 'bg-green-600 text-white'
                 : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600',
             )}
           >
-            {status === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {status === 'copied' ? <Check className="w-4 h-4 shrink-0" /> : <Copy className="w-4 h-4 shrink-0" />}
             {status === 'copied' ? t('common.copied') : t('share.copyLink')}
           </button>
 
@@ -308,9 +303,9 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
             <button
               type="button"
               onClick={handleSystemShare}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap bg-indigo-600 hover:bg-indigo-700 text-white transition-all"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-4 h-4 shrink-0" />
               {t('share.systemShare')}
             </button>
           )}
@@ -318,9 +313,9 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
           <button
             type="button"
             onClick={handleDownloadImage}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white transition-all"
+            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white transition-all"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 shrink-0" />
             {t('share.saveImage')}
           </button>
         </div>
