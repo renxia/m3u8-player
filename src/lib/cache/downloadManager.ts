@@ -40,8 +40,22 @@ interface SlotWaiter {
   reject: (error: Error) => void
 }
 
+/** 进行中的共享下载任务 */
+interface InflightTask {
+  promise: Promise<ArrayBuffer>
+  /** 内部 AbortController：只有所有调用方都放弃时才真正中止网络请求 */
+  controller: AbortController
+  /** 当前仍在等待该任务的调用方数量 */
+  waiters: number
+  /** 任务是否已 settle */
+  settled: boolean
+}
+
 /** 结果缓存时间（30秒） */
 const RESULT_CACHE_TIME = 30000
+
+/** 结果缓存条目上限（避免长视频播放期间内存无上限增长） */
+const MAX_RESULT_CACHE_ENTRIES = 30
 
 /** 创建 AbortError（与 fetch 中止错误保持一致的 name） */
 function createAbortError(): Error {
@@ -52,8 +66,8 @@ function createAbortError(): Error {
  * 统一的下载管理器
  */
 class DownloadManager {
-  /** 进行中的请求（URL -> Promise），用于去重 */
-  private inflight = new Map<string, Promise<ArrayBuffer>>();
+  /** 进行中的请求（URL -> 任务），用于去重 */
+  private inflight = new Map<string, InflightTask>();
   /** 下载结果缓存（URL -> 结果） */
   private resultCache = new Map<string, DownloadResult>();
   /** 当前活跃下载数 */
@@ -85,6 +99,14 @@ class DownloadManager {
         this.resultCache.delete(url);
       }
     }
+
+    // 兜底：仍超过上限时按时间从旧到新淘汰
+    if (this.resultCache.size > MAX_RESULT_CACHE_ENTRIES) {
+      const sorted = [...this.resultCache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+      for (const [url] of sorted.slice(0, this.resultCache.size - MAX_RESULT_CACHE_ENTRIES)) {
+        this.resultCache.delete(url);
+      }
+    }
   }
 
   /**
@@ -107,20 +129,42 @@ class DownloadManager {
       return cached.data.slice(0); // 返回副本
     }
 
-    // 复用进行中的同 URL 请求（首次调用方负责启动并持有所属 signal）
+    // 复用进行中的同 URL 请求。
+    // 关键：真实请求由内部 AbortController 控制，调用方 signal 只影响自己的等待，
+    // 否则播放与预加载共享同一 URL 时，任一方取消都会打断对方的请求
     let task = this.inflight.get(url);
     if (!task) {
-      task = this.execute(url, priority, signal);
-      this.inflight.set(url, task);
+      const controller = new AbortController();
+      const promise = this.execute(url, priority, controller.signal);
+      const newTask: InflightTask = { promise, controller, waiters: 0, settled: false };
+      task = newTask;
+
       // 请求结束（无论成功失败）都要清理去重表，避免条目永久驻留
-      void task
-        .catch(() => undefined)
-        .then(() => {
-          if (this.inflight.get(url) === task) this.inflight.delete(url);
-        });
+      promise.then(
+        () => {
+          newTask.settled = true;
+          if (this.inflight.get(url) === newTask) this.inflight.delete(url);
+        },
+        () => {
+          newTask.settled = true;
+          if (this.inflight.get(url) === newTask) this.inflight.delete(url);
+        },
+      );
+
+      this.inflight.set(url, newTask);
     }
 
-    return this.waitWithSignal(task, signal);
+    task.waiters++;
+    try {
+      return await this.waitWithSignal(task.promise, signal);
+    } finally {
+      task.waiters--;
+      // 所有调用方都放弃且请求仍未结束 → 真正中止网络请求，避免白白占用带宽
+      if (task.waiters <= 0 && !task.settled) {
+        if (this.inflight.get(url) === task) this.inflight.delete(url);
+        task.controller.abort();
+      }
+    }
   }
 
   /**
@@ -264,6 +308,12 @@ class DownloadManager {
     for (const waiter of pending) {
       waiter.reject(createAbortError());
     }
+
+    // 中止仍在进行的共享请求
+    for (const task of this.inflight.values()) {
+      if (!task.settled) task.controller.abort();
+    }
+    this.inflight.clear();
   }
 
   /**

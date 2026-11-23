@@ -169,6 +169,9 @@ class IdbCacheManager {
     // 检查是否需要淘汰
     await this.ensureCapacity()
 
+    // 覆盖写：先记下旧条目的 size/m3u8Url，写入成功后扣减，避免统计只增不减
+    const existing = await indexedDBStore.getMetadata(url)
+
     const success = await indexedDBStore.set({
       url,
       data,
@@ -177,6 +180,7 @@ class IdbCacheManager {
       m3u8Url,
     })
     if (success) {
+      if (existing) this.removeFromStats(url, existing.size, existing.m3u8Url)
       this.addToStats(url, data.byteLength, m3u8Url)
       this.emit('add', url)
     }

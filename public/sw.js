@@ -26,8 +26,7 @@ const CACHE_STRATEGIES = {
     strategy: networkFirst,
     maxAge: 5 * 60 * 1000, // 5分钟
   },
-  // M3U8 媒体资源：Cache First（媒体片段 URL 通常不变，缓存命中可直接复用）
-  // 注意：使用与 pwaCache.ts 相同的缓存名称，确保缓存共享
+  // M3U8 媒体资源缓存（页面侧负责写入，这里只负责按 TTL 清理历史遗留条目）
   media: {
     cacheName: M3U8_CACHE,
     strategy: cacheFirst,
@@ -360,9 +359,12 @@ self.addEventListener('fetch', (event) => {
 
   // 默认使用 Network First
   let cacheStrategy = CACHE_STRATEGIES.api;
-  // 处理 M3U8 媒体资源
+  // M3U8 媒体资源：完全透传，SW 不参与缓存。
+  // 原因：1) SW 读不到 cacheConfigManager，无法感知用户「关闭缓存」的开关，会继续写入；
+  //      2) 与页面侧 pwaCache 写同一个 Cache 桶会导致重复占用与统计失真。
+  // 媒体缓存统一由页面侧（pwaCache / IndexedDB）负责。
   if (isM3U8Resource(url.href) && url.origin !== location.origin) {
-    cacheStrategy = CACHE_STRATEGIES.media;
+    return;
   } else if (isStaticAsset(url.href) && !url.pathname.includes("?t=")) {
     // 处理静态资源（但排除 Vite 开发构建的资源）
     cacheStrategy = CACHE_STRATEGIES.static;

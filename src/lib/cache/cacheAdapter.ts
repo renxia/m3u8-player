@@ -175,9 +175,13 @@ class PWACacheAdapter implements UnifiedCacheAdapter {
   }
 
   async getOldestKeys(limit: number): Promise<string[]> {
-    const items = await pwaCacheManager.query({ limit })
-    // items 已按 cachedAt 降序排序（最新的在前），反转获取最旧的
-    return items.reverse().map((item) => item.url)
+    // query() 返回按 cachedAt 降序（最新在前）的全量列表，
+    // 直接带 limit 取的是「最新的 N 条」，必须取末尾 N 条才是最旧的
+    const items = await pwaCacheManager.query()
+    return items
+      .slice(-limit)
+      .reverse()
+      .map((item) => item.url)
   }
 }
 

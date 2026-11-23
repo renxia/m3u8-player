@@ -636,7 +636,12 @@ class Preloader {
           // 使用下载管理器下载（较低优先级）
           const data = await downloadManager.download(segment.url, DownloadPriority.PRELOAD, signal)
 
-          await adapter.set(segment.url, data, m3u8Url)
+          // 必须校验写入结果：配额超限 / 事务失败时 set 返回 false，
+          // 若仍计入 loaded，会出现「进度 100% 显示已缓存但实际没有」
+          const saved = await adapter.set(segment.url, data, m3u8Url)
+          if (!saved) {
+            throw new Error(`Failed to write cache (quota exceeded or storage error): ${segment.url}`)
+          }
 
           loaded++
           loadedBytes += data.byteLength

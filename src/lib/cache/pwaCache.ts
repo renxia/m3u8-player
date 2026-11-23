@@ -375,9 +375,12 @@ class PWACacheManager {
         contentType,
         m3u8Url,
       }
+      // 覆盖写：先取旧条目（saveMetadata 会覆盖内存缓存），写入后扣减再累加
+      const existing = this.metadataCache.get(url)
       await this.saveMetadata(metadata)
 
       // 增量统计
+      if (existing) this.removeFromStats(existing)
       this.addToStats(metadata)
 
       // 添加到 LRU 缓存
