@@ -281,6 +281,10 @@
       "defaultTitle": "Reproductor M3U8 Online",
       "scanTitle": "Escanea para ver",
       "scanDesc": "Sin instalar · Sin anuncios · HD al instante"
-    }
+    },
+    "tabPoster": "Póster",
+    "tabScan": "Código QR",
+    "posterLoading": "Generando póster…",
+    "posterAlt": "Póster para compartir"
   }
 }

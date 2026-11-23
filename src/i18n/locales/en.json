@@ -281,6 +281,10 @@
       "defaultTitle": "M3U8 Online Player",
       "scanTitle": "Scan to play",
       "scanDesc": "No install · No ads · Instant HD"
-    }
+    },
+    "tabPoster": "Poster",
+    "tabScan": "QR Code",
+    "posterLoading": "Generating poster…",
+    "posterAlt": "Share poster"
   }
 }

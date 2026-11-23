@@ -281,6 +281,10 @@
       "defaultTitle": "Player M3U8 Online",
       "scanTitle": "Escaneie para assistir",
       "scanDesc": "Sem instalar · Sem anúncios · HD instantâneo"
-    }
+    },
+    "tabPoster": "Pôster",
+    "tabScan": "QR Code",
+    "posterLoading": "Gerando pôster…",
+    "posterAlt": "Pôster de compartilhamento"
   }
 }

@@ -281,6 +281,10 @@
       "defaultTitle": "M3U8 Online-Player",
       "scanTitle": "Scannen und abspielen",
       "scanDesc": "Ohne Installation · Werbefrei · Sofort HD"
-    }
+    },
+    "tabPoster": "Poster",
+    "tabScan": "QR-Code",
+    "posterLoading": "Poster wird erstellt…",
+    "posterAlt": "Freigabe-Poster"
   }
 }

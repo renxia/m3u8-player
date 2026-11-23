@@ -281,6 +281,10 @@
       "defaultTitle": "M3U8 オンラインプレーヤー",
       "scanTitle": "スキャンして再生",
       "scanDesc": "インストール不要 · 広告なし · 高画質"
-    }
+    },
+    "tabPoster": "ポスター",
+    "tabScan": "QRコード",
+    "posterLoading": "ポスター生成中…",
+    "posterAlt": "共有ポスター"
   }
 }

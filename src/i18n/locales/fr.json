@@ -281,6 +281,10 @@
       "defaultTitle": "Lecteur M3U8 en ligne",
       "scanTitle": "Scannez pour lire",
       "scanDesc": "Sans installation · Sans pub · HD instantanée"
-    }
+    },
+    "tabPoster": "Affiche",
+    "tabScan": "QR Code",
+    "posterLoading": "Génération de l'affiche…",
+    "posterAlt": "Affiche de partage"
   }
 }

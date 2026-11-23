@@ -81,11 +81,16 @@ export async function systemShare(content: ShareContent, imageFile?: File): Prom
  * @param color 前景/背景色（海报场景使用深色模块 + 白色底）
  * @returns PNG 格式的 dataURL
  */
-export async function getQrCodeDataUrl(text: string, size = 220, color?: { dark?: string; light?: string }): Promise<string> {
+export async function getQrCodeDataUrl(
+  text: string,
+  size = 220,
+  color?: { dark?: string; light?: string },
+  errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H' = 'M',
+): Promise<string> {
   return QRCode.toDataURL(text, {
     width: size,
     margin: 1,
-    errorCorrectionLevel: 'M',
+    errorCorrectionLevel,
     color: color ? { dark: color.dark ?? '#000000', light: color.light ?? '#FFFFFF' } : undefined,
   })
 }
@@ -392,7 +397,7 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   const contentW = W - PAD * 2
   const cardX = PAD
   const cardW = contentW
-  const cardH = 400
+  const cardH = 440
   const cardY = H - PAD - cardH
 
   const scanTitle = i18n.t('share.poster.scanTitle', { defaultValue: '扫码即刻播放' })
@@ -500,6 +505,41 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   ctx.fill()
   ctx.restore()
 
+  // 卡片质感层：白 → 微暖金渐变 + 品牌水印 + 金色角标（均避开二维码静区）
+  ctx.save()
+  roundRect(ctx, cardX, cardY, cardW, cardH, POSTER.radius)
+  ctx.clip()
+
+  const cardBg = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH)
+  cardBg.addColorStop(0, '#FFFFFF')
+  cardBg.addColorStop(1, '#FBF7EC')
+  ctx.fillStyle = cardBg
+  ctx.fillRect(cardX, cardY, cardW, cardH)
+
+  // 右下角超大品牌水印（alpha 极低，仅作质感）
+  ctx.fillStyle = 'rgba(216,164,80,0.05)'
+  ctx.font = `900 190px ${FONT_STACK}`
+  ctx.textAlign = 'right'
+  ctx.fillText('M3U8', cardX + cardW + 10, cardY + cardH + 46)
+  ctx.textAlign = 'left'
+
+  // 金色角标（右上 / 右下，远离二维码）
+  const cornerX = cardX + cardW - 18
+  const cornerLen = 52
+  ctx.strokeStyle = 'rgba(216,164,80,0.55)'
+  ctx.lineWidth = 2.5
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(cornerX - cornerLen, cardY + 18)
+  ctx.lineTo(cornerX, cardY + 18)
+  ctx.lineTo(cornerX, cardY + 18 + cornerLen)
+  ctx.moveTo(cornerX - cornerLen, cardY + cardH - 18)
+  ctx.lineTo(cornerX, cardY + cardH - 18)
+  ctx.lineTo(cornerX, cardY + cardH - 18 - cornerLen)
+  ctx.stroke()
+
+  ctx.restore()
+
   // 卡片顶部发丝金色高光，提升精致度
   const hairline = ctx.createLinearGradient(cardX + 40, 0, cardX + cardW * 0.52, 0)
   hairline.addColorStop(0, 'rgba(231,196,139,0.9)')
@@ -508,8 +548,8 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   ctx.fillRect(cardX + 40, cardY + 1, cardW * 0.48, 2)
 
   // 二维码（尺寸取卡片可用高度，最大化可扫描性）
-  const qrSize = 344
-  const qrX = cardX + 72
+  const qrSize = 360
+  const qrX = cardX + 62
   const qrY = cardY + (cardH - qrSize) / 2
   let qrImage: HTMLImageElement | null = null
   try {
@@ -518,6 +558,11 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   } catch {
     qrImage = null
   }
+
+  // 二维码白色底板：保证静区纯白，与暖金卡片拉开层次
+  ctx.fillStyle = '#FFFFFF'
+  roundRect(ctx, qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 22)
+  ctx.fill()
 
   if (qrImage) {
     ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
@@ -535,7 +580,7 @@ export async function generateShareImage(content: ShareContent): Promise<string>
 
   // 卡片右侧文案
   const textX = qrX + qrSize + 44
-  const textW = cardX + cardW - 72 - textX
+  const textW = cardX + cardW - 62 - textX
 
   let scanSize = 52
   ctx.font = `800 ${scanSize}px ${FONT_STACK}`
@@ -544,7 +589,7 @@ export async function generateShareImage(content: ShareContent): Promise<string>
     ctx.font = `800 ${scanSize}px ${FONT_STACK}`
   }
   ctx.fillStyle = '#0B1020'
-  ctx.fillText(ellipsize(ctx, scanTitle, textW), textX, cardY + 176)
+  ctx.fillText(ellipsize(ctx, scanTitle, textW), textX, cardY + 198)
 
   // 网址胶囊
   let host = ''
@@ -558,19 +603,19 @@ export async function generateShareImage(content: ShareContent): Promise<string>
     const hostText = ellipsize(ctx, host, textW - 40)
     const hostWidth = Math.min(ctx.measureText(hostText).width + 40, textW)
     ctx.fillStyle = 'rgba(15,23,42,0.05)'
-    roundRect(ctx, textX, cardY + 204, hostWidth, 50, 25)
+    roundRect(ctx, textX, cardY + 228, hostWidth, 50, 25)
     ctx.fill()
     ctx.fillStyle = '#475569'
-    ctx.fillText(hostText, textX + 20, cardY + 237)
+    ctx.fillText(hostText, textX + 20, cardY + 261)
   }
 
   // 卡片内金色分隔竖线（二维码与文案之间）
-  const divider = ctx.createLinearGradient(0, cardY + 80, 0, cardY + cardH - 80)
+  const divider = ctx.createLinearGradient(0, cardY + 96, 0, cardY + cardH - 96)
   divider.addColorStop(0, 'rgba(231,196,139,0)')
   divider.addColorStop(0.5, 'rgba(231,196,139,0.7)')
   divider.addColorStop(1, 'rgba(231,196,139,0)')
   ctx.fillStyle = divider
-  ctx.fillRect(textX - 22, cardY + 80, 2, cardH - 160)
+  ctx.fillRect(textX - 22, cardY + 96, 2, cardH - 192)
 
   return canvas.toDataURL('image/png')
 }
