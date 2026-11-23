@@ -52,7 +52,8 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
     let url = urlInput.trim() || demoUrl
     if (!url.startsWith('http')) {
       if (url.includes('http')) {
-        const match = url.match(/https?:\/\/[a-z0-9\-./]+/i)
+        // 取整段地址（含查询串），不能只匹配 [a-z0-9\-./]，否则会截断 ?token= 之类的鉴权参数
+        const match = url.match(/https?:\/\/[^\s"'<>]+/i)
         if (match) url = match[0]
       } else {
         url = ''
@@ -168,7 +169,11 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
       if (file.name.endsWith('.m3u8')) {
         file.text().then((text) => {
           setM3u8Content(text)
-          handlePlay('artplayer')
+          // 本地文件没有可用的 base URL，直接用它生成 blob 播放。
+          // 不能调用 handlePlay()：它读取的是本次渲染前的 m3u8Content（旧值），
+          // 会退化成播放 demo 或上一个地址
+          const blobUrl = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
+          onPlay(blobUrl, 'customHls', 'artplayer')
         })
       } else if (file.type.startsWith('video/')) {
         const url = URL.createObjectURL(file)
@@ -177,7 +182,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
         onPlay(url, type)
       }
     },
-    [handlePlay, onPlay],
+    [onPlay],
   )
 
   // 处理拖放

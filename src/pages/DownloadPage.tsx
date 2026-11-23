@@ -5,7 +5,7 @@ import { StorageKeys, storage } from '@/lib/storage'
 import { cn, detectOS, formatDate, formatSize } from '@/lib/utils'
 import type { Asset, OSType, Release } from '@/types'
 
-const ghproxy = navigator.language === 'zh-CN' ? 'https://gh-proxy.org/' : ''
+const ghproxy = navigator.language?.toLowerCase().startsWith('zh') ? 'https://gh-proxy.org/' : ''
 
 function getOSAsset(assets: Asset[], os: OSType): Asset | null {
   if (os === 'windows') {

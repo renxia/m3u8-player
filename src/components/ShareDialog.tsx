@@ -21,6 +21,7 @@ import {
   systemShare,
 } from '@/lib/share'
 import { cn } from '@/lib/utils'
+import { logger } from '@/utils/logger'
 
 interface ShareDialogProps {
   /** 是否显示 */
@@ -155,12 +156,21 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
     }
     const file = dataUrlToFile(dataUrl, `m3u8-share-${Date.now()}.png`)
     const url = URL.createObjectURL(file)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = file.name
-    a.click()
-    URL.revokeObjectURL(url)
-    toast.success(t('share.imageSaved'))
+    try {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.name
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      // 立即 revoke 会让部分浏览器（Safari）下载失败，延迟释放
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
+      toast.success(t('share.imageSaved'))
+    } catch (error) {
+      URL.revokeObjectURL(url)
+      logger.warn('[ShareDialog] Download image failed:', error)
+      toast.error(t('share.imageFailed'))
+    }
   }, [content, posterUrl, t])
 
   if (!show) return null
