@@ -278,6 +278,7 @@
     "nothingToShare": "Nada para compartilhar",
     "copyFailed": "Falha ao copiar",
     "poster": {
+      "defaultTitle": "Player M3U8 Online",
       "scanTitle": "Escaneie para assistir",
       "scanDesc": "Sem instalar · Sem anúncios · HD instantâneo"
     }

@@ -278,6 +278,7 @@
     "nothingToShare": "Nada que compartir",
     "copyFailed": "Error al copiar",
     "poster": {
+      "defaultTitle": "Reproductor M3U8 Online",
       "scanTitle": "Escanea para ver",
       "scanDesc": "Sin instalar · Sin anuncios · HD al instante"
     }

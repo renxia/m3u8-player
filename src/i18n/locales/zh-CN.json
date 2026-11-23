@@ -274,6 +274,7 @@
     "nothingToShare": "暂无可分享的内容",
     "copyFailed": "复制失败",
     "poster": {
+      "defaultTitle": "M3U8 在线播放器",
       "scanTitle": "扫码即刻播放",
       "scanDesc": "免安装 · 无广告 · 高清秒开"
     }

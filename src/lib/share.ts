@@ -276,9 +276,7 @@ function paintStardust(ctx: CanvasRenderingContext2D, width: number, height: num
     const y = Math.random() * height
     const r = Math.random() * 1.4 + 0.4
     const golden = Math.random() > 0.7
-    ctx.fillStyle = golden
-      ? `rgba(231,196,139,${0.05 + Math.random() * 0.22})`
-      : `rgba(255,255,255,${0.03 + Math.random() * 0.14})`
+    ctx.fillStyle = golden ? `rgba(231,196,139,${0.05 + Math.random() * 0.22})` : `rgba(255,255,255,${0.03 + Math.random() * 0.14})`
     ctx.beginPath()
     ctx.arc(x, y, r, 0, Math.PI * 2)
     ctx.fill()
@@ -405,10 +403,11 @@ export async function generateShareImage(content: ShareContent): Promise<string>
     .filter(Boolean)
 
   // 主标题先测量，用于纵向排布（优先 2 行，避免末行孤字）
-  const rawTitle = (content.title || '').trim() || 'M3U8 Player'
+  const rawTitle = (content.title || '').trim() || i18n.t('share.poster.defaultTitle', { defaultValue: 'M3U8 在线播放器' })
   const titleSizes = [96, 88, 80, 72, 64, 56, 48]
   let title = fitTitle(ctx, rawTitle, contentW, 2, titleSizes)
-  if (!title.complete) title = fitTitle(ctx, rawTitle, contentW, 3, titleSizes)
+  // 3 行时降一档字号，给底部二维码卡片留出空间
+  if (!title.complete) title = fitTitle(ctx, rawTitle, contentW, 3, titleSizes.slice(1))
   const lineHeight = Math.round(title.size * 1.2)
 
   const chipH = 56
@@ -449,7 +448,8 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   ctx.fill()
 
   /* --------------------------- 卖点胶囊（标题下方） --------------------------- */
-  const chipTop = accentY + 72
+  // 与卡片保持安全距离，避免挤压二维码卡片
+  const chipTop = Math.min(accentY + 72, cardY - 60 - chipH)
   if (hasChips) {
     let chipFont = 22
     let chipPadX = 28
@@ -507,9 +507,9 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   ctx.fillStyle = hairline
   ctx.fillRect(cardX + 40, cardY + 1, cardW * 0.48, 2)
 
-  // 二维码
-  const qrSize = 296
-  const qrX = cardX + 104
+  // 二维码（尺寸取卡片可用高度，最大化可扫描性）
+  const qrSize = 344
+  const qrX = cardX + 72
   const qrY = cardY + (cardH - qrSize) / 2
   let qrImage: HTMLImageElement | null = null
   try {
@@ -535,7 +535,7 @@ export async function generateShareImage(content: ShareContent): Promise<string>
 
   // 卡片右侧文案
   const textX = qrX + qrSize + 44
-  const textW = cardX + cardW - 44 - textX
+  const textW = cardX + cardW - 72 - textX
 
   let scanSize = 52
   ctx.font = `800 ${scanSize}px ${FONT_STACK}`
@@ -544,7 +544,7 @@ export async function generateShareImage(content: ShareContent): Promise<string>
     ctx.font = `800 ${scanSize}px ${FONT_STACK}`
   }
   ctx.fillStyle = '#0B1020'
-  ctx.fillText(ellipsize(ctx, scanTitle, textW), textX, cardY + 180)
+  ctx.fillText(ellipsize(ctx, scanTitle, textW), textX, cardY + 176)
 
   // 网址胶囊
   let host = ''
@@ -558,10 +558,10 @@ export async function generateShareImage(content: ShareContent): Promise<string>
     const hostText = ellipsize(ctx, host, textW - 40)
     const hostWidth = Math.min(ctx.measureText(hostText).width + 40, textW)
     ctx.fillStyle = 'rgba(15,23,42,0.05)'
-    roundRect(ctx, textX, cardY + 210, hostWidth, 50, 25)
+    roundRect(ctx, textX, cardY + 204, hostWidth, 50, 25)
     ctx.fill()
     ctx.fillStyle = '#475569'
-    ctx.fillText(hostText, textX + 20, cardY + 243)
+    ctx.fillText(hostText, textX + 20, cardY + 237)
   }
 
   // 卡片内金色分隔竖线（二维码与文案之间）

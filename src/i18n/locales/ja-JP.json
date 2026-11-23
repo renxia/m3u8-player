@@ -278,6 +278,7 @@
     "nothingToShare": "共有するコンテンツがありません",
     "copyFailed": "コピーに失敗しました",
     "poster": {
+      "defaultTitle": "M3U8 オンラインプレーヤー",
       "scanTitle": "スキャンして再生",
       "scanDesc": "インストール不要 · 広告なし · 高画質"
     }

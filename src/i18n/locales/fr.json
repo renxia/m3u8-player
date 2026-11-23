@@ -278,6 +278,7 @@
     "nothingToShare": "Rien à partager",
     "copyFailed": "Échec de la copie",
     "poster": {
+      "defaultTitle": "Lecteur M3U8 en ligne",
       "scanTitle": "Scannez pour lire",
       "scanDesc": "Sans installation · Sans pub · HD instantanée"
     }

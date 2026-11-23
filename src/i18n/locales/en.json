@@ -278,6 +278,7 @@
     "nothingToShare": "Nothing to share",
     "copyFailed": "Copy failed",
     "poster": {
+      "defaultTitle": "M3U8 Online Player",
       "scanTitle": "Scan to play",
       "scanDesc": "No install · No ads · Instant HD"
     }
