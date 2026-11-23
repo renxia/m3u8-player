@@ -6,7 +6,7 @@
  * - 支持一键复制链接
  */
 
-import { Check, Copy, Download, Image as ImageIcon, Loader2, Play, QrCode, Share2, X } from 'lucide-react'
+import { Check, Copy, Download, Image as ImageIcon, Loader2, QrCode, Share2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -16,7 +16,7 @@ import {
   copyToClipboard,
   dataUrlToFile,
   generateShareImage,
-  getQrCodeDataUrl,
+  getStyledQrCodeDataUrl,
   type ShareContent,
   systemShare,
 } from '@/lib/share'
@@ -75,12 +75,28 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
     }
   }, [show, content])
 
-  // 本地生成二维码（H 级容错，配合中心品牌标），失败时展示占位
+  // 本地生成美化二维码（渐变紫 + 圆角模块 + 中心站点图标）
+  // 纠错级别与 logo 占比按链接长度自适应：链接越长，模块越密，越需要给模块让位
   useEffect(() => {
     if (!show) return
     let cancelled = false
     setQrUrl('')
-    getQrCodeDataUrl(shareUrl, 220, { dark: '#0A0A12', light: '#FFFFFF' }, 'H')
+    setQrFailed(false)
+    const len = shareUrl.length
+    const errorCorrectionLevel = len > 700 ? 'L' : len > 400 ? 'Q' : 'H'
+    const logoSize = len > 700 ? 16 : 20
+    getStyledQrCodeDataUrl(shareUrl, {
+      size: 760,
+      margin: 2,
+      errorCorrectionLevel,
+      colorFrom: '#312E81',
+      colorTo: '#7C3AED',
+      eyeColor: '#312E81',
+      shape: 'rounded',
+      eyeStyle: 'rounded',
+      logo: '/assets/favicon.png',
+      logoSize,
+    })
       .then((url) => {
         if (!cancelled) setQrUrl(url)
       })
@@ -152,7 +168,7 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={onClose}>
       <div
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
@@ -210,11 +226,11 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
             </button>
           </div>
 
-          {/* 海报预览 */}
+          {/* 海报预览：深色展台衬托，避免深色海报与白色弹窗直接硬碰 */}
           {mode === 'poster' && (
-            <div className="flex justify-center">
+            <div className="rounded-2xl bg-gradient-to-br from-slate-800 via-slate-800 to-indigo-900 p-4 shadow-inner">
               {posterLoading ? (
-                <div className="w-full h-[340px] rounded-xl bg-slate-100 dark:bg-slate-700/40 flex flex-col items-center justify-center gap-2 text-slate-400">
+                <div className="h-[46vh] max-h-[460px] min-h-[240px] flex flex-col items-center justify-center gap-2 text-slate-500">
                   <Loader2 className="w-6 h-6 animate-spin" />
                   <span className="text-xs">{t('share.posterLoading')}</span>
                 </div>
@@ -222,10 +238,10 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
                 <img
                   src={posterUrl}
                   alt={t('share.posterAlt')}
-                  className="max-h-[380px] rounded-xl border border-slate-200 dark:border-slate-600 shadow-md"
+                  className="mx-auto block max-h-[46vh] w-auto rounded-xl shadow-2xl ring-1 ring-white/10"
                 />
               ) : (
-                <div className="w-full h-[340px] rounded-xl bg-slate-100 dark:bg-slate-700/40 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
+                <div className="h-[46vh] max-h-[460px] min-h-[240px] flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
                   <ImageIcon className="w-8 h-8" />
                   {t('share.imageFailed')}
                 </div>
@@ -233,24 +249,26 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
             </div>
           )}
 
-          {/* 扫码模式：大二维码 + 中心品牌标 */}
+          {/* 扫码模式：大二维码（渐变紫 + 中心站点图标） */}
           {mode === 'scan' && (
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-white p-3 rounded-2xl border border-amber-200/80 dark:border-amber-400/30 shadow-sm">
+              <div className="bg-white p-3 rounded-2xl border border-indigo-200/70 dark:border-indigo-400/30 shadow-sm">
                 {qrFailed ? (
-                  <div className="w-[220px] h-[220px] flex flex-col items-center justify-center text-slate-400 text-xs gap-2 text-center px-4">
+                  <div className="w-[260px] h-[260px] flex flex-col items-center justify-center text-slate-400 text-xs gap-2 text-center px-4">
                     <QrCode className="w-8 h-8" />
                     {t('share.qrFailed')}
                   </div>
                 ) : qrUrl ? (
-                  <div className="relative">
-                    <img src={qrUrl} alt={t('share.qrCode')} width={220} height={220} className="block" onError={() => setQrFailed(true)} />
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-xl shadow-md ring-1 ring-amber-200 flex items-center justify-center">
-                      <Play className="w-6 h-6 text-amber-500 fill-amber-500" />
-                    </div>
-                  </div>
+                  <img
+                    src={qrUrl}
+                    alt={t('share.qrCode')}
+                    width={260}
+                    height={260}
+                    className="block w-[260px] h-[260px] rounded-lg"
+                    onError={() => setQrFailed(true)}
+                  />
                 ) : (
-                  <div className="w-[220px] h-[220px] flex items-center justify-center text-slate-300 dark:text-slate-600">
+                  <div className="w-[260px] h-[260px] flex items-center justify-center text-slate-300 dark:text-slate-600">
                     <QrCode className="w-8 h-8 animate-pulse" />
                   </div>
                 )}
@@ -300,7 +318,7 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
           <button
             type="button"
             onClick={handleDownloadImage}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white transition-all"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white transition-all"
           >
             <Download className="w-4 h-4" />
             {t('share.saveImage')}

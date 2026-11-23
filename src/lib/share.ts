@@ -96,6 +96,159 @@ export async function getQrCodeDataUrl(
 }
 
 /* -------------------------------------------------------------------------- */
+/*                          美化二维码（自绘矩阵）                              */
+/* -------------------------------------------------------------------------- */
+
+/** 美化二维码配置 */
+export interface StyledQrCodeOptions {
+  /** 输出像素尺寸 */
+  size?: number
+  /** 静区模块数（建议 ≥2） */
+  margin?: number
+  /** 纠错级别（含中心 logo 时必须用 H） */
+  errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H'
+  /** 渐变起始色 */
+  colorFrom?: string
+  /** 渐变结束色 */
+  colorTo?: string
+  /** 定位眼颜色（纯色，保证识别） */
+  eyeColor?: string
+  /** 背景色 */
+  background?: string
+  /** 模块形状 */
+  shape?: 'square' | 'rounded' | 'dot'
+  /** 定位眼样式 */
+  eyeStyle?: 'square' | 'rounded' | 'circle'
+  /** 中心 logo 图片地址（同源） */
+  logo?: string
+  /** logo 占码面边长百分比（建议 ≤24） */
+  logoSize?: number
+}
+
+/** 绘制定位眼（7×7 模块区域） */
+function drawQrEye(ctx: CanvasRenderingContext2D, x: number, y: number, cell: number, style: string) {
+  const s = cell * 7
+  if (style === 'circle') {
+    ctx.lineWidth = cell
+    ctx.beginPath()
+    ctx.arc(x + s / 2, y + s / 2, s / 2 - cell / 2, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(x + s / 2, y + s / 2, cell * 1.5, 0, Math.PI * 2)
+    ctx.fill()
+    return
+  }
+
+  const outerR = style === 'rounded' ? cell * 2.2 : cell * 0.6
+  ctx.lineWidth = cell
+  roundRect(ctx, x + cell / 2, y + cell / 2, s - cell, s - cell, Math.max(0, outerR - cell / 2))
+  ctx.stroke()
+
+  const innerR = style === 'rounded' ? cell * 1.1 : cell * 0.3
+  roundRect(ctx, x + cell * 2, y + cell * 2, cell * 3, cell * 3, innerR)
+  ctx.fill()
+}
+
+/**
+ * 生成美化版二维码 DataURL
+ * 基于 qrcode 的矩阵自绘：支持渐变前景、圆角/圆点模块、自定义定位眼、中心 logo
+ * 默认参数已按可扫描性收敛（H 级纠错、静区 2 模块、logo ≤24%）
+ */
+export async function getStyledQrCodeDataUrl(text: string, options: StyledQrCodeOptions = {}): Promise<string> {
+  const {
+    size = 660,
+    margin = 2,
+    errorCorrectionLevel = 'H',
+    colorFrom = '#312E81',
+    colorTo = '#7C3AED',
+    eyeColor = '#312E81',
+    background = '#FFFFFF',
+    shape = 'rounded',
+    eyeStyle = 'rounded',
+    logo,
+    logoSize = 22,
+  } = options
+
+  const qr = QRCode.create(text, { errorCorrectionLevel })
+  const n = qr.modules.size
+  const data = qr.modules.data
+
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+
+  // 码点取整，避免半像素抗锯齿把圆角模块糊成一片
+  const cell = Math.max(2, Math.floor(size / (n + margin * 2)))
+  const face = cell * n
+  const off = Math.round((size - face) / 2)
+
+  ctx.fillStyle = background
+  ctx.fillRect(0, 0, size, size)
+
+  const grad = ctx.createLinearGradient(0, 0, size, size)
+  grad.addColorStop(0, colorFrom)
+  grad.addColorStop(1, colorTo)
+  ctx.fillStyle = grad
+
+  const inEye = (r: number, c: number) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7)
+
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (!(data[r * n + c] & 1) || inEye(r, c)) continue
+      const x = off + c * cell
+      const y = off + r * cell
+      if (shape === 'dot') {
+        ctx.beginPath()
+        ctx.arc(x + cell / 2, y + cell / 2, cell * 0.5, 0, Math.PI * 2)
+        ctx.fill()
+      } else if (shape === 'rounded') {
+        roundRect(ctx, x + cell * 0.06, y + cell * 0.06, cell * 0.88, cell * 0.88, cell * 0.3)
+        ctx.fill()
+      } else {
+        ctx.fillRect(x, y, cell, cell)
+      }
+    }
+  }
+
+  // 定位眼使用纯色（渐变会让识别变脆）
+  ctx.fillStyle = eyeColor
+  ctx.strokeStyle = eyeColor
+  drawQrEye(ctx, off, off, cell, eyeStyle)
+  drawQrEye(ctx, off + (n - 7) * cell, off, cell, eyeStyle)
+  drawQrEye(ctx, off, off + (n - 7) * cell, cell, eyeStyle)
+
+  // 中心 logo
+  if (logo) {
+    try {
+      const img = await loadImage(logo)
+      const box = face * (logoSize / 100)
+      const center = off + face / 2
+      const x = center - box / 2
+      const y = center - box / 2
+
+      ctx.fillStyle = background
+      roundRect(ctx, x - box * 0.06, y - box * 0.06, box * 1.12, box * 1.12, box * 0.24)
+      ctx.fill()
+
+      ctx.save()
+      roundRect(ctx, x, y, box, box, box * 0.18)
+      ctx.clip()
+      const scale = Math.max(box / img.width, box / img.height)
+      const w = img.width * scale
+      const h = img.height * scale
+      ctx.drawImage(img, x + (box - w) / 2, y + (box - h) / 2, w, h)
+      ctx.restore()
+    } catch {
+      // logo 加载失败时忽略，二维码本身仍可正常扫描
+    }
+  }
+
+  return canvas.toDataURL('image/png')
+}
+
+/* -------------------------------------------------------------------------- */
 /*                              分享海报绘制                                   */
 /* -------------------------------------------------------------------------- */
 
@@ -553,7 +706,17 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   const qrY = cardY + (cardH - qrSize) / 2
   let qrImage: HTMLImageElement | null = null
   try {
-    const qrDataUrl = await getQrCodeDataUrl(shareUrl, qrSize * 2, { dark: '#0A0A12', light: '#FFFFFF' })
+    // 深色渐变前景 + 方角模块：与海报色调统一，同时保留最高识别度
+    const qrDataUrl = await getStyledQrCodeDataUrl(shareUrl, {
+      size: qrSize * 2,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+      colorFrom: '#0B0A12',
+      colorTo: '#2E1065',
+      eyeColor: '#0B0A12',
+      shape: 'square',
+      eyeStyle: 'square',
+    })
     qrImage = await loadImage(qrDataUrl)
   } catch {
     qrImage = null
