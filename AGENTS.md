@@ -1,318 +1,97 @@
 # AI 编程开发指引
 
-本文档为 AI 编程助手提供的开发规范和参考指南，用于指导项目开发工作。
+面向 AI 编程助手的项目约定。**以本文件为准**，不要依赖历史记忆中的 Handlebars 模板时代结构（已废弃）。
 
 ## 项目概述
 
-**M3U8 在线播放器** - 一个支持多语言的 M3U8 视频在线播放器
+M3U8 在线播放器：React 19 SPA（React Router 8 `BrowserRouter`），支持 HLS/MP4/FLV/磁力链，7 语言，HLS 分片缓存 + Service Worker 离线。
 
 ### 技术栈
-- **构建工具**: Vite 8.x
-- **模板引擎**: Handlebars 4.x
-- **开发语言**: TypeScript 7.x
-- **包管理器**: pnpm 12.x（配置见 `.npmrc` / `pnpm-workspace.yaml`）
-- **项目类型**: 静态网站 + TypeScript 构建
+- 构建：Vite 8（Rolldown 内核，`rolldownOptions` 而非 `rollupOptions`）
+- UI：React 19 + Tailwind CSS 4（**无 `tailwind.config.js`**，主题写在 `src/index.css` 的 `@theme`/变量里）
+- 语言：TypeScript 7（`strict: true`）
+- i18n：i18next 26 + react-i18next 17
+- 规范：Biome 2（`pnpm run lint` / `pnpm run format`）
+- 包管理：pnpm 12（`pnpm-lock.yaml` 不入库）
 
-### 项目特性
-- 支持 HLS 协议的 M3U8 资源
-- 支持 mp4、flv、磁力链格式视频
-- 支持批量剧集播放
-- 支持历史记录、收藏夹功能
-- 支持中文、英文、日文多语言
-- 使用 TypeScript 开发，类型安全
-- 组件化架构（HBS 模板）
-
-## 项目结构
-
-```
-m3u8-player/
-├── src/                    # 源代码目录
-│   ├── layouts/            # 布局模板
-│   │   └── default.hbs
-│   ├── partials/           # 可复用组件
-│   │   ├── header.hbs
-│   │   └── footer.hbs
-│   ├── locales/            # 多语言配置
-│   │   ├── zh-CN.json
-│   │   ├── en.json
-│   │   └── ja-JP.json
-│   ├── pages/              # 页面模板
-│   │   ├── index.hbs
-│   │   ├── about.hbs
-│   │   ├── download.hbs
-│   │   └── feedback.hbs
-│   ├── assets/             # TypeScript 源码和静态资源
-│   │   ├── types.ts        # 通用类型定义
-│   │   ├── i18n.types.ts   # i18n 类型定义
-│   │   ├── main.ts         # 主逻辑 (播放器功能)
-│   │   ├── i18n.main.ts    # 国际化
-│   │   ├── dl.main.ts      # 下载页逻辑
-│   │   ├── favicon.png
-│   │   ├── play.html
-│   │   └── webtorrent.sw.min.js
-│   └── data/               # 数据文件
-│       └── version.json
-├── dist/                   # 构建输出目录
-├── tsconfig.json           # TypeScript 配置
-├── vite.config.js         # Vite 构建配置
-├── build.js              # 构建脚本
-├── package.json          # 项目配置
-└── *.md                 # 文档文件
-```
-
-## 构建系统
-
-### 构建命令
+## 常用命令
 
 ```bash
-# 安装依赖
-pnpm install
-
-# 开发模式 (带热更新)
-pnpm run dev
-
-# 生产构建
-pnpm run build
-
-# 预览构建结果
-pnpm run preview
+pnpm run dev        # 开发服务器 :3009
+pnpm run build      # tsc --noEmit → vite build → zip
+pnpm run preview    # 预览产物 :4171
+pnpm run lint       # biome check --fix
+pnpm run i18n:align # 以 zh-CN 为基准对齐 7 个语言包的 key
 ```
 
-### 构建输出
+改动后至少要跑通 `npx tsc --noEmit` 与 `npx biome check src`。
 
-执行 `pnpm run build` 后：
+## 目录约定
 
-1. **Vite 编译** - 将 TypeScript 文件编译为 JavaScript
-2. **Handlebars 渲染** - 为所有语言生成 HTML 页面
-3. **静态资源复制** - 复制 assets 目录中的非 TypeScript 文件
-4. **ZIP 压缩** - 生成带时间戳的压缩包
-
-输出位置：
-- `dist/m3u8-player/` - 完整的项目文件
-- `dist/m3u8-player-[timestamp].zip` - 压缩包
-
-### Vite 配置说明
-
-**vite.config.js** 关键配置：
-
-```javascript
-{
-  root: 'src',                          // 源代码根目录
-  build: {
-    outDir: '../dist/m3u8-player',       // 输出目录
-    rollupOptions: {
-      input: {
-        // TypeScript 入口文件
-        'main': path.resolve(__dirname, 'src/assets/main.ts'),
-        'i18n.main': path.resolve(__dirname, 'src/assets/i18n.main.ts'),
-        'dl.main': path.resolve(__dirname, 'src/assets/dl.main.ts'),
-      },
-      output: {
-        entryFileNames: 'assets/[name].js',  // JS 输出到 assets/
-      }
-    }
-  }
-}
+```
+src/components/        展示组件（PascalCase 目录或 .tsx）
+src/components/ui/     通用基座（Dialog：遮罩/焦点陷阱/Esc/aria）
+src/hooks/             业务 hook；播放器相关在 hooks/player/
+src/lib/               无 UI 的领域逻辑（cache / serviceWorker / share / seo / storage ...）
+src/i18n/languages.ts  语言清单唯一来源
+src/pages/             路由页面
+src/types/index.ts     公共类型
+public/                sw.js、manifest.json、静态资源（不经过构建）
+scripts/               build.ts / i18n-align.ts
 ```
 
-## TypeScript 开发规范
+## 多语言
 
-### 类型定义位置
+- **语言清单只写在 `src/i18n/languages.ts`**（`supportedLanguages` + `getLangPathPrefix` / `detectLangFromPath` / `stripLangPrefix`）。路由（`App.tsx`）、Header、SEO、`lib/utils.getLangPrefix()` 全部从它派生，**不要在别处硬编码语言数组**。
+- 新增语言：`languages.ts` 加一项 → `src/i18n/locales/<lang>.json` 加文件 → `src/i18n/index.ts` 的 `resources` 注册 → `pnpm run i18n:align`。
+- 文案 key 结构：首页用 `meta.*`，其余页面用 `<page>.meta.*`（由 `getSeoI18nPrefix()` 映射）；UI 文案分别在 `index/player/cache/common/settings/share/shortcuts/nav/footer` 命名空间下。
+- **禁止在 JSX 里硬编码中文字面量**，一律 `t('ns.key')`；缺失 key 用 `pnpm run i18n:align` 补齐后填真实翻译。
 
-1. **通用类型** - `src/assets/types.ts`
-   - `StorageData` - 本地存储数据
-   - `PlayListItem` - 播放列表项
-   - `PlayerType` - 播放器类型
-   - `VideoType` - 视频类型
-   - `PlayerElements` - DOM 元素引用
-   - 等等
+## 播放器
 
-2. **模块特定类型** - 同目录下的 `*.types.ts`
-   - `src/assets/i18n.types.ts` - i18n 相关类型
+- 双播放器：`hooks/player/artplayerConfig.ts`（默认）与 `dplayerConfig.ts`；HLS 实例统一由 `hlsInstance.ts#createHlsInstance` 创建（含缓存、预加载、fatal 错误重试）。
+- `VideoType → 播放器类型键名` 的映射：Artplayer 用 `ART_TYPE_MAP`（`customHls→m3u8`、`customFlv→flv`、`customWebTorrent→torrent`）；DPlayer 用原样的 `customHls/customFlv/customWebTorrent` 作为 `customType` 键。**改类型枚举必须同步这两处**。
+- DPlayer 的 `customType` 回调在**构造函数内同步执行**，回调里只能使用第二个参数传入的实例（`player.on(...)`），不能引用 `const dp`（TDZ）。
+- 播放失败处理链路：`hls.js ERROR(fatal)` → 自动重试（network 2 次带退避、media recover 2 次，4xx 不重试）→ `onFatalError` → `usePlayer(onError)` → `Player` 错误面板（重试/关闭）。
+- 生命周期：`usePlayer` 内已有卸载 `useEffect` 清理；新增实例必须在 `destroyAll()` 里销毁。
 
-### 添加新的 TypeScript 文件
+## 缓存子系统
 
-1. 在 `src/assets/` 下创建 `.ts` 文件
-2. 在 `vite.config.js` 的 `rollupOptions.input` 中添加入口
-3. Vite 会自动编译并输出到 `dist/m3u8-player/assets/`
+分层（改动时保持方向：上层调下层，禁止下层反向依赖调度层）：
 
-示例：
-```javascript
-// vite.config.js
-rollupOptions: {
-  input: {
-    'main': path.resolve(__dirname, 'src/assets/main.ts'),
-    'my-script': path.resolve(__dirname, 'src/assets/my-script.ts'),  // 新增
-  }
-}
+```
+L4 调度：preloader（唯一状态机）+ smartPreloader（纯策略）
+L3 传输：downloadManager（去重/优先级/并发/超时/内部 AbortController）
+L2 策略：cacheAdapter（统一接口）+ IDBCacheManager / pwaCacheManager
+L1 存储：indexedDB / Cache API
 ```
 
-### TypeScript 配置
+关键约定：
+- **调用方 AbortSignal 只取消自己的等待**，共享请求由 `downloadManager` 内部 `AbortController` + 引用计数控制。不要把它透传进 `fetch`。
+- `adapter.set()` **返回 boolean，必须校验**；失败不要计入预加载成功数。
+- 统计（count/size）只在「新建」时自增，覆盖写要先 `removeFromStats`。
+- **Service Worker 不再缓存媒体资源**（`public/sw.js` 对跨域 m3u8/ts 直接透传）。媒体缓存唯一归属是页面侧 `lib/cache`，不要在 SW 里加回缓存逻辑——SW 读不到用户的缓存开关。
+- SW 与页面侧共用缓存桶名 `m3u8-player-media-v1`，改名必须两边同步。
 
-**tsconfig.json** 关键设置：
-- `target: "ES2020"` - 目标 ECMAScript 版本
-- `module: "ESNext"` - ESM 模块
-- `strict: true` - 启用严格类型检查
-- `lib: ["ES2020", "DOM"]` - 包含 DOM 类型
+## SEO
 
-## 多语言开发
+- `lib/seo.ts` 的 `PAGE_SEO_CONFIG` 按「去掉语言前缀」的页面路径登记；`useSeo` 负责 title/description/keywords + canonical + hreflang + `<html lang>`。
+- 预渲染路由在 `vite.config.ts` 的 `prerenderPlugin.routes` 里，新增可索引页面要同步加入。
 
-### 语言文件位置
+## 样式与可访问性
 
-- `src/locales/zh-CN.json` - 中文
-- `src/locales/en.json` - 英文
-- `src/locales/ja-JP.json` - 日文
+- 颜色用 Tailwind 语义类并同时给 `dark:` 变体，不要写死 hex（`App.tsx` 的 Toaster 内联色是历史遗留）。
+- 图标按钮必须有 `aria-label`；弹窗统一用 `components/ui/Dialog`（自带 role/aria-modal/焦点陷阱/Esc）。
+- 开关用 `role="switch"` + `aria-checked`。
+- 提示统一用 `sonner`（`toast.success/error/info`），**不要再用 `utils/toast` 的 `dialog`**（依赖外部 CDN 的 h5Utils，被拦截会抛错）。
 
-### 添加新语言
+## 提交约定
 
-1. 复制现有语言文件：
-   ```bash
-   cp src/locales/zh-CN.json src/locales/fr.json
-   ```
+- 使用 `type(scope): 描述` 的提交信息（如 `fix(player): ...`、`fix(cache): ...`）。
+- 每个任务完成后立即 `git commit` 并 `git push`。
+- 不要提交 `dist/`、`docs/`、`pnpm-lock.yaml`（`.gitignore` 已配置，属于有意为之）。
 
-2. 编辑新语言文件内容
+## 已知取舍（不要"顺手修"）
 
-3. 构建项目：
-   ```bash
-   pnpm run build
-   ```
-
-4. 新语言版本自动生成在 `dist/m3u8-player/fr/`
-
-### 在代码中使用翻译
-
-在 `.hbs` 模板中：
-```handlebars
-{{t 'page.title'}}
-```
-
-在 TypeScript 代码中：
-```typescript
-(window as any).translate('translation.key')
-```
-
-## Handlebars 模板开发
-
-### Helper 函数
-
-项目注册了以下 Helper：
-
-```handlebars
-{{t 'key'}}              // 获取翻译
-{{eq value1 value2}}     // 条件判断
-{{times n}}             // 循环 n 次
-{{url 'path'}}           // 拼接带语言前缀的 URL
-```
-
-### 页面模板结构
-
-```handlebars
-{{!< layouts/default.hbs}}
-
-<div class="container">
-  <h1>{{t 'page.title'}}</h1>
-  <p>{{t 'page.description'}}</p>
-</div>
-```
-
-## 常见任务
-
-### 修改播放器功能
-
-1. 编辑 `src/assets/main.ts`
-2. 修改相关 TypeScript 代码（带类型提示）
-3. 运行 `pnpm run build` 测试
-
-### 修改页面 UI
-
-1. 编辑对应的 `.hbs` 模板文件
-2. 如需修改文案，编辑 `src/locales/*.json`
-3. 运行 `pnpm run build`
-
-### 添加新页面
-
-1. 在 `src/pages/` 下创建 `.hbs` 文件
-2. 在各语言 JSON 中添加翻译
-3. 运行 `pnpm run build`
-4. 新页面自动生成在所有语言目录
-
-### 修复构建错误
-
-1. 检查 TypeScript 类型错误
-2. 确认 `vite.config.js` 中的入口文件路径正确
-3. 确认输出路径 `outDir` 配置正确
-
-## 开发注意事项
-
-### 文件修改原则
-
-1. **优先编辑 TypeScript 文件** - 而非编译后的 JS 文件
-2. **编辑模板** - 使用 `.hbs` 文件而非生成的 HTML
-3. **更新翻译** - 修改 JSON 文件而非直接修改 HTML
-
-### 类型检查
-
-如需单独进行类型检查：
-```bash
-pnpm exec tsc --noEmit
-```
-
-### Git 忽略
-
-以下内容已被 `.gitignore`：
-- `dist/` - 构建输出目录
-- `node_modules/` - 依赖目录
-- `pnpm-lock.yaml` 需保留（pnpm 的 lockfile）
-
-## 构建输出验证
-
-构建成功后，检查：
-
-```bash
-# 检查编译的 JS 文件
-ls dist/m3u8-player/assets/*.js
-
-# 预期输出：
-# - main.js
-# - i18n.main.js
-# - dl.main.js
-# - preload-helper.js (自动生成)
-
-# 检查 HTML 文件
-ls dist/m3u8-player/*.html
-
-# 检查 ZIP 压缩包
-ls dist/m3u8-player-*.zip
-```
-
-## 文档参考
-
-- [BUILD_GUIDE.md](./BUILD_GUIDE.md) - 详细构建文档
-- [README.md](./README.md) - 项目说明
-- [MIGRATION.md](./MIGRATION.md) - 迁移历史和变更记录
-
-## 技术栈版本
-
-- pnpm: 12.x
-- TypeScript: 7.0+
-- Vite: 8.0+
-- Handlebars: 4.7.8+
-- Node.js: 20.19+（`@lzwme/prerender-kit` 要求）
-
-## 开发环境要求
-
-- Node.js 20.19+ 与 pnpm 12.x
-- 支持的操作系统: Windows, macOS, Linux
-- 推荐的 IDE: VS Code + TypeScript 插件
-
-## 总结
-
-本文档提供了完整的开发规范，涵盖：
-- ✅ 项目结构和技术栈
-- ✅ 构建系统使用方法
-- ✅ TypeScript 开发规范
-- ✅ 多语言开发流程
-- ✅ Handlebars 模板开发
-- ✅ 常见任务和注意事项
-
-AI 编程助手应遵循本文档的规范进行项目开发工作。
+- 缓存类型 `pwa` 的 `isEnabled()` 只反映环境支持，用户开关由上层 `cacheConfigManager.isEnabled()` 判定，adapter 层属防御性冗余。
+- 自动预加载的分组键使用子播放列表（level）URL，与 `hlsLoader` 的输入 URL 不同，「当前视频缓存」统计会拆成两份，但不影响命中率。

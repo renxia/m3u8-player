@@ -106,7 +106,11 @@ function updateMetaTag(attribute: 'name' | 'property', key: string, content: str
 export function setLanguageLinks(pathname: string, currentLang?: string): void {
   const basePath = stripLangPrefix(pathname)
   const origin = window.location.origin
-  const langOf = (lang: string) => `${origin}${getLangPathPrefix(lang)}${basePath === '/' ? '' : basePath}` || `${origin}/`
+  // 预渲染环境下 origin 可能为空，此时退化为相对路径（首页固定为 '/'）
+  const langOf = (lang: string) => {
+    const path = `${getLangPathPrefix(lang)}${basePath === '/' ? '' : basePath}`
+    return `${origin}${path || '/'}`
+  }
   const activeLang = currentLang || (pathname === basePath ? defaultLanguage : pathname.split('/')[1])
 
   // canonical 指向当前语言版本

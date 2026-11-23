@@ -24,6 +24,10 @@ export default defineConfig(async ({ mode }) => {
       }),
       delay: 300,
       concurrency: process.env.PRENDER_CONCURRENCY ? Number(process.env.PRENDER_CONCURRENCY) : 50,
+      // 必须强制全量重渲染：默认的增量策略会把「产物文件已存在且较新」的页面判为最新而跳过，
+      // 而根路由 '/' 的产物 index.html 是 Vite 自己写的 SPA 外壳，永远「存在且较新」，
+      // 导致首页永远不会被预渲染（SEO meta 缺失）
+      force: true,
       // HTML 瘦身：等价于原 scripts/optimize-prerendered-html.ts（移除内联 SVG / 大段内联样式 / class，压缩并注入首屏 loading）
       optimize: {
         removeInlineSvg: true,
