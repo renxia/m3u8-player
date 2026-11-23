@@ -89,10 +89,14 @@
     "collected": "Collected",
     "copied": "Copied",
     "copy": "Copy",
+    "copyFailed": "Copy failed",
     "delete": "Delete",
+    "edit": "Rename",
     "enterUrl": "Please enter the URL or content of m3u8",
+    "episode": "Episode {{n}}",
     "fav": "Favorite",
     "favSuccess": "Successfully added to favorites",
+    "fetchFailed": "Failed to fetch: {{message}}",
     "justNow": "Just Now",
     "minuteAgo": "minute ago",
     "noFav": "No favorites",
@@ -104,11 +108,14 @@
     "recdl": "Recommend downloads for your system",
     "refresh": "Refresh",
     "releaseDate": "Release Date",
+    "save": "Save",
+    "saved": "Saved",
     "size": "Size",
     "sopebap": "Successfully obtained, please edit below and play",
     "startPlaying": "Start playing the content of the editor box",
     "tmcy": "The M3U8 content you entered is an encrypted resource. If playback fails, please also enter the URL address of the source page to try to obtain decryption information",
-    "version": "Version"
+    "version": "Version",
+    "videoName": "Video name"
   },
   "download": {
     "clientDesc": "@lzwme/m3u8-dl is a powerful m3u8 file video batch download tool that supports multi-threaded download, play while downloading, cache resume and other features. It supports installation and use in various forms, here is a brief introduction.",
@@ -130,6 +137,7 @@
     ],
     "featuresTitle": "Main Features",
     "globalInstall": "Global installation:",
+    "loading": "Loading...",
     "meta": {
       "description": "Download M3U8-DL downloader client and CLI tools. Available for Windows, macOS, and Linux. A powerful M3U8 video batch download tool.",
       "keywords": "M3U8 download tool, M3U8-DL downloader, M3U8 client download, M3U8 batch download",
@@ -151,6 +159,7 @@
   },
   "feedback": {
     "desc": "Welcome to make suggestions, report issues or share your experience. Your feedback will help us continuously improve our products!",
+    "loadingComments": "Loading comments...",
     "meta": {
       "description": "Welcome to provide suggestions, report issues, or share your experience with M3U8 Online Player. Your feedback helps us continuously improve our products.",
       "keywords": "M3U8 player feedback, user suggestions, issue reporting, product discussion",
@@ -214,6 +223,7 @@
     "errorOther": "Playback error. Check that the video URL is valid.",
     "errorRetry": "Retry",
     "errorTitle": "Playback failed",
+    "httpWarn": "Browsers block http media on https pages. Please visit this site over http:// to play it.",
     "muted": "Muted",
     "paused": "Paused",
     "placeholderPrompt": "Enter M3U8 URL to start playing",
@@ -231,21 +241,74 @@
     "volume": "Volume"
   },
   "settings": {
+    "cacheTypeIdbDesc": "Better compatibility",
+    "cacheTypePwaDesc": "Better performance",
     "description": "Manage app settings and cache configuration",
+    "embed": {
+      "description": "Behavior settings when the player is embedded in other websites via iframe (mode=embed)",
+      "enableCache": "Enable cache download",
+      "enableCacheDesc": "Cache played video segments in embed mode for faster loading on replay",
+      "recordHistory": "Auto-record history",
+      "recordHistoryDesc": "Automatically save played videos to history in embed mode",
+      "title": "Embed Mode (iframe)"
+    },
     "meta": {
       "description": "Manage M3U8 Online Player app settings, cache configuration, and player preferences to optimize your experience.",
       "keywords": "M3U8 player settings, cache configuration, player configuration, preferences",
       "title": "Settings - Free M3U8 Video Player"
     },
-    "embed": {
-      "title": "Embed Mode (iframe)",
-      "description": "Behavior settings when the player is embedded in other websites via iframe (mode=embed)",
-      "recordHistory": "Auto-record history",
-      "recordHistoryDesc": "Automatically save played videos to history in embed mode",
-      "enableCache": "Enable cache download",
-      "enableCacheDesc": "Cache played video segments in embed mode for faster loading on replay"
+    "sw": {
+      "actions": "Actions",
+      "activateFailed": "Activation failed",
+      "checking": "Checking for updates...",
+      "checkUpdate": "Check for updates",
+      "clearCache": "Clear cache",
+      "cleared": "Cache cleared",
+      "clearFailed": "Failed to clear cache",
+      "confirmClear": "Clear all cached data? Offline content will become unavailable.",
+      "controlled": "Controls this page",
+      "hasUpdate": "Update available",
+      "latest": "Latest version",
+      "newVersion": "A new version is available",
+      "newVersionDesc": "Click refresh to update to the latest version",
+      "no": "No",
+      "note": "Service Worker provides offline playback and caching. Once enabled, cached videos and pages remain available offline.",
+      "registered": "Registered",
+      "unsupportedDesc": "Your browser does not support Service Worker, so offline playback is unavailable.",
+      "unsupportedTitle": "Service Worker unavailable",
+      "updateFailed": "Update failed",
+      "updateFailedRetry": "Update failed, please reload the page and try again",
+      "updateNow": "Update now",
+      "updating": "Updating...",
+      "upToDate": "Up to date",
+      "yes": "Yes"
     },
+    "swSectionTitle": "Service Worker settings",
     "title": "Settings"
+  },
+  "share": {
+    "copyFailed": "Copy failed",
+    "copyLink": "Copy Link",
+    "imageFailed": "Failed to generate image",
+    "imageSaved": "Image saved",
+    "linkCopied": "Link copied",
+    "nothingToShare": "Nothing to share",
+    "poster": {
+      "defaultTitle": "M3U8 Online Player",
+      "scanDesc": "No install · No ads · Instant HD",
+      "scanTitle": "Scan to play"
+    },
+    "posterAlt": "Share poster",
+    "posterLoading": "Generating poster…",
+    "qrCode": "QR Code",
+    "qrFailed": "Failed to load QR code",
+    "qrHint": "Scan to open the playback link",
+    "saveImage": "Save Image",
+    "shareSuccess": "Shared",
+    "systemShare": "Share",
+    "tabPoster": "Poster",
+    "tabScan": "QR Code",
+    "title": "Share"
   },
   "shortcuts": {
     "fullscreen": "Fullscreen / Exit fullscreen",
@@ -269,29 +332,5 @@
     "togglePlay": "Play / Pause",
     "volumeDown": "Volume down 10%",
     "volumeUp": "Volume up 10%"
-  },
-  "share": {
-    "title": "Share",
-    "copyLink": "Copy Link",
-    "linkCopied": "Link copied",
-    "qrCode": "QR Code",
-    "qrHint": "Scan to open the playback link",
-    "qrFailed": "Failed to load QR code",
-    "systemShare": "Share",
-    "shareSuccess": "Shared",
-    "saveImage": "Save Image",
-    "imageFailed": "Failed to generate image",
-    "imageSaved": "Image saved",
-    "nothingToShare": "Nothing to share",
-    "copyFailed": "Copy failed",
-    "poster": {
-      "defaultTitle": "M3U8 Online Player",
-      "scanTitle": "Scan to play",
-      "scanDesc": "No install · No ads · Instant HD"
-    },
-    "tabPoster": "Poster",
-    "tabScan": "QR Code",
-    "posterLoading": "Generating poster…",
-    "posterAlt": "Share poster"
   }
 }

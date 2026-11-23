@@ -174,7 +174,7 @@ export default function HomePage() {
       // 检查 HTTP 协议
       if (uri.startsWith('http:') && location.protocol === 'https:') {
         if (!uri.startsWith('http://localhost')) {
-          toast.warning('由于浏览器安全限制，您访问的 https 页面下无法播放 http 协议的资源，请手动修改访问 URL 改为 http:// 格式并重新访问')
+          toast.warning(t('player.httpWarn'))
         }
       }
 
@@ -185,7 +185,7 @@ export default function HomePage() {
       handlePlay(DEMO_URL)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handlePlay, playlist.length, isEmbed])
+  }, [handlePlay, playlist.length, isEmbed, t])
 
   // 键盘快捷键处理
   const handleShortcut = useCallback(

@@ -89,10 +89,14 @@
     "collected": "Collecté",
     "copied": "Copié",
     "copy": "Copier",
+    "copyFailed": "Échec de la copie",
     "delete": "Supprimer",
+    "edit": "Renommer",
     "enterUrl": "Veuillez entrer l'URL ou le contenu de m3u8",
+    "episode": "Épisode {{n}}",
     "fav": "Favori",
     "favSuccess": "Ajouté aux favoris avec succès",
+    "fetchFailed": "Échec de la récupération : {{message}}",
     "justNow": "À l'instant",
     "minuteAgo": "minute(s) auparavant",
     "noFav": "Aucun favori",
@@ -104,11 +108,14 @@
     "recdl": "Téléchargements recommandés pour votre système",
     "refresh": "Actualiser",
     "releaseDate": "Date de publication",
+    "save": "Enregistrer",
+    "saved": "Enregistré",
     "size": "Taille",
     "sopebap": "Obtenu avec succès, veuillez modifier ci-dessous et lire",
     "startPlaying": "Commencer à lire le contenu de la boîte d'édition",
     "tmcy": "Le contenu M3U8 que vous avez entré est une ressource cryptée. Si la lecture échoue, veuillez également entrer l'adresse URL de la page source pour essayer d'obtenir des informations de décryptage",
-    "version": "Version"
+    "version": "Version",
+    "videoName": "Nom de la vidéo"
   },
   "download": {
     "clientDesc": "@lzwme/m3u8-dl est un outil puissant de téléchargement par lots de vidéos de fichiers m3u8 qui prend en charge le téléchargement multi-thread, la lecture pendant le téléchargement, la reprise du cache et d'autres fonctionnalités. Il prend en charge l'installation et l'utilisation sous diverses formes, voici une brève introduction.",
@@ -130,6 +137,7 @@
     ],
     "featuresTitle": "Fonctionnalités principales",
     "globalInstall": "Installation globale :",
+    "loading": "Chargement...",
     "meta": {
       "description": "Téléchargez le client de téléchargement M3U8-DL et les outils CLI. Disponible pour Windows, macOS et Linux. Un outil puissant de téléchargement par lots de vidéos M3U8.",
       "keywords": "outil de téléchargement M3U8, téléchargeur M3U8-DL, téléchargement client M3U8, téléchargement par lots M3U8",
@@ -151,6 +159,7 @@
   },
   "feedback": {
     "desc": "N'hésitez pas à faire des suggestions, signaler des problèmes ou partager votre expérience. Vos commentaires nous aideront à améliorer continuellement nos produits !",
+    "loadingComments": "Chargement des commentaires...",
     "meta": {
       "description": "N'hésitez pas à faire des suggestions, signaler des problèmes ou partager votre expérience avec le lecteur M3U8 en ligne. Vos commentaires nous aident à améliorer continuellement nos produits.",
       "keywords": "commentaires du lecteur M3U8, suggestions des utilisateurs, signalement de problèmes, discussion sur le produit",
@@ -214,6 +223,7 @@
     "errorOther": "Erreur de lecture. Vérifiez que l'URL de la vidéo est valide.",
     "errorRetry": "Réessayer",
     "errorTitle": "Échec de la lecture",
+    "httpWarn": "Pour des raisons de sécurité, un navigateur bloque les médias http sur une page https. Accédez au site en http:// pour lire cette vidéo.",
     "muted": "Sourdine",
     "paused": "En pause",
     "placeholderPrompt": "Entrez l'URL M3U8 pour commencer la lecture",
@@ -231,21 +241,74 @@
     "volume": "Volume"
   },
   "settings": {
+    "cacheTypeIdbDesc": "Meilleure compatibilité",
+    "cacheTypePwaDesc": "Meilleures performances",
     "description": "Gérer les paramètres de l'application et la configuration du cache",
+    "embed": {
+      "description": "Paramètres de comportement lorsque le lecteur est intégré à d'autres sites via iframe (mode=embed)",
+      "enableCache": "Activer le téléchargement du cache",
+      "enableCacheDesc": "Mettre en cache les segments vidéo lus en mode intégré pour un chargement plus rapide",
+      "recordHistory": "Enregistrer automatiquement l'historique",
+      "recordHistoryDesc": "Enregistrer automatiquement les vidéos lues dans l'historique en mode intégré",
+      "title": "Mode intégré (iframe)"
+    },
     "meta": {
       "description": "Gérez les paramètres de l'application du lecteur M3U8 en ligne, la configuration du cache et les préférences du lecteur pour optimiser votre expérience.",
       "keywords": "paramètres du lecteur M3U8, configuration du cache, configuration du lecteur, préférences",
       "title": "Paramètres - Lecteur vidéo M3U8 gratuit"
     },
-    "embed": {
-      "title": "Mode intégré (iframe)",
-      "description": "Paramètres de comportement lorsque le lecteur est intégré à d'autres sites via iframe (mode=embed)",
-      "recordHistory": "Enregistrer automatiquement l'historique",
-      "recordHistoryDesc": "Enregistrer automatiquement les vidéos lues dans l'historique en mode intégré",
-      "enableCache": "Activer le téléchargement du cache",
-      "enableCacheDesc": "Mettre en cache les segments vidéo lus en mode intégré pour un chargement plus rapide"
+    "sw": {
+      "actions": "Actions",
+      "activateFailed": "Échec de l'activation",
+      "checking": "Vérification des mises à jour...",
+      "checkUpdate": "Vérifier les mises à jour",
+      "clearCache": "Vider le cache",
+      "cleared": "Cache vidé",
+      "clearFailed": "Échec du vidage du cache",
+      "confirmClear": "Vider tout le cache ? Le contenu hors ligne deviendra indisponible.",
+      "controlled": "Contrôle cette page",
+      "hasUpdate": "Mise à jour disponible",
+      "latest": "Dernière version",
+      "newVersion": "Une nouvelle version est disponible",
+      "newVersionDesc": "Cliquez sur actualiser pour passer à la dernière version",
+      "no": "Non",
+      "note": "Service Worker fournit la lecture hors ligne et la mise en cache. Une fois activé, les vidéos et pages en cache restent accessibles hors ligne.",
+      "registered": "Enregistré",
+      "unsupportedDesc": "Votre navigateur ne prend pas en charge Service Worker : la lecture hors ligne est indisponible.",
+      "unsupportedTitle": "Service Worker indisponible",
+      "updateFailed": "Échec de la mise à jour",
+      "updateFailedRetry": "Échec de la mise à jour, rechargez la page et réessayez",
+      "updateNow": "Mettre à jour",
+      "updating": "Mise à jour...",
+      "upToDate": "À jour",
+      "yes": "Oui"
     },
+    "swSectionTitle": "Paramètres Service Worker",
     "title": "Paramètres"
+  },
+  "share": {
+    "copyFailed": "Échec de la copie",
+    "copyLink": "Copier le lien",
+    "imageFailed": "Échec de la génération de l'image",
+    "imageSaved": "Image enregistrée",
+    "linkCopied": "Lien copié",
+    "nothingToShare": "Rien à partager",
+    "poster": {
+      "defaultTitle": "Lecteur M3U8 en ligne",
+      "scanDesc": "Sans installation · Sans pub · HD instantanée",
+      "scanTitle": "Scannez pour lire"
+    },
+    "posterAlt": "Affiche de partage",
+    "posterLoading": "Génération de l'affiche…",
+    "qrCode": "QR Code",
+    "qrFailed": "Échec du chargement du QR code",
+    "qrHint": "Scannez pour ouvrir le lien",
+    "saveImage": "Enregistrer l'image",
+    "shareSuccess": "Partagé",
+    "systemShare": "Partage système",
+    "tabPoster": "Affiche",
+    "tabScan": "QR Code",
+    "title": "Partager"
   },
   "shortcuts": {
     "fullscreen": "Plein écran / Quitter le plein écran",
@@ -269,29 +332,5 @@
     "togglePlay": "Lecture / Pause",
     "volumeDown": "Volume -10 %",
     "volumeUp": "Volume +10 %"
-  },
-  "share": {
-    "title": "Partager",
-    "copyLink": "Copier le lien",
-    "linkCopied": "Lien copié",
-    "qrCode": "QR Code",
-    "qrHint": "Scannez pour ouvrir le lien",
-    "qrFailed": "Échec du chargement du QR code",
-    "systemShare": "Partage système",
-    "shareSuccess": "Partagé",
-    "saveImage": "Enregistrer l'image",
-    "imageFailed": "Échec de la génération de l'image",
-    "imageSaved": "Image enregistrée",
-    "nothingToShare": "Rien à partager",
-    "copyFailed": "Échec de la copie",
-    "poster": {
-      "defaultTitle": "Lecteur M3U8 en ligne",
-      "scanTitle": "Scannez pour lire",
-      "scanDesc": "Sans installation · Sans pub · HD instantanée"
-    },
-    "tabPoster": "Affiche",
-    "tabScan": "QR Code",
-    "posterLoading": "Génération de l'affiche…",
-    "posterAlt": "Affiche de partage"
   }
 }

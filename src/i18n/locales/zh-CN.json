@@ -89,10 +89,14 @@
     "collected": "已收藏",
     "copied": "已复制",
     "copy": "复制",
+    "copyFailed": "复制失败",
     "delete": "删除",
+    "edit": "编辑名称",
     "enterUrl": "请输入 m3u8 地址或内容",
+    "episode": "第{{n}}集",
     "fav": "收藏",
     "favSuccess": "收藏成功",
+    "fetchFailed": "获取失败：{{message}}",
     "justNow": "刚刚",
     "minuteAgo": "分钟前",
     "noFav": "暂无收藏",
@@ -104,11 +108,14 @@
     "recdl": "为您的系统推荐下载",
     "refresh": "刷新",
     "releaseDate": "发布日期",
+    "save": "保存",
+    "saved": "已保存",
     "size": "大小",
     "sopebap": "获取成功，请在下方编辑后播放",
     "startPlaying": "开始播放自选视频",
     "tmcy": "您输入的 M3U8 内容为加密资源，若播放失败，请同时输入来源页面 URL 地址尝试获取解密信息",
-    "version": "版本"
+    "version": "版本",
+    "videoName": "视频名称"
   },
   "download": {
     "clientDesc": "@lzwme/m3u8-dl 是一个功能强大的 m3u8 文件视频批量下载工具，支持多线程下载、边下边播、缓存续传等特性。它支持以多种形式安装和使用，下面进行简单介绍。",
@@ -130,6 +137,7 @@
     ],
     "featuresTitle": "主要特性",
     "globalInstall": "全局安装：",
+    "loading": "加载中...",
     "meta": {
       "description": "提供M3U8-DL下载器客户端及命令行工具的下载，支持Windows、macOS、Linux多平台，功能强大的m3u8文件视频批量下载工具。",
       "keywords": "M3U8下载工具, M3U8-DL下载器, M3U8客户端下载, M3U8批量下载",
@@ -147,6 +155,7 @@
   },
   "feedback": {
     "desc": "欢迎提出建议、反馈问题或交流使用体验。您的留言将帮助我们不断改进产品！",
+    "loadingComments": "加载评论系统中...",
     "meta": {
       "description": "欢迎对M3U8在线播放器提出建议、反馈问题或交流使用体验，帮助我们不断改进产品。",
       "keywords": "M3U8播放器反馈, 用户建议, 问题反馈, 产品交流",
@@ -210,6 +219,7 @@
     "errorOther": "播放出错，请检查视频地址是否有效",
     "errorRetry": "重试",
     "errorTitle": "播放失败",
+    "httpWarn": "由于浏览器安全限制，https 页面下无法播放 http 协议的资源，请改用 http:// 访问",
     "muted": "已静音",
     "paused": "已暂停",
     "placeholderPrompt": "输入 M3U8 地址开始播放",
@@ -227,21 +237,74 @@
     "volume": "音量"
   },
   "settings": {
+    "cacheTypeIdbDesc": "兼容性好",
+    "cacheTypePwaDesc": "性能更优",
     "description": "管理应用设置和缓存配置",
+    "embed": {
+      "description": "当播放器以 iframe 形式嵌入其他网站时（mode=embed）的行为设置",
+      "enableCache": "开启缓存下载",
+      "enableCacheDesc": "嵌入模式下缓存已播放的视频片段，提升重复播放时的加载速度",
+      "recordHistory": "自动记录历史记录",
+      "recordHistoryDesc": "嵌入模式下播放视频时自动保存到历史记录",
+      "title": "嵌入模式（iframe）"
+    },
     "meta": {
       "description": "管理M3U8在线播放器的应用设置、缓存配置和播放器偏好设置，优化您的使用体验。",
       "keywords": "M3U8播放器设置, 缓存配置, 播放器配置, 偏好设置",
       "title": "设置 - M3U8视频在线播放器"
     },
-    "embed": {
-      "title": "嵌入模式（iframe）",
-      "description": "当播放器以 iframe 形式嵌入其他网站时（mode=embed）的行为设置",
-      "recordHistory": "自动记录历史记录",
-      "recordHistoryDesc": "嵌入模式下播放视频时自动保存到历史记录",
-      "enableCache": "开启缓存下载",
-      "enableCacheDesc": "嵌入模式下缓存已播放的视频片段，提升重复播放时的加载速度"
+    "sw": {
+      "actions": "操作",
+      "activateFailed": "激活失败",
+      "checking": "正在检查更新...",
+      "checkUpdate": "检查更新",
+      "clearCache": "清除缓存",
+      "cleared": "缓存已清除",
+      "clearFailed": "清除缓存失败",
+      "confirmClear": "确定要清除所有缓存吗？这将导致离线内容无法播放。",
+      "controlled": "已控制页面",
+      "hasUpdate": "有更新",
+      "latest": "最新版本",
+      "newVersion": "发现新版本可用",
+      "newVersionDesc": "点击刷新按钮即可更新到最新版本",
+      "no": "否",
+      "note": "Service Worker 提供离线播放和缓存功能。启用后，您可以离线访问已缓存的视频内容和页面。",
+      "registered": "已注册",
+      "unsupportedDesc": "您的浏览器不支持 Service Worker，无法使用离线播放功能。",
+      "unsupportedTitle": "Service Worker 不可用",
+      "updateFailed": "更新失败",
+      "updateFailedRetry": "更新失败，请刷新页面重试",
+      "updateNow": "立即更新",
+      "updating": "更新中...",
+      "upToDate": "已是最新",
+      "yes": "是"
     },
+    "swSectionTitle": "Service Worker 设置",
     "title": "设置"
+  },
+  "share": {
+    "copyFailed": "复制失败",
+    "copyLink": "复制链接",
+    "imageFailed": "生成图片失败",
+    "imageSaved": "图片已保存",
+    "linkCopied": "链接已复制",
+    "nothingToShare": "暂无可分享的内容",
+    "poster": {
+      "defaultTitle": "M3U8 在线播放器",
+      "scanDesc": "免安装 · 无广告 · 高清秒开",
+      "scanTitle": "扫码即刻播放"
+    },
+    "posterAlt": "分享海报",
+    "posterLoading": "海报生成中…",
+    "qrCode": "二维码",
+    "qrFailed": "二维码加载失败",
+    "qrHint": "扫码打开播放链接",
+    "saveImage": "保存分享图",
+    "shareSuccess": "分享成功",
+    "systemShare": "系统分享",
+    "tabPoster": "海报",
+    "tabScan": "扫码",
+    "title": "分享"
   },
   "shortcuts": {
     "fullscreen": "全屏/退出全屏",
@@ -265,29 +328,5 @@
     "togglePlay": "播放/暂停",
     "volumeDown": "音量减少 10%",
     "volumeUp": "音量增加 10%"
-  },
-  "share": {
-    "title": "分享",
-    "copyLink": "复制链接",
-    "linkCopied": "链接已复制",
-    "qrCode": "二维码",
-    "qrHint": "扫码打开播放链接",
-    "qrFailed": "二维码加载失败",
-    "systemShare": "系统分享",
-    "shareSuccess": "分享成功",
-    "saveImage": "保存分享图",
-    "imageFailed": "生成图片失败",
-    "imageSaved": "图片已保存",
-    "nothingToShare": "暂无可分享的内容",
-    "copyFailed": "复制失败",
-    "poster": {
-      "defaultTitle": "M3U8 在线播放器",
-      "scanTitle": "扫码即刻播放",
-      "scanDesc": "免安装 · 无广告 · 高清秒开"
-    },
-    "tabPoster": "海报",
-    "tabScan": "扫码",
-    "posterLoading": "海报生成中…",
-    "posterAlt": "分享海报"
   }
 }

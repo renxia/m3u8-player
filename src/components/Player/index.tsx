@@ -477,7 +477,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ className, playlist = [], c
                   idx === currentIndex ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-indigo-600 text-white hover:bg-indigo-700',
                 )}
               >
-                {item.name || `第${idx + 1}集`}
+                {item.name || t('common.episode', { n: idx + 1 })}
               </button>
             ))}
           </div>

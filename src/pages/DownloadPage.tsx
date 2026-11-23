@@ -85,7 +85,7 @@ export default function DownloadPage() {
       {loading ? (
         <div className="bg-white/80 dark:bg-slate-900/80 rounded-2xl shadow-xl p-4 md:p-8 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-slate-600 dark:text-slate-300 mt-4">加载中...</p>
+          <p className="text-slate-600 dark:text-slate-300 mt-4">{t('download.loading')}</p>
         </div>
       ) : recommendedAsset ? (
         <div className="highlight-download rounded-2xl p-4 md:p-8 text-center">

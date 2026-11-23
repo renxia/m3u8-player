@@ -5,24 +5,26 @@
 
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useServiceWorker } from '@/lib/serviceWorker/useServiceWorker'
 
 export function ServiceWorkerUpdate() {
+  const { t } = useTranslation()
   const { isSupported, isUpdateAvailable, skipWaiting, isRegistered } = useServiceWorker()
   const [showToast, setShowToast] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     if (isUpdateAvailable && showToast) {
-      toast('发现新版本可用', {
-        description: '点击刷新按钮即可更新到最新版本',
+      toast(t('settings.sw.newVersion'), {
+        description: t('settings.sw.newVersionDesc'),
         duration: Infinity,
         action: {
           label: (
             <span className="flex items-center gap-1 text-sm font-medium">
               {isUpdating ? <RefreshCw className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-              {isUpdating ? '更新中...' : '立即更新'}
+              {isUpdating ? t('settings.sw.updating') : t('settings.sw.updateNow')}
             </span>
           ),
           onClick: async () => {
@@ -32,7 +34,7 @@ export function ServiceWorkerUpdate() {
               window.location.reload()
             } catch (error) {
               console.error('Update failed:', error)
-              toast.error('更新失败，请刷新页面重试')
+              toast.error(t('settings.sw.updateFailedRetry'))
               setIsUpdating(false)
             }
           },
@@ -43,7 +45,7 @@ export function ServiceWorkerUpdate() {
         },
       })
     }
-  }, [isUpdateAvailable, skipWaiting, showToast, isUpdating])
+  }, [isUpdateAvailable, skipWaiting, showToast, isUpdating, t])
 
   useEffect(() => {
     // 延迟显示提示，避免影响首屏加载

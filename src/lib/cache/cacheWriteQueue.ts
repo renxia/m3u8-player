@@ -62,13 +62,6 @@ class CacheWriteQueue {
   getQueueLength(): number {
     return this.queue.length
   }
-
-  /**
-   * 清空等待队列（不取消活跃写入）
-   */
-  clearQueue(): void {
-    this.queue = []
-  }
 }
 
 /** 导出单例实例 */

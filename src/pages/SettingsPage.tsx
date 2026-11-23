@@ -220,8 +220,8 @@ export default function SettingsPage() {
   // 计算是否显示缓存类型选择
   const cacheNotSupported = !cacheSupport.indexeddb && !cacheSupport.pwa
   const availableCacheTypes = [
-    ...(cacheSupport.pwa ? [{ value: 'pwa' as const, label: 'PWA Cache', desc: '性能更优' }] : []),
-    ...(cacheSupport.indexeddb ? [{ value: 'indexeddb' as const, label: 'IndexedDB', desc: '兼容性好' }] : []),
+    ...(cacheSupport.pwa ? [{ value: 'pwa' as const, label: 'PWA Cache', desc: t('settings.cacheTypePwaDesc') }] : []),
+    ...(cacheSupport.indexeddb ? [{ value: 'indexeddb' as const, label: 'IndexedDB', desc: t('settings.cacheTypeIdbDesc') }] : []),
   ]
 
   return (
@@ -267,7 +267,7 @@ export default function SettingsPage() {
               titleClassName="text-sm font-medium text-slate-600 dark:text-slate-300 !font-medium"
               titleRender={(isExpanded, toggleExpanded) => (
                 <button type="button" onClick={toggleExpanded} className="flex items-center justify-between w-full text-left">
-                  <span>Service Worker 设置</span>
+                  <span>{t('settings.swSectionTitle')}</span>
                   <span
                     className="flex-shrink-0 text-slate-400 transition-transform duration-200"
                     style={{ transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}

@@ -4,7 +4,7 @@
  */
 
 import { cacheConfigManager, getSmartPreloader, HlsCachedFragmentLoader, preloader, setCurrentM3U8Url } from '@/lib/cache'
-import { fetchAndParseM3U8 } from '@/lib/cache/m3u8Parser'
+import { fetchAndParseM3U8, getSegmentIndexByTime } from '@/lib/cache/m3u8Parser'
 
 /** HLS fatal 错误（重试耗尽后上报给 UI） */
 export interface HlsFatalError {
@@ -316,16 +316,8 @@ export async function preloadSegmentForTime(
     const parseResult = await fetchAndParseM3U8(url)
     if (!parseResult.segments || parseResult.segments.length === 0) return
 
-    // 计算时间点对应的片段索引
-    let accumulatedTime = 0
-    let segmentIndex = 0
-    for (let i = 0; i < parseResult.segments.length; i++) {
-      accumulatedTime += parseResult.segments[i].duration
-      if (accumulatedTime >= time) {
-        segmentIndex = i
-        break
-      }
-    }
+    // 计算时间点对应的片段索引（统一实现，避免多处重复）
+    const segmentIndex = getSegmentIndexByTime(parseResult.segments, time)
 
     // 预加载当前片段及后续几个片段
     const config = cacheConfigManager.getPreloadConfig()

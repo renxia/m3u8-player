@@ -89,10 +89,14 @@
     "collected": "Coletado",
     "copied": "Copiado",
     "copy": "Copiar",
+    "copyFailed": "Falha ao copiar",
     "delete": "Excluir",
+    "edit": "Renomear",
     "enterUrl": "Digite a URL ou o conteúdo de m3u8",
+    "episode": "Episódio {{n}}",
     "fav": "Favorito",
     "favSuccess": "Adicionado aos favoritos com sucesso",
+    "fetchFailed": "Falha ao obter: {{message}}",
     "justNow": "Agora mesmo",
     "minuteAgo": "minuto(s) atrás",
     "noFav": "Nenhum favorito",
@@ -104,11 +108,14 @@
     "recdl": "Downloads recomendados para seu sistema",
     "refresh": "Atualizar",
     "releaseDate": "Data de lançamento",
+    "save": "Salvar",
+    "saved": "Salvo",
     "size": "Tamanho",
     "sopebap": "Obtido com sucesso, edite abaixo e reproduza",
     "startPlaying": "Começar a reproduzir o conteúdo da caixa de edição",
     "tmcy": "O conteúdo M3U8 que você inseriu é um recurso criptografado. Se a reprodução falhar, também insira o endereço URL da página de origem para tentar obter informações de descriptografia",
-    "version": "Versão"
+    "version": "Versão",
+    "videoName": "Nome do vídeo"
   },
   "download": {
     "clientDesc": "@lzwme/m3u8-dl é uma ferramenta poderosa de download em lote de vídeo de arquivo m3u8 que suporta download multi-thread, reprodução durante o download, retomada de cache e outros recursos. Suporta instalação e uso em várias formas, aqui está uma breve introdução.",
@@ -130,6 +137,7 @@
     ],
     "featuresTitle": "Recursos principais",
     "globalInstall": "Instalação global:",
+    "loading": "Carregando...",
     "meta": {
       "description": "Baixe o cliente downloader M3U8-DL e ferramentas CLI. Disponível para Windows, macOS e Linux. Uma ferramenta poderosa de download em lote de vídeo M3U8.",
       "keywords": "ferramenta de download M3U8, downloader M3U8-DL, download de cliente M3U8, download em lote M3U8",
@@ -151,6 +159,7 @@
   },
   "feedback": {
     "desc": "Sinta-se à vontade para fazer sugestões, relatar problemas ou compartilhar sua experiência. Seu feedback nos ajudará a melhorar continuamente nossos produtos!",
+    "loadingComments": "Carregando comentários...",
     "meta": {
       "description": "Sinta-se à vontade para fazer sugestões, relatar problemas ou compartilhar sua experiência com o Reprodutor M3U8 Online. Seu feedback nos ajuda a melhorar continuamente nossos produtos.",
       "keywords": "feedback do reprodutor M3U8, sugestões de usuários, relatório de problemas, discussão do produto",
@@ -214,6 +223,7 @@
     "errorOther": "Erro de reprodução. Verifique se a URL do vídeo é válida.",
     "errorRetry": "Tentar novamente",
     "errorTitle": "Falha na reprodução",
+    "httpWarn": "Por segurança, o navegador bloqueia mídia http em páginas https. Acesse o site via http:// para reproduzir este vídeo.",
     "muted": "Silenciado",
     "paused": "Pausado",
     "placeholderPrompt": "Digite o URL M3U8 para começar a reproduzir",
@@ -231,21 +241,74 @@
     "volume": "Volume"
   },
   "settings": {
+    "cacheTypeIdbDesc": "Melhor compatibilidade",
+    "cacheTypePwaDesc": "Melhor desempenho",
     "description": "Gerenciar configurações do aplicativo e configuração de cache",
+    "embed": {
+      "description": "Configurações de comportamento quando o reprodutor é incorporado em outros sites via iframe (mode=embed)",
+      "enableCache": "Ativar download de cache",
+      "enableCacheDesc": "Armazenar em cache os segmentos de vídeo reproduzidos no modo incorporado para carregamento mais rápido",
+      "recordHistory": "Registrar histórico automaticamente",
+      "recordHistoryDesc": "Salvar automaticamente os vídeos reproduzidos no histórico no modo incorporado",
+      "title": "Modo incorporado (iframe)"
+    },
     "meta": {
       "description": "Gerencie as configurações do aplicativo do Reprodutor M3U8 Online, configuração de cache e preferências do reprodutor para otimizar sua experiência.",
       "keywords": "configurações do reprodutor M3U8, configuração de cache, configuração do reprodutor, preferências",
       "title": "Configurações - Reprodutor de vídeo M3U8 gratuito"
     },
-    "embed": {
-      "title": "Modo incorporado (iframe)",
-      "description": "Configurações de comportamento quando o reprodutor é incorporado em outros sites via iframe (mode=embed)",
-      "recordHistory": "Registrar histórico automaticamente",
-      "recordHistoryDesc": "Salvar automaticamente os vídeos reproduzidos no histórico no modo incorporado",
-      "enableCache": "Ativar download de cache",
-      "enableCacheDesc": "Armazenar em cache os segmentos de vídeo reproduzidos no modo incorporado para carregamento mais rápido"
+    "sw": {
+      "actions": "Ações",
+      "activateFailed": "Falha na ativação",
+      "checking": "Verificando atualizações...",
+      "checkUpdate": "Verificar atualizações",
+      "clearCache": "Limpar cache",
+      "cleared": "Cache limpo",
+      "clearFailed": "Falha ao limpar o cache",
+      "confirmClear": "Limpar todo o cache? O conteúdo offline ficará indisponível.",
+      "controlled": "Controla esta página",
+      "hasUpdate": "Atualização disponível",
+      "latest": "Versão mais recente",
+      "newVersion": "Uma nova versão está disponível",
+      "newVersionDesc": "Clique em atualizar para ir para a versão mais recente",
+      "no": "Não",
+      "note": "O Service Worker fornece reprodução offline e cache. Após ativar, vídeos e páginas em cache continuam disponíveis offline.",
+      "registered": "Registrado",
+      "unsupportedDesc": "Seu navegador não suporta Service Worker, portanto a reprodução offline não está disponível.",
+      "unsupportedTitle": "Service Worker indisponível",
+      "updateFailed": "Falha na atualização",
+      "updateFailedRetry": "Falha na atualização, recarregue a página e tente novamente",
+      "updateNow": "Atualizar agora",
+      "updating": "Atualizando...",
+      "upToDate": "Atualizado",
+      "yes": "Sim"
     },
+    "swSectionTitle": "Configurações do Service Worker",
     "title": "Configurações"
+  },
+  "share": {
+    "copyFailed": "Falha ao copiar",
+    "copyLink": "Copiar link",
+    "imageFailed": "Falha ao gerar imagem",
+    "imageSaved": "Imagem salva",
+    "linkCopied": "Link copiado",
+    "nothingToShare": "Nada para compartilhar",
+    "poster": {
+      "defaultTitle": "Player M3U8 Online",
+      "scanDesc": "Sem instalar · Sem anúncios · HD instantâneo",
+      "scanTitle": "Escaneie para assistir"
+    },
+    "posterAlt": "Pôster de compartilhamento",
+    "posterLoading": "Gerando pôster…",
+    "qrCode": "QR Code",
+    "qrFailed": "Falha ao carregar o QR code",
+    "qrHint": "Escaneie para abrir o link",
+    "saveImage": "Salvar imagem",
+    "shareSuccess": "Compartilhado",
+    "systemShare": "Compartilhamento do sistema",
+    "tabPoster": "Pôster",
+    "tabScan": "QR Code",
+    "title": "Compartilhar"
   },
   "shortcuts": {
     "fullscreen": "Tela cheia / Sair da tela cheia",
@@ -269,29 +332,5 @@
     "togglePlay": "Reproduzir / Pausar",
     "volumeDown": "Volume -10%",
     "volumeUp": "Volume +10%"
-  },
-  "share": {
-    "title": "Compartilhar",
-    "copyLink": "Copiar link",
-    "linkCopied": "Link copiado",
-    "qrCode": "QR Code",
-    "qrHint": "Escaneie para abrir o link",
-    "qrFailed": "Falha ao carregar o QR code",
-    "systemShare": "Compartilhamento do sistema",
-    "shareSuccess": "Compartilhado",
-    "saveImage": "Salvar imagem",
-    "imageFailed": "Falha ao gerar imagem",
-    "imageSaved": "Imagem salva",
-    "nothingToShare": "Nada para compartilhar",
-    "copyFailed": "Falha ao copiar",
-    "poster": {
-      "defaultTitle": "Player M3U8 Online",
-      "scanTitle": "Escaneie para assistir",
-      "scanDesc": "Sem instalar · Sem anúncios · HD instantâneo"
-    },
-    "tabPoster": "Pôster",
-    "tabScan": "QR Code",
-    "posterLoading": "Gerando pôster…",
-    "posterAlt": "Pôster de compartilhamento"
   }
 }

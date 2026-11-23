@@ -12,7 +12,7 @@
 
 import { cacheConfigManager } from './cacheConfigManager'
 import { getCurrentCacheAdapter } from './cacheAdapter'
-import { fetchAndParseM3U8, getSegmentsInRange, type TSSegment } from './m3u8Parser'
+import { fetchAndParseM3U8, getSegmentIndexByTime, getSegmentsInRange, type TSSegment } from './m3u8Parser'
 import { logger } from '@/utils/logger'
 import { downloadManager, DownloadPriority } from './downloadManager'
 import { getNetworkMonitor } from '@/lib/network/networkMonitor'
@@ -90,9 +90,6 @@ export interface PreloadEventPayload {
 
 /** 预加载事件监听器 */
 export type PreloadEventListener = (event: PreloadEventType, payload: PreloadEventPayload) => void
-
-/** 空的进度对象 */
-const EMPTY_PROGRESS: PreloadProgress = { loaded: 0, total: 0, currentUrl: '', loadedBytes: 0, percent: 0 }
 
 class Preloader {
   private currentM3U8Url = ''
@@ -344,15 +341,7 @@ class Preloader {
       }
 
       // 时间 → 片段索引（各级别片段时间线一致，直接用当前解析的 segments）
-      let segmentIndex = 0
-      let accumulated = 0
-      for (let i = 0; i < this.segments.length; i++) {
-        accumulated += this.segments[i].duration
-        if (accumulated > currentTime) {
-          segmentIndex = i
-          break
-        }
-      }
+      const segmentIndex = getSegmentIndexByTime(this.segments, currentTime)
 
       // 更新当前播放位置，供 preloadSegments 排序使用
       this.currentSegmentIndex = segmentIndex
@@ -668,52 +657,6 @@ class Preloader {
     }
 
     await Promise.all(activePromises)
-  }
-
-  /**
-   * 获取预加载进度
-   * 当目标 URL 与当前预加载 URL 不一致时，独立解析目标 URL 的分片进行统计，
-   * 避免用当前视频的分片列表统计其他视频导致进度张冠李戴
-   */
-  async getProgress(m3u8Url?: string): Promise<PreloadProgress> {
-    const url = m3u8Url || this.currentM3U8Url
-    if (!url) return { ...EMPTY_PROGRESS }
-
-    let segments = this.segments
-    if (url !== this.currentM3U8Url) {
-      try {
-        const result = await fetchAndParseM3U8(url)
-        segments = result.segments
-      } catch (error) {
-        logger.warn('[Preloader] Failed to parse m3u8 for progress:', error)
-        return { ...EMPTY_PROGRESS }
-      }
-    } else if (segments.length === 0) {
-      try {
-        segments = await this.prepare(url)
-      } catch (error) {
-        logger.warn('[Preloader] Failed to prepare m3u8 for progress:', error)
-        return { ...EMPTY_PROGRESS }
-      }
-    }
-
-    if (segments.length === 0) return { ...EMPTY_PROGRESS }
-
-    const adapter = getCurrentCacheAdapter()
-    // 批量查询已缓存的片段（性能优化：一次查询替代多次查询）
-    const segmentUrls = segments.map((s) => s.url)
-    const cachedUrls = await adapter.hasMany(segmentUrls, url)
-
-    const total = segmentUrls.length
-    const loaded = cachedUrls.size
-
-    return {
-      loaded,
-      total,
-      currentUrl: '',
-      loadedBytes: 0,
-      percent: total > 0 ? Math.round((loaded / total) * 100) : 0,
-    }
   }
 
   /**

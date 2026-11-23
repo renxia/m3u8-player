@@ -89,10 +89,14 @@
     "collected": "お気に入り済み",
     "copied": "コピー済み",
     "copy": "コピー",
+    "copyFailed": "コピーに失敗しました",
     "delete": "削除",
+    "edit": "名前を編集",
     "enterUrl": "m3u8アドレスまたはコンテンツを入力してください",
+    "episode": "第{{n}}話",
     "fav": "お気に入り",
     "favSuccess": "お気に入りに追加しました",
+    "fetchFailed": "取得に失敗しました：{{message}}",
     "justNow": "たった今",
     "minuteAgo": "分前",
     "noFav": "お気に入りはありません",
@@ -104,11 +108,14 @@
     "recdl": "お使いのシステムに推奨されるダウンロード",
     "refresh": "更新",
     "releaseDate": "リリース日",
+    "save": "保存",
+    "saved": "保存しました",
     "size": "サイズ",
     "sopebap": "取得成功、以下で編集して再生してください",
     "startPlaying": "編集ボックスのコンテンツを再生開始",
     "tmcy": "入力したM3U8コンテンツは暗号化されたリソースです。再生に失敗した場合は、ソースページのURLアドレスも入力して復号化情報を取得してください",
-    "version": "バージョン"
+    "version": "バージョン",
+    "videoName": "動画名"
   },
   "download": {
     "clientDesc": "@lzwme/m3u8-dlは、マルチスレッドダウンロード、ダウンロード中の再生、キャッシュ再開などの機能をサポートする強力なm3u8ファイルビデオバッチダウンロードツールです。さまざまな形式でインストールと使用をサポートしています。以下は簡単な紹介です。",
@@ -130,6 +137,7 @@
     ],
     "featuresTitle": "主な機能",
     "globalInstall": "グローバルインストール：",
+    "loading": "読み込み中...",
     "meta": {
       "description": "M3U8-DLダウンローダークライアントおよびCLIツールのダウンロード。Windows、macOS、Linux対応。強力なM3U8ビデオバッチダウンロードツール。",
       "keywords": "M3U8ダウンロードツール, M3U8-DLダウンローダー, M3U8クライアントダウンロード, M3U8バッチダウンロード",
@@ -151,6 +159,7 @@
   },
   "feedback": {
     "desc": "提案、問題の報告、使用体験の共有を歓迎します。あなたのフィードバックは私たちの製品の継続的な改善に役立ちます！",
+    "loadingComments": "コメントを読み込み中...",
     "meta": {
       "description": "M3U8オンラインプレーヤーへの提案、問題報告、使用体験の共有を歓迎します。フィードバックは製品の継続的な改善に役立ちます。",
       "keywords": "M3U8プレーヤーフィードバック, ユーザー提案, 問題報告, 製品ディスカッション",
@@ -214,6 +223,7 @@
     "errorOther": "再生エラーです。動画 URL が有効か確認してください。",
     "errorRetry": "再試行",
     "errorTitle": "再生に失敗しました",
+    "httpWarn": "ブラウザのセキュリティ制限により、https ページでは http の動画を再生できません。http:// でアクセスしてください。",
     "muted": "ミュート",
     "paused": "一時停止",
     "placeholderPrompt": "M3U8 アドレスを入力して再生を開始",
@@ -231,21 +241,74 @@
     "volume": "音量"
   },
   "settings": {
+    "cacheTypeIdbDesc": "互換性重視",
+    "cacheTypePwaDesc": "パフォーマンス重視",
     "description": "アプリの設定とキャッシュ構成を管理",
+    "embed": {
+      "description": "プレーヤーが iframe で他のサイトに埋め込まれる場合（mode=embed）の動作設定",
+      "enableCache": "キャッシュダウンロードを有効化",
+      "enableCacheDesc": "埋め込みモードで再生済みの動画セグメントをキャッシュし、再読み込みを高速化します",
+      "recordHistory": "履歴を自動記録",
+      "recordHistoryDesc": "埋め込みモードで再生した動画を履歴に自動保存します",
+      "title": "埋め込みモード（iframe）"
+    },
     "meta": {
       "description": "M3U8オンラインプレーヤーのアプリ設定、キャッシュ構成、プレーヤー設定を管理して、使用体験を最適化。",
       "keywords": "M3U8プレーヤー設定, キャッシュ構成, プレーヤー構成, 設定",
       "title": "設定 - 無料M3U8ビデオプレーヤー"
     },
-    "embed": {
-      "title": "埋め込みモード（iframe）",
-      "description": "プレーヤーが iframe で他のサイトに埋め込まれる場合（mode=embed）の動作設定",
-      "recordHistory": "履歴を自動記録",
-      "recordHistoryDesc": "埋め込みモードで再生した動画を履歴に自動保存します",
-      "enableCache": "キャッシュダウンロードを有効化",
-      "enableCacheDesc": "埋め込みモードで再生済みの動画セグメントをキャッシュし、再読み込みを高速化します"
+    "sw": {
+      "actions": "操作",
+      "activateFailed": "有効化に失敗しました",
+      "checking": "更新を確認しています...",
+      "checkUpdate": "更新を確認",
+      "clearCache": "キャッシュを削除",
+      "cleared": "キャッシュを削除しました",
+      "clearFailed": "キャッシュの削除に失敗しました",
+      "confirmClear": "すべてのキャッシュを削除しますか？オフラインコンテンツは利用できなくなります。",
+      "controlled": "ページを制御中",
+      "hasUpdate": "更新あり",
+      "latest": "最新バージョン",
+      "newVersion": "新しいバージョンがあります",
+      "newVersionDesc": "更新ボタンをクリックすると最新版になります",
+      "no": "いいえ",
+      "note": "Service Worker はオフライン再生とキャッシュを提供します。有効にすると、キャッシュ済みの動画とページをオフラインで利用できます。",
+      "registered": "登録済み",
+      "unsupportedDesc": "お使いのブラウザは Service Worker に対応していないため、オフライン再生は利用できません。",
+      "unsupportedTitle": "Service Worker を利用できません",
+      "updateFailed": "更新に失敗しました",
+      "updateFailedRetry": "更新に失敗しました。ページを再読み込みしてください",
+      "updateNow": "今すぐ更新",
+      "updating": "更新中...",
+      "upToDate": "最新です",
+      "yes": "はい"
     },
+    "swSectionTitle": "Service Worker 設定",
     "title": "設定"
+  },
+  "share": {
+    "copyFailed": "コピーに失敗しました",
+    "copyLink": "リンクをコピー",
+    "imageFailed": "画像の生成に失敗しました",
+    "imageSaved": "画像を保存しました",
+    "linkCopied": "リンクをコピーしました",
+    "nothingToShare": "共有するコンテンツがありません",
+    "poster": {
+      "defaultTitle": "M3U8 オンラインプレーヤー",
+      "scanDesc": "インストール不要 · 広告なし · 高画質",
+      "scanTitle": "スキャンして再生"
+    },
+    "posterAlt": "共有ポスター",
+    "posterLoading": "ポスター生成中…",
+    "qrCode": "QRコード",
+    "qrFailed": "QRコードの読み込みに失敗しました",
+    "qrHint": "スキャンして再生リンクを開く",
+    "saveImage": "画像を保存",
+    "shareSuccess": "共有しました",
+    "systemShare": "システム共有",
+    "tabPoster": "ポスター",
+    "tabScan": "QRコード",
+    "title": "共有"
   },
   "shortcuts": {
     "fullscreen": "全画面 / 全画面解除",
@@ -269,29 +332,5 @@
     "togglePlay": "再生 / 一時停止",
     "volumeDown": "音量 10% ダウン",
     "volumeUp": "音量 10% アップ"
-  },
-  "share": {
-    "title": "共有",
-    "copyLink": "リンクをコピー",
-    "linkCopied": "リンクをコピーしました",
-    "qrCode": "QRコード",
-    "qrHint": "スキャンして再生リンクを開く",
-    "qrFailed": "QRコードの読み込みに失敗しました",
-    "systemShare": "システム共有",
-    "shareSuccess": "共有しました",
-    "saveImage": "画像を保存",
-    "imageFailed": "画像の生成に失敗しました",
-    "imageSaved": "画像を保存しました",
-    "nothingToShare": "共有するコンテンツがありません",
-    "copyFailed": "コピーに失敗しました",
-    "poster": {
-      "defaultTitle": "M3U8 オンラインプレーヤー",
-      "scanTitle": "スキャンして再生",
-      "scanDesc": "インストール不要 · 広告なし · 高画質"
-    },
-    "tabPoster": "ポスター",
-    "tabScan": "QRコード",
-    "posterLoading": "ポスター生成中…",
-    "posterAlt": "共有ポスター"
   }
 }

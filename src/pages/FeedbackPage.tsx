@@ -38,7 +38,7 @@ export default function FeedbackPage() {
           <div className="flex items-center justify-center h-[400px] text-slate-600 dark:text-slate-400">
             <div className="text-center">
               <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>加载评论系统中...</p>
+              <p>{t('feedback.loadingComments')}</p>
             </div>
           </div>
         </div>

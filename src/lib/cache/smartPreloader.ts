@@ -560,18 +560,3 @@ export function getSmartPreloader(): SmartPreloader {
   return smartPreloaderInstance
 }
 
-/**
- * 工具函数: 根据智能策略调整预加载配置
- */
-export function adjustPreloadConfig(
-  basePreloadCount: number,
-  baseConcurrency: number
-): { preloadCount: number; concurrency: number } {
-  const smartPreloader = getSmartPreloader()
-  const strategy = smartPreloader.getPreloadStrategy(basePreloadCount, baseConcurrency)
-
-  return {
-    preloadCount: strategy.preloadCount,
-    concurrency: strategy.concurrency,
-  }
-}

@@ -671,27 +671,6 @@ class PWACacheManager {
     return group ? { ...group } : { count: 0, size: 0 }
   }
 
-  /**
-   * 删除指定 M3U8 URL 的所有缓存
-   */
-  async deleteByM3U8(m3u8Url: string): Promise<PWACacheOperationResult> {
-    await this.loadMetadata()
-
-    const items = Array.from(this.metadataCache.values()).filter(
-      (item) => item.m3u8Url === m3u8Url,
-    )
-
-    const urls = items.map((item) => item.url)
-    return this.deleteMany(urls)
-  }
-
-  /**
-   * 获取所有缓存项（用于调试）
-   */
-  async getAllItems(): Promise<PWACacheItem[]> {
-    await this.loadMetadata()
-    return Array.from(this.metadataCache.values())
-  }
 }
 
 /** 导出单例实例 */

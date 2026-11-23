@@ -105,7 +105,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
             .map((d, i) => {
               const parts = d.split(/[$\s]+/)
               let itemUrl = parts[0]
-              let name = `第${i + 1}集`
+              let name = t('common.episode', { n: i + 1 })
               if (!itemUrl.startsWith('http') && parts[1]?.startsWith('http')) {
                 ;[itemUrl, name] = [parts[1], parts[0]]
               }
@@ -138,7 +138,7 @@ export default function InputForm({ demoUrl, currentPlayingUrl, onPlay, onRotate
       setM3u8Content(text)
       toast.success(t('common.sopebap'))
     } catch (error) {
-      toast.error(`获取失败：${(error as Error).message}`)
+      toast.error(t('common.fetchFailed', { message: (error as Error).message }))
     }
   }, [getValidUrl, t])
 

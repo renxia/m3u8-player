@@ -5,26 +5,26 @@
 
 import { CheckCircle, RefreshCw, Trash2, Wifi, XCircle } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { useServiceWorker } from '@/lib/serviceWorker/useServiceWorker'
-import { dialog } from '@/utils/toast'
+import { logger } from '@/utils/logger'
 
 export function ServiceWorkerSettings() {
+  const { t } = useTranslation()
   const { isSupported, isRegistered, isControlled, isUpdateAvailable, update, skipWaiting, clearCache } = useServiceWorker()
   const [isClearingCache, setIsClearingCache] = useState(false)
 
   const handleClearCache = async () => {
-    const { isConfirmed } = await dialog.confirm('确定要清除所有缓存吗？这将导致离线内容无法访问。')
-    if (!isConfirmed) {
-      return
-    }
+    if (!window.confirm(t('settings.sw.confirmClear'))) return
 
     setIsClearingCache(true)
     try {
       await clearCache()
-      dialog.alert('缓存已清除')
+      toast.success(t('settings.sw.cleared'))
     } catch (error) {
-      console.error('Clear cache failed:', error)
-      dialog.alert('清除缓存失败', { icon: 'error' })
+      logger.error('[ServiceWorkerSettings] Clear cache failed:', error)
+      toast.error(t('settings.sw.clearFailed'))
     } finally {
       setIsClearingCache(false)
     }
@@ -33,10 +33,10 @@ export function ServiceWorkerSettings() {
   const handleUpdate = async () => {
     try {
       await update()
-      dialog.toast('正在检查更新...')
+      toast.info(t('settings.sw.checking'))
     } catch (error) {
-      console.error('Update failed:', error)
-      dialog.alert('更新失败', { icon: 'error' })
+      logger.error('[ServiceWorkerSettings] Update failed:', error)
+      toast.error(t('settings.sw.updateFailed'))
     }
   }
 
@@ -45,8 +45,8 @@ export function ServiceWorkerSettings() {
       await skipWaiting()
       window.location.reload()
     } catch (error) {
-      console.error('Skip waiting failed:', error)
-      dialog.alert('激活失败', { icon: 'error' })
+      logger.error('[ServiceWorkerSettings] Skip waiting failed:', error)
+      toast.error(t('settings.sw.activateFailed'))
     }
   }
 
@@ -57,56 +57,56 @@ export function ServiceWorkerSettings() {
         <div className="flex items-start gap-3">
           <XCircle className="size-5 flex-shrink-0 text-red-500" />
           <div>
-            <h3 className="font-medium text-red-900 dark:text-red-100">Service Worker 不可用</h3>
-            <p className="mt-1 text-sm text-red-700 dark:text-red-300">您的浏览器不支持 Service Worker，无法使用离线播放功能。</p>
+            <h3 className="font-medium text-red-900 dark:text-red-100">{t('settings.sw.unsupportedTitle')}</h3>
+            <p className="mt-1 text-sm text-red-700 dark:text-red-300">{t('settings.sw.unsupportedDesc')}</p>
           </div>
         </div>
       </div>
     )
   }
 
+  const statusRows = [
+    {
+      key: 'registered',
+      icon: isRegistered ? <CheckCircle className="size-5 text-green-500" /> : <XCircle className="size-5 text-red-500" />,
+      label: t('settings.sw.registered'),
+      value: isRegistered ? t('settings.sw.yes') : t('settings.sw.no'),
+    },
+    {
+      key: 'controlled',
+      icon: isControlled ? <Wifi className="size-5 text-blue-500" /> : <Wifi className="size-5 text-slate-400" />,
+      label: t('settings.sw.controlled'),
+      value: isControlled ? t('settings.sw.yes') : t('settings.sw.no'),
+    },
+    {
+      key: 'update',
+      icon: isUpdateAvailable ? <RefreshCw className="size-5 text-amber-500" /> : <CheckCircle className="size-5 text-green-500" />,
+      label: t('settings.sw.latest'),
+      value: isUpdateAvailable ? t('settings.sw.hasUpdate') : t('settings.sw.upToDate'),
+    },
+  ]
+
   return (
     <div className="space-y-4 mt-4">
       {/* 状态卡片 */}
-      <div className="space-y-3">
-        {/* <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">Service Worker 状态</h3> */}
-
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
-          <div className="space-y-3">
-            {/* 注册状态 */}
-            <div className="flex items-center justify-between">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
+        <div className="space-y-3">
+          {statusRows.map((row) => (
+            <div key={row.key} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {isRegistered ? <CheckCircle className="size-5 text-green-500" /> : <XCircle className="size-5 text-red-500" />}
-                <span className="text-sm text-slate-700 dark:text-slate-300">已注册</span>
+                {row.icon}
+                <span className="text-sm text-slate-700 dark:text-slate-300">{row.label}</span>
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{isRegistered ? '是' : '否'}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{row.value}</span>
             </div>
-
-            {/* 控制状态 */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isControlled ? <Wifi className="size-5 text-blue-500" /> : <Wifi className="size-5 text-slate-400" />}
-                <span className="text-sm text-slate-700 dark:text-slate-300">已控制页面</span>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{isControlled ? '是' : '否'}</span>
-            </div>
-
-            {/* 更新状态 */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isUpdateAvailable ? <RefreshCw className="size-5 text-amber-500" /> : <CheckCircle className="size-5 text-green-500" />}
-                <span className="text-sm text-slate-700 dark:text-slate-300">最新版本</span>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{isUpdateAvailable ? '有更新' : '已是最新'}</span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* 操作按钮 */}
       {isRegistered && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">操作</h3>
+          <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">{t('settings.sw.actions')}</h3>
 
           <div className="flex flex-wrap gap-2">
             {isUpdateAvailable && (
@@ -116,7 +116,7 @@ export function ServiceWorkerSettings() {
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-3 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCw className="size-4" />
-                立即更新
+                {t('settings.sw.updateNow')}
               </button>
             )}
 
@@ -126,7 +126,7 @@ export function ServiceWorkerSettings() {
               className="inline-flex items-center gap-2 rounded-lg bg-slate-500 px-3 py-2 text-sm font-medium text-white hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw className="size-4" />
-              检查更新
+              {t('settings.sw.checkUpdate')}
             </button>
 
             <button
@@ -136,7 +136,7 @@ export function ServiceWorkerSettings() {
               className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isClearingCache ? <RefreshCw className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-              清除缓存
+              {t('settings.sw.clearCache')}
             </button>
           </div>
         </div>
@@ -144,9 +144,7 @@ export function ServiceWorkerSettings() {
 
       {/* 说明 */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
-        <p className="text-xs text-blue-900 dark:text-blue-100">
-          <strong>Service Worker</strong> 提供离线播放和缓存功能。启用后，您可以离线访问已缓存的视频内容和页面。
-        </p>
+        <p className="text-xs text-blue-900 dark:text-blue-100">{t('settings.sw.note')}</p>
       </div>
     </div>
   )

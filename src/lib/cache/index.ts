@@ -43,5 +43,4 @@ export {
   type BandwidthSample,
   type PreloadStrategy,
   type SmartPreloaderConfig,
-  adjustPreloadConfig,
 } from './smartPreloader'
