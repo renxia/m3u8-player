@@ -3,7 +3,7 @@
  * 显示缓存开关、缓存进度、命中率等信息
  */
 
-import { AlertTriangle, Database, Download, Pause, Play, RefreshCw, Settings, Trash2, X, Zap } from 'lucide-react'
+import { AlertTriangle, Database, Download, Loader2, Pause, Play, RefreshCw, Settings, Trash2, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -25,6 +25,8 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
   const [expanded, setExpanded] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
+  // 点击「预加载」后的启动态：请求发出即给出视觉反馈，避免解析 m3u8 期间界面毫无变化
+  const [isStarting, setIsStarting] = useState(false)
   const {
     enabled,
     stats,
@@ -67,6 +69,17 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
       toast.success(t('cache.clearSuccess'))
     } finally {
       setIsClearing(false)
+    }
+  }
+
+  // 开始预加载：请求发出即进入启动态，preloader 的状态事件随后接管进度展示
+  const handleStartPreload = async () => {
+    if (!m3u8Url || isStarting) return
+    setIsStarting(true)
+    try {
+      await startPreload(m3u8Url)
+    } finally {
+      setIsStarting(false)
     }
   }
 
@@ -209,16 +222,25 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
             {isCacheSupported && enabled && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-300">{t('cache.preload')}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-300">{t('cache.preload')}</span>
+                    {effectiveStatus === 'error' && <span className="text-[10px] text-red-400">{t('cache.preloadFailed')}</span>}
+                  </div>
                   <div className="flex items-center gap-0.5">
-                    {effectiveStatus === 'idle' && m3u8Url && (
+                    {(effectiveStatus === 'idle' || effectiveStatus === 'error') && m3u8Url && (
                       <button
                         type="button"
-                        onClick={() => startPreload(m3u8Url)}
-                        className="p-1 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 rounded-lg transition-colors"
+                        onClick={handleStartPreload}
+                        disabled={isStarting}
+                        className={cn(
+                          'p-1 rounded-lg transition-colors',
+                          isStarting
+                            ? 'bg-indigo-500/20 text-indigo-300 cursor-wait'
+                            : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30',
+                        )}
                         title={t('cache.startPreload')}
                       >
-                        <Download className="w-3.5 h-3.5" />
+                        {isStarting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                       </button>
                     )}
                     {effectiveStatus === 'loading' && (
@@ -279,6 +301,13 @@ export function CacheIndicator({ m3u8Url: propM3U8Url, className }: CacheIndicat
                       </div>
                     </div>
                   )}
+
+                {/* 解析 m3u8 阶段没有总量，用不确定态进度条反馈"任务已启动" */}
+                {effectiveStatus === 'loading' && preloadProgress.total === 0 && (
+                  <div className="w-full h-1 bg-slate-600 rounded-full overflow-hidden">
+                    <div className="h-full w-1/2 bg-indigo-500/70 rounded-full animate-pulse" />
+                  </div>
+                )}
 
                 {effectiveStatus === 'completed' && preloadProgress.total > 0 && (
                   <div className="flex items-center gap-1 text-xs text-emerald-400">

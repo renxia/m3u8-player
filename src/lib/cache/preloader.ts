@@ -140,11 +140,13 @@ class Preloader {
 
   /**
    * 设置任务状态并推送事件
+   * @param url 事件携带的任务 URL（默认当前 URL）。任务刚启动、尚未 prepare 时需显式传入，
+   *            否则事件携带的是上一个任务的 URL，UI 按 URL 匹配后会把状态判为 idle
    */
-  private setStatus(status: PreloadStatus): void {
+  private setStatus(status: PreloadStatus, url: string = this.currentM3U8Url): void {
     if (this.status === status) return
     this.status = status
-    this.emit('status', { status, url: this.currentM3U8Url, type: this.taskType })
+    this.emit('status', { status, url, type: this.taskType })
   }
 
   /**
@@ -464,6 +466,12 @@ class Preloader {
     // - manual 任务优先级最高，可抢占任何正在运行的任务。
     if (this.preloadTaskLock) {
       const runningType = this.taskType
+
+      // 同一 URL 的手动预加载已在运行：直接复用当前任务，避免"中断自己再重启"的无谓抖动
+      if (taskType === 'manual' && runningType === 'manual' && this.currentM3U8Url === m3u8Url && this.status === 'loading') {
+        return true
+      }
+
       if (runningType) {
         const currentPriority = PreloadTaskPriority[runningType.toUpperCase() as keyof typeof PreloadTaskPriority] ?? PreloadTaskPriority.AUTO
         const newPriority = PreloadTaskPriority[taskType.toUpperCase() as keyof typeof PreloadTaskPriority] ?? PreloadTaskPriority.AUTO
@@ -498,10 +506,17 @@ class Preloader {
     }
 
     this.taskType = taskType
-    this.setStatus('loading')
+    // 提前把任务 URL 同步到状态事件：UI 可立即按 URL 匹配并切换到 loading/进度视图，
+    // 不必等到 prepare() 完成（大列表解析可能需要数秒，期间用户会认为"点了没反应"）
+    this.setStatus('loading', m3u8Url)
 
     try {
       const segments = await segmentsLoader()
+      // 手动全量预加载解析不到片段时按失败处理：否则会以 total=0 的形态静默"完成"，
+      // UI 既不显示进度也不显示完成提示，用户感受就是点击无效
+      if (segments.length === 0 && taskType === 'manual') {
+        throw new Error('[Preloader] No segments parsed from m3u8, cannot preload')
+      }
       // 记录预加载任务总量，供 getCachedProgress 快速返回
       this.preloadTotalCount = segments.length
       this.preloadLoadedCount = 0
