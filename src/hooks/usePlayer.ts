@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { preloader } from '@/lib/cache'
 import type { PlayerInstances, PlayerType, VideoType } from '@/types'
 import { logger } from '@/utils/logger'
@@ -19,6 +19,10 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
   const currentUrlRef = useRef('')
   const isPlayingRef = useRef(false)
   const pendingAnimationFrameRef = useRef<number | null>(null)
+  // 待决 Promise 的 resolve 句柄：取消动画帧时必须先 settle，否则调用方永久挂起
+  const pendingResolveRef = useRef<((value: boolean) => void) | null>(null)
+  // 标记 play() 自身正在执行的帧内流程，此时 destroyAll() 不应抢先 settle
+  const playFrameActiveRef = useRef(false)
   const isInitializingRef = useRef(false) // 新增：标记是否正在初始化
 
   // 创建降级播放器管理器
@@ -34,10 +38,15 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
 
   // 统一的播放器销毁函数
   const destroyAll = useCallback(() => {
-    // 取消待执行的动画帧
+    // 取消待执行的动画帧（先 settle 挂起的 Promise，避免调用方永久等待）
     if (pendingAnimationFrameRef.current !== null) {
       cancelAnimationFrame(pendingAnimationFrameRef.current)
       pendingAnimationFrameRef.current = null
+      // play() 自身的帧内流程会自己 resolve，此处只处理外部中断
+      if (!playFrameActiveRef.current) {
+        pendingResolveRef.current?.(false)
+        pendingResolveRef.current = null
+      }
     }
 
     // 停止预加载
@@ -58,10 +67,9 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
 
     if (instances.current.art) {
       try {
-        // ArtPlayer 可能有自定义的清理逻辑
+        // ArtPlayer 的 destroy() 内部已会触发 'destroy' 事件，
+        // 此处不再手动 emit，否则清理回调会重复执行
         instances.current.art.destroy()
-        // 显式触发销毁事件，确保所有监听器被清理
-        instances.current.art.emit?.('destroy')
         // 移除所有事件监听器
         instances.current.art.off?.()
       } catch (error) {
@@ -71,6 +79,8 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
       }
     }
 
+    // 已废弃的独立实例引用（实例实际挂在 art.hls/art.flv/art.torrent 上），
+    // 保留清理逻辑以兼容历史调用，正常路径下均为 null
     if (instances.current.hls) {
       try {
         instances.current.hls.destroy()
@@ -118,6 +128,13 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
     }
   }, [])
 
+  // 组件卸载时销毁播放器，避免路由离开后 HLS / WebTorrent 继续下载
+  useEffect(() => {
+    return () => {
+      destroyAll()
+    }
+  }, [destroyAll])
+
   // ArtPlayer 播放器初始化（简化，移除冗余检查）
   const initArtPlayerInstance = useCallback(
     async (url: string, type: VideoType) => {
@@ -139,6 +156,17 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
           },
           currentUrlRef,
         })
+
+        // 初始化期间 URL 已变化：销毁刚创建的实例，避免旧实例污染新状态
+        if (currentUrlRef.current !== url) {
+          logger.log('[initArtPlayer] URL changed during init, discarding instance')
+          try {
+            art.destroy()
+          } catch {
+            // ignore
+          }
+          return false
+        }
 
         // 直接赋值，无需再次销毁（play() 函数已调用 destroyAll()）
         instances.current.art = art
@@ -220,18 +248,22 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
         return false
       }
 
-      // 取消之前的待执行动画帧
+      // 取消之前的待执行动画帧（同时 settle 上一轮 Promise）
       if (pendingAnimationFrameRef.current !== null) {
         cancelAnimationFrame(pendingAnimationFrameRef.current)
         pendingAnimationFrameRef.current = null
+        pendingResolveRef.current?.(false)
+        pendingResolveRef.current = null
       }
 
       // 使用 Promise 包装播放流程
       return new Promise<boolean>((resolve) => {
         isInitializingRef.current = true
+        pendingResolveRef.current = resolve
 
         // 使用 requestAnimationFrame 优化销毁和初始化的时机，减少重绘
         const frameId1 = requestAnimationFrame(() => {
+          playFrameActiveRef.current = true
           // 第一步：销毁旧实例并重置状态
           destroyAll()
           currentUrlRef.current = url
@@ -302,6 +334,11 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
                     const fallbackType = detectVideoType(fallbackOptions.url, customType)
                     const fallbackPlayer = fallbackOptions.playerType
 
+                    // 降级前必须先销毁旧实例并同步 currentUrlRef，
+                    // 否则自定义类型处理器会因 URL 校验不通过而直接 return，表现为「降级成功但黑屏」
+                    destroyAll()
+                    currentUrlRef.current = fallbackOptions.url
+
                     if (fallbackPlayer === 'dplayer') {
                       success = await initDPlayerInstance(fallbackOptions.url, fallbackType)
                     } else {
@@ -357,6 +394,8 @@ export function usePlayer(containerRef: React.RefObject<HTMLDivElement | null>, 
             } finally {
               isInitializingRef.current = false
               pendingAnimationFrameRef.current = null
+              pendingResolveRef.current = null
+              playFrameActiveRef.current = false
             }
           })
 

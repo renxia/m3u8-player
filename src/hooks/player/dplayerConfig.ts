@@ -42,7 +42,8 @@ export async function initDPlayer(options: DPlayerInitOptions): Promise<any> {
     autoplay: true,
     airplay: true,
     theme: '#6366f1',
-    loop: true,
+    // 不开启循环：loop 会让 ended 永不触发，导致「下一集」自动连播失效
+    loop: false,
     lang: 'zh-cn',
     screenshot: true,
     hotkey: true,
@@ -55,7 +56,7 @@ export async function initDPlayer(options: DPlayerInitOptions): Promise<any> {
       url,
       type,
       customType: {
-        customHls: (video: HTMLVideoElement) => {
+        customHls: (video: HTMLVideoElement, player: any) => {
           // 检查 URL 是否变化
           if (currentUrlRef.current !== url) return
 
@@ -77,12 +78,13 @@ export async function initDPlayer(options: DPlayerInitOptions): Promise<any> {
           // 存储 HLS 实例（如果需要外部访问）
           // 注意：DPlayer 没有 art.hls 这样的属性，所以这里不存储
 
-          // 监听播放器销毁事件
-          dp.on('destroy', () => {
+          // 监听播放器销毁事件（此回调在 DPlayer 构造函数内同步执行，
+          // 不能引用尚在 TDZ 的 const dp，只能用第二个参数传入的实例）
+          player?.on?.('destroy', () => {
             cleanup()
           })
         },
-        customFlv: (video: HTMLVideoElement) => {
+        customFlv: (video: HTMLVideoElement, player: any) => {
           // 检查 URL 是否变化
           if (currentUrlRef.current !== url) return
 
@@ -98,8 +100,8 @@ export async function initDPlayer(options: DPlayerInitOptions): Promise<any> {
           flv.attachMediaElement(video)
           flv.load()
 
-          // 监听播放器销毁事件
-          dp.on('destroy', () => {
+          // 同上：用回调传入的实例，避免引用未初始化的 dp
+          player?.on?.('destroy', () => {
             flv.destroy()
           })
         },
@@ -133,8 +135,8 @@ export async function initDPlayer(options: DPlayerInitOptions): Promise<any> {
             })
           })
 
-          // 监听播放器销毁事件
-          dp.on('destroy', () => {
+          // 同上：用回调传入的实例，避免引用未初始化的 dp
+          player?.on?.('destroy', () => {
             wtClient.destroy()
           })
         },

@@ -14,14 +14,15 @@ let isCdnInitialized = false
 export function detectVideoType(url: string, customType?: string): VideoType {
   if (customType) return customType as VideoType
 
-  if (url.includes('.m3u8')) {
+  const path = url.split(/[?#]/)[0].toLowerCase()
+
+  if (path.endsWith('.m3u8') || path.endsWith('.ts')) {
     if (window.Hls?.isSupported()) return 'customHls'
     return 'auto'
   }
   if (url.includes('torrent') || url.includes('magnet:')) return 'customWebTorrent'
-  if (url.includes('.ts')) return 'customHls'
-  if (url.includes('.mp4')) return 'mp4'
-  if (url.includes('.flv')) return 'customFlv'
+  if (path.endsWith('.mp4')) return 'mp4'
+  if (path.endsWith('.flv')) return 'customFlv'
   return 'auto'
 }
 

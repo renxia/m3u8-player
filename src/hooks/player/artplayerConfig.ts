@@ -11,6 +11,20 @@ import { loadArtPlayerDependencies } from './playerUtils'
 import { createCachedThumbnailPlugin } from './thumbnailPlugin'
 
 /**
+ * 本项目 VideoType → Artplayer 自定义类型键名的映射
+ * Artplayer 只认 customType 里注册的键（m3u8 / flv / torrent），
+ * 若不映射，customFlv / customWebTorrent 会找不到处理器
+ */
+const ART_TYPE_MAP: Record<string, string> = {
+  customHls: 'm3u8',
+  hls: 'm3u8',
+  customFlv: 'flv',
+  flv: 'flv',
+  customWebTorrent: 'torrent',
+  torrent: 'torrent',
+}
+
+/**
  * ArtPlayer 初始化选项
  */
 export interface ArtPlayerInitOptions {
@@ -44,7 +58,7 @@ export async function initArtPlayer(options: ArtPlayerInitOptions): Promise<any>
   Artplayer.SEEK_STEP = 10
   Artplayer.FAST_FORWARD_VALUE = 3
 
-  const artType = type === 'customHls' || type === 'hls' ? 'm3u8' : type
+  const artType = ART_TYPE_MAP[type] || type
 
   // HLS 控制插件
   const hlsControlPlugin = (window as any).artplayerPluginHlsControl?.({
