@@ -276,6 +276,10 @@
     "imageFailed": "Failed to generate image",
     "imageSaved": "Image saved",
     "nothingToShare": "Nothing to share",
-    "copyFailed": "Copy failed"
+    "copyFailed": "Copy failed",
+    "poster": {
+      "scanTitle": "Scan to play",
+      "scanDesc": "No install · No ads · Instant HD"
+    }
   }
 }

@@ -272,6 +272,10 @@
     "imageFailed": "生成图片失败",
     "imageSaved": "图片已保存",
     "nothingToShare": "暂无可分享的内容",
-    "copyFailed": "复制失败"
+    "copyFailed": "复制失败",
+    "poster": {
+      "scanTitle": "扫码即刻播放",
+      "scanDesc": "免安装 · 无广告 · 高清秒开"
+    }
   }
 }

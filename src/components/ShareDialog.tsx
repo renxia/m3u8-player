@@ -91,7 +91,7 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
   const handleSystemShare = useCallback(async () => {
     try {
       let imageFile: File | undefined
-      const dataUrl = generateShareImage(content)
+      const dataUrl = await generateShareImage(content)
       if (dataUrl) imageFile = dataUrlToFile(dataUrl, 'm3u8-share.png')
       await systemShare(content, imageFile)
       setStatus('shared')
@@ -106,8 +106,8 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
     }
   }, [content, handleCopy, onClose, t])
 
-  const handleDownloadImage = useCallback(() => {
-    const dataUrl = generateShareImage(content)
+  const handleDownloadImage = useCallback(async () => {
+    const dataUrl = await generateShareImage(content)
     if (!dataUrl) {
       toast.error(t('share.imageFailed'))
       return

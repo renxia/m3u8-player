@@ -276,6 +276,10 @@
     "imageFailed": "Échec de la génération de l'image",
     "imageSaved": "Image enregistrée",
     "nothingToShare": "Rien à partager",
-    "copyFailed": "Échec de la copie"
+    "copyFailed": "Échec de la copie",
+    "poster": {
+      "scanTitle": "Scannez pour lire",
+      "scanDesc": "Sans installation · Sans pub · HD instantanée"
+    }
   }
 }

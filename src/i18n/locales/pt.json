@@ -276,6 +276,10 @@
     "imageFailed": "Falha ao gerar imagem",
     "imageSaved": "Imagem salva",
     "nothingToShare": "Nada para compartilhar",
-    "copyFailed": "Falha ao copiar"
+    "copyFailed": "Falha ao copiar",
+    "poster": {
+      "scanTitle": "Escaneie para assistir",
+      "scanDesc": "Sem instalar · Sem anúncios · HD instantâneo"
+    }
   }
 }

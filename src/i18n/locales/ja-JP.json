@@ -276,6 +276,10 @@
     "imageFailed": "画像の生成に失敗しました",
     "imageSaved": "画像を保存しました",
     "nothingToShare": "共有するコンテンツがありません",
-    "copyFailed": "コピーに失敗しました"
+    "copyFailed": "コピーに失敗しました",
+    "poster": {
+      "scanTitle": "スキャンして再生",
+      "scanDesc": "インストール不要 · 広告なし · 高画質"
+    }
   }
 }

@@ -7,6 +7,7 @@
  */
 
 import QRCode from 'qrcode'
+import i18n from '@/i18n'
 import { copyToClipboard } from './utils'
 
 export { copyToClipboard } from './utils'
@@ -77,98 +78,499 @@ export async function systemShare(content: ShareContent, imageFile?: File): Prom
  * 使用 qrcode 在客户端生成，避免将分享链接外发到第三方服务
  * @param text 需要编码的内容
  * @param size 二维码像素尺寸
+ * @param color 前景/背景色（海报场景使用深色模块 + 白色底）
  * @returns PNG 格式的 dataURL
  */
-export async function getQrCodeDataUrl(text: string, size = 220): Promise<string> {
+export async function getQrCodeDataUrl(text: string, size = 220, color?: { dark?: string; light?: string }): Promise<string> {
   return QRCode.toDataURL(text, {
     width: size,
     margin: 1,
     errorCorrectionLevel: 'M',
+    color: color ? { dark: color.dark ?? '#000000', light: color.light ?? '#FFFFFF' } : undefined,
   })
 }
 
-/** 截断文本，超出长度加省略号 */
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text
-  return `${text.slice(0, max)}…`
+/* -------------------------------------------------------------------------- */
+/*                              分享海报绘制                                   */
+/* -------------------------------------------------------------------------- */
+
+/** 海报版面参数（设计稿 1080 × 1350，4:5 竖版，适配社交平台） */
+const POSTER = {
+  width: 1080,
+  height: 1350,
+  padding: 88,
+  radius: 32,
+} as const
+
+const FONT_STACK = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif'
+
+/** 圆角矩形路径 */
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const radius = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.arcTo(x + w, y, x + w, y + h, radius)
+  ctx.arcTo(x + w, y + h, x, y + h, radius)
+  ctx.arcTo(x, y + h, x, y, radius)
+  ctx.arcTo(x, y, x + w, y, radius)
+  ctx.closePath()
+}
+
+/** 径向柔光（叠加在整幅画布上，营造体积感） */
+function paintGlow(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  rgb: string,
+  alpha: number,
+  width: number,
+  height: number,
+) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, radius)
+  g.addColorStop(0, `rgba(${rgb},${alpha})`)
+  g.addColorStop(0.55, `rgba(${rgb},${alpha * 0.35})`)
+  g.addColorStop(1, `rgba(${rgb},0)`)
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, width, height)
+}
+
+/** 字间距文本绘制（canvas 的 letterSpacing 兼容性不足，手动逐字排布） */
+function drawSpacedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, spacing: number): number {
+  let cursor = x
+  for (const char of text) {
+    ctx.fillText(char, cursor, y)
+    cursor += ctx.measureText(char).width + spacing
+  }
+  return cursor - spacing - x
+}
+
+/** 文本分词：CJK 单字成词，拉丁文按词，避免中文无法换行 */
+function tokenize(text: string): string[] {
+  return text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]|[A-Za-z0-9@._'’%+-]+|\s+|./gu) ?? []
+}
+
+/** 是否为 CJK 字符 */
+const CJK_RE = /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/
+
+/**
+ * 按最大宽度折行（返回每行的 token 列表）
+ * 中文会在任意字之间断开，这里额外规避「行尾孤字」（把孤字挪到下一行）
+ */
+function wrapTokenLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[][] {
+  const lines: string[][] = []
+  let lineTokens: string[] = []
+
+  const widthOf = (tokens: string[]) => ctx.measureText(tokens.join('').trim()).width
+
+  for (const token of tokenize(text)) {
+    if (!lineTokens.length) {
+      lineTokens.push(token)
+      continue
+    }
+    if (widthOf([...lineTokens, token]) <= maxWidth) {
+      lineTokens.push(token)
+      continue
+    }
+
+    // 需要换行：若行尾是 CJK 单字，且新行也以 CJK 开头，则把孤字带到下一行
+    let carry: string[] = []
+    if (CJK_RE.test(token)) {
+      const last = lineTokens[lineTokens.length - 1]
+      if (last && last.length === 1 && CJK_RE.test(last) && lineTokens.length > 1) {
+        lineTokens.pop()
+        carry = [last]
+      }
+    }
+
+    lines.push(lineTokens)
+    lineTokens = [...carry, token.trimStart()]
+  }
+
+  if (lineTokens.join('').trim()) lines.push(lineTokens)
+  return lines
+}
+
+/** 使多行文本宽度尽量均衡（避免末行只剩几个字） */
+function balanceLines(ctx: CanvasRenderingContext2D, lines: string[][], maxWidth: number): string[][] {
+  const widthOf = (tokens: string[]) => ctx.measureText(tokens.join('').trim()).width
+
+  for (let i = 0; i < lines.length - 1; i++) {
+    let guard = 0
+    while (guard++ < 40) {
+      const cur = lines[i]
+      const next = lines[i + 1]
+      if (cur.length <= 1 || widthOf(next) >= widthOf(cur) - 2) break
+      const moved = [cur[cur.length - 1], ...next]
+      if (widthOf(moved) > maxWidth) break
+      cur.pop()
+      lines[i + 1] = moved
+    }
+  }
+  return lines
+}
+
+/** 按最大宽度折行（返回字符串行） */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  return wrapTokenLines(ctx, text, maxWidth).map((tokens) => tokens.join('').trim())
+}
+
+/** 单行截断并补省略号 */
+function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text
+  const ellipsis = '…'
+  const ellipsisWidth = ctx.measureText(ellipsis).width
+  let result = text
+  while (result && ctx.measureText(result).width + ellipsisWidth > maxWidth) {
+    result = result.slice(0, -1)
+  }
+  return `${result.trimEnd()}${ellipsis}`
 }
 
 /**
- * 生成包含标题的分享图 (PNG DataURL)
- * 用于系统分享附带图片，或用户保存分享海报
+ * 标题自适应：在候选字号中挑选能完整放进指定行数的最大字号
+ * 行宽尽量均衡，全部超出时按最小字号截断
+ */
+function fitTitle(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+  sizes: number[],
+): { size: number; lines: string[]; complete: boolean } {
+  for (const size of sizes) {
+    ctx.font = `800 ${size}px ${FONT_STACK}`
+    const tokenLines = wrapTokenLines(ctx, text, maxWidth)
+    if (tokenLines.length <= maxLines) {
+      const balanced = balanceLines(ctx, tokenLines, maxWidth)
+      return { size, lines: balanced.map((tokens) => tokens.join('').trim()), complete: true }
+    }
+  }
+
+  const size = sizes[sizes.length - 1]
+  ctx.font = `800 ${size}px ${FONT_STACK}`
+  const lines = wrapText(ctx, text, maxWidth).slice(0, maxLines)
+  const last = lines.length - 1
+  if (last >= 0) lines[last] = ellipsize(ctx, lines[last], maxWidth)
+  return { size, lines, complete: false }
+}
+
+/** 加载图片（用于注入二维码） */
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('image load failed'))
+    img.src = src
+  })
+}
+
+/**
+ * 星尘颗粒：稀疏亮点，营造质感
+ * （相比均匀噪点，对 PNG 压缩友好，不会让分享图体积暴涨）
+ */
+function paintStardust(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  ctx.save()
+  for (let i = 0; i < 620; i++) {
+    const x = Math.random() * width
+    const y = Math.random() * height
+    const r = Math.random() * 1.4 + 0.4
+    const golden = Math.random() > 0.7
+    ctx.fillStyle = golden
+      ? `rgba(231,196,139,${0.05 + Math.random() * 0.22})`
+      : `rgba(255,255,255,${0.03 + Math.random() * 0.14})`
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
+/**
+ * 生成分享海报 (PNG DataURL)
+ * 深色高级质感 + 金色点缀的 3:4 竖版海报，内含可扫描二维码
  *
  * @returns PNG 格式的 dataURL
  */
-export function generateShareImage({ url, title }: ShareContent): string {
-  const W = 600
-  const H = title ? 420 : 360
+export async function generateShareImage(content: ShareContent): Promise<string> {
+  const { width: W, height: H, padding: PAD } = POSTER
+  const shareUrl = buildShareUrl(content)
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext('2d')
   if (!ctx) return ''
 
-  // 背景渐变
-  const bg = ctx.createLinearGradient(0, 0, W, H)
-  bg.addColorStop(0, '#4f46e5')
-  bg.addColorStop(1, '#06b6d4')
+  ctx.textBaseline = 'alphabetic'
+  ctx.textAlign = 'left'
+
+  /* ------------------------------- 背景层 ------------------------------- */
+  const bg = ctx.createLinearGradient(0, 0, W * 0.7, H)
+  bg.addColorStop(0, '#0A0A12')
+  bg.addColorStop(0.5, '#0D0B18')
+  bg.addColorStop(1, '#120E1F')
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, W, H)
 
-  // 装饰圆
-  ctx.globalAlpha = 0.12
-  ctx.fillStyle = '#ffffff'
-  ctx.beginPath()
-  ctx.arc(W * 0.85, H * 0.18, 120, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.beginPath()
-  ctx.arc(W * 0.12, H * 0.88, 90, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.globalAlpha = 1
+  paintGlow(ctx, W * 0.18, -H * 0.02, H * 0.62, '124,92,255', 0.42, W, H)
+  paintGlow(ctx, W * 1.02, H * 0.6, H * 0.5, '34,211,238', 0.16, W, H)
+  paintGlow(ctx, W * 0.95, H * 0.04, H * 0.32, '231,196,139', 0.14, W, H)
 
-  const padding = 40
-
-  // 标题（如有）
-  let nextY = padding + 10
-  if (title) {
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 32px system-ui, -apple-system, "Segoe UI", sans-serif'
-    const displayTitle = truncate(title, 28)
-    // 标题最多两行
-    const words = displayTitle
-    const line1 = truncate(words, 18)
-    ctx.fillText(line1, padding, nextY + 32, W - padding * 2)
-    if (words.length > 18) {
-      const line2 = truncate(words.slice(18), 22)
-      ctx.fillText(line2, padding, nextY + 72, W - padding * 2)
-      nextY += 100
-    } else {
-      nextY += 60
-    }
-
-    // 分隔线
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)'
-    ctx.lineWidth = 1
+  // 极细网格
+  ctx.save()
+  ctx.strokeStyle = 'rgba(255,255,255,0.028)'
+  ctx.lineWidth = 1
+  for (let x = 0; x <= W; x += 60) {
     ctx.beginPath()
-    ctx.moveTo(padding, nextY)
-    ctx.lineTo(W - padding, nextY)
+    ctx.moveTo(x + 0.5, 0)
+    ctx.lineTo(x + 0.5, H)
     ctx.stroke()
   }
+  for (let y = 0; y <= H; y += 60) {
+    ctx.beginPath()
+    ctx.moveTo(0, y + 0.5)
+    ctx.lineTo(W, y + 0.5)
+    ctx.stroke()
+  }
+  ctx.restore()
 
-  nextY += 24
+  paintStardust(ctx, W, H)
 
-  // 分享链接
-  ctx.fillStyle = 'rgba(255,255,255,0.92)'
-  ctx.font = '18px system-ui, -apple-system, "Segoe UI", sans-serif'
-  const shareUrl = buildShareUrl({ url, title })
-  ctx.fillText(truncate(shareUrl, 56), padding, nextY + 18, W - padding * 2)
+  // 外描边
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'
+  ctx.lineWidth = 2
+  roundRect(ctx, 20, 20, W - 40, H - 40, 40)
+  ctx.stroke()
 
-  nextY += 56
+  /* ----------------------------- 顶部品牌区 ----------------------------- */
+  const logoY = 120
+  const logoGradient = ctx.createLinearGradient(PAD, logoY - 30, PAD + 60, logoY + 30)
+  logoGradient.addColorStop(0, '#F7E4BE')
+  logoGradient.addColorStop(1, '#D8A450')
+  ctx.fillStyle = logoGradient
+  ctx.beginPath()
+  ctx.arc(PAD + 30, logoY, 30, 0, Math.PI * 2)
+  ctx.fill()
 
-  // 底部品牌
-  ctx.fillStyle = 'rgba(255,255,255,0.65)'
-  ctx.font = '14px system-ui, -apple-system, "Segoe UI", sans-serif'
-  ctx.fillText('M3U8 在线播放器', padding, H - padding)
+  // 播放三角
+  ctx.fillStyle = '#0A0A12'
+  ctx.beginPath()
+  ctx.moveTo(PAD + 24, logoY - 12)
+  ctx.lineTo(PAD + 40, logoY)
+  ctx.lineTo(PAD + 24, logoY + 12)
+  ctx.closePath()
+  ctx.fill()
+
+  ctx.fillStyle = '#FFFFFF'
+  ctx.font = `700 28px ${FONT_STACK}`
+  drawSpacedText(ctx, 'M3U8 PLAYER', PAD + 84, logoY + 4, 2.5)
+
+  ctx.fillStyle = 'rgba(255,255,255,0.42)'
+  ctx.font = `500 17px ${FONT_STACK}`
+  drawSpacedText(ctx, 'PREMIUM STREAMING', PAD + 84, logoY + 32, 3)
+
+  // 右上装饰：同心圆环
+  const ringX = W - PAD - 44
+  const ringY = logoY - 6
+  ctx.strokeStyle = 'rgba(231,196,139,0.5)'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.arc(ringX, ringY, 26, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.strokeStyle = 'rgba(231,196,139,0.22)'
+  ctx.beginPath()
+  ctx.arc(ringX, ringY, 44, 0, Math.PI * 2)
+  ctx.stroke()
+
+  // 顶部细分隔线
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(PAD, 208)
+  ctx.lineTo(W - PAD, 208)
+  ctx.stroke()
+
+  /* ------------------------------ 标题区域 ------------------------------ */
+  const contentW = W - PAD * 2
+  const cardX = PAD
+  const cardW = contentW
+  const cardH = 400
+  const cardY = H - PAD - cardH
+
+  const scanTitle = i18n.t('share.poster.scanTitle', { defaultValue: '扫码即刻播放' })
+  const scanDesc = i18n.t('share.poster.scanDesc', { defaultValue: '免安装 · 无广告 · 高清秒开' })
+  const chipParts = scanDesc
+    .split(/[·•|｜]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  // 主标题先测量，用于纵向排布（优先 2 行，避免末行孤字）
+  const rawTitle = (content.title || '').trim() || 'M3U8 Player'
+  const titleSizes = [96, 88, 80, 72, 64, 56, 48]
+  let title = fitTitle(ctx, rawTitle, contentW, 2, titleSizes)
+  if (!title.complete) title = fitTitle(ctx, rawTitle, contentW, 3, titleSizes)
+  const lineHeight = Math.round(title.size * 1.2)
+
+  const chipH = 56
+  const hasChips = chipParts.length > 1
+
+  // 标题块在「品牌区底边 → 卡片上方」之间垂直居中
+  const regionTop = 214
+  const regionBottom = cardY - 40
+  const blockH = 30 + 88 + Math.max(title.lines.length - 1, 0) * lineHeight + 54 + 4
+  const labelY = regionTop + 30 + Math.max(0, (regionBottom - regionTop - blockH) / 2)
+
+  // 小标签：金色圆点 + SCAN TO PLAY
+  ctx.fillStyle = '#E7C48B'
+  ctx.beginPath()
+  ctx.arc(PAD + 6, labelY - 7, 6, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = 'rgba(231,196,139,0.85)'
+  ctx.font = `600 19px ${FONT_STACK}`
+  drawSpacedText(ctx, 'SCAN TO PLAY', PAD + 26, labelY, 4.5)
+
+  // 主标题
+  ctx.font = `800 ${title.size}px ${FONT_STACK}`
+  ctx.fillStyle = '#FFFFFF'
+  const titleTop = labelY + 88
+  title.lines.forEach((line, i) => {
+    ctx.fillText(line, PAD, titleTop + i * lineHeight)
+  })
+  const titleBottom = titleTop + Math.max(title.lines.length - 1, 0) * lineHeight
+
+  // 金色强调线
+  const accentY = titleBottom + 54
+  const accent = ctx.createLinearGradient(PAD, accentY, PAD + 120, accentY)
+  accent.addColorStop(0, '#F7E4BE')
+  accent.addColorStop(1, 'rgba(216,164,80,0)')
+  ctx.fillStyle = accent
+  roundRect(ctx, PAD, accentY, 96, 4, 2)
+  ctx.fill()
+
+  /* --------------------------- 卖点胶囊（标题下方） --------------------------- */
+  const chipTop = accentY + 72
+  if (hasChips) {
+    let chipFont = 22
+    let chipPadX = 28
+    const chipGap = 14
+
+    const measureChips = () => {
+      ctx.font = `600 ${chipFont}px ${FONT_STACK}`
+      return chipParts.map((text) => ctx.measureText(text).width + chipPadX * 2)
+    }
+
+    let widths = measureChips()
+    let total = widths.reduce((a, b) => a + b, 0) + chipGap * (widths.length - 1)
+    if (total > contentW) {
+      chipFont = 19
+      chipPadX = 20
+      widths = measureChips()
+      total = widths.reduce((a, b) => a + b, 0) + chipGap * (widths.length - 1)
+    }
+
+    if (total <= contentW) {
+      let x = PAD
+      chipParts.forEach((text, i) => {
+        const w = widths[i]
+        ctx.fillStyle = 'rgba(255,255,255,0.055)'
+        roundRect(ctx, x, chipTop, w, chipH, chipH / 2)
+        ctx.fill()
+        ctx.strokeStyle = 'rgba(231,196,139,0.26)'
+        ctx.lineWidth = 1
+        ctx.stroke()
+
+        ctx.fillStyle = 'rgba(255,255,255,0.82)'
+        ctx.font = `600 ${chipFont}px ${FONT_STACK}`
+        ctx.textAlign = 'center'
+        ctx.fillText(text, x + w / 2, chipTop + chipH / 2 + chipFont * 0.36)
+        ctx.textAlign = 'left'
+        x += w + chipGap
+      })
+    }
+  }
+
+  // 卡片投影
+  ctx.save()
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'
+  ctx.shadowBlur = 60
+  ctx.shadowOffsetY = 24
+  ctx.fillStyle = '#FFFFFF'
+  roundRect(ctx, cardX, cardY, cardW, cardH, POSTER.radius)
+  ctx.fill()
+  ctx.restore()
+
+  // 卡片顶部发丝金色高光，提升精致度
+  const hairline = ctx.createLinearGradient(cardX + 40, 0, cardX + cardW * 0.52, 0)
+  hairline.addColorStop(0, 'rgba(231,196,139,0.9)')
+  hairline.addColorStop(1, 'rgba(231,196,139,0)')
+  ctx.fillStyle = hairline
+  ctx.fillRect(cardX + 40, cardY + 1, cardW * 0.48, 2)
+
+  // 二维码
+  const qrSize = 296
+  const qrX = cardX + 104
+  const qrY = cardY + (cardH - qrSize) / 2
+  let qrImage: HTMLImageElement | null = null
+  try {
+    const qrDataUrl = await getQrCodeDataUrl(shareUrl, qrSize * 2, { dark: '#0A0A12', light: '#FFFFFF' })
+    qrImage = await loadImage(qrDataUrl)
+  } catch {
+    qrImage = null
+  }
+
+  if (qrImage) {
+    ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
+  } else {
+    // 二维码失败降级：灰色占位方块
+    ctx.fillStyle = '#F1F5F9'
+    roundRect(ctx, qrX, qrY, qrSize, qrSize, 16)
+    ctx.fill()
+    ctx.fillStyle = '#94A3B8'
+    ctx.font = `600 20px ${FONT_STACK}`
+    ctx.textAlign = 'center'
+    ctx.fillText('QR', qrX + qrSize / 2, qrY + qrSize / 2 + 7)
+    ctx.textAlign = 'left'
+  }
+
+  // 卡片右侧文案
+  const textX = qrX + qrSize + 44
+  const textW = cardX + cardW - 44 - textX
+
+  let scanSize = 52
+  ctx.font = `800 ${scanSize}px ${FONT_STACK}`
+  while (scanSize > 30 && ctx.measureText(scanTitle).width > textW) {
+    scanSize -= 2
+    ctx.font = `800 ${scanSize}px ${FONT_STACK}`
+  }
+  ctx.fillStyle = '#0B1020'
+  ctx.fillText(ellipsize(ctx, scanTitle, textW), textX, cardY + 180)
+
+  // 网址胶囊
+  let host = ''
+  try {
+    host = new URL(shareUrl).host
+  } catch {
+    host = ''
+  }
+  if (host) {
+    ctx.font = `600 22px ${FONT_STACK}`
+    const hostText = ellipsize(ctx, host, textW - 40)
+    const hostWidth = Math.min(ctx.measureText(hostText).width + 40, textW)
+    ctx.fillStyle = 'rgba(15,23,42,0.05)'
+    roundRect(ctx, textX, cardY + 210, hostWidth, 50, 25)
+    ctx.fill()
+    ctx.fillStyle = '#475569'
+    ctx.fillText(hostText, textX + 20, cardY + 243)
+  }
+
+  // 卡片内金色分隔竖线（二维码与文案之间）
+  const divider = ctx.createLinearGradient(0, cardY + 80, 0, cardY + cardH - 80)
+  divider.addColorStop(0, 'rgba(231,196,139,0)')
+  divider.addColorStop(0.5, 'rgba(231,196,139,0.7)')
+  divider.addColorStop(1, 'rgba(231,196,139,0)')
+  ctx.fillStyle = divider
+  ctx.fillRect(textX - 22, cardY + 80, 2, cardH - 160)
 
   return canvas.toDataURL('image/png')
 }
@@ -201,7 +603,7 @@ export async function shareContent(content: ShareContent): Promise<'shared' | 'c
   // 尝试生成分享图附带分享
   let imageFile: File | undefined
   try {
-    const dataUrl = generateShareImage(content)
+    const dataUrl = await generateShareImage(content)
     if (dataUrl) imageFile = dataUrlToFile(dataUrl, 'm3u8-share.png')
   } catch {
     // 图片生成失败时回退为纯文本分享

@@ -276,6 +276,10 @@
     "imageFailed": "Bildgenerierung fehlgeschlagen",
     "imageSaved": "Bild gespeichert",
     "nothingToShare": "Nichts zum Teilen",
-    "copyFailed": "Kopieren fehlgeschlagen"
+    "copyFailed": "Kopieren fehlgeschlagen",
+    "poster": {
+      "scanTitle": "Scannen und abspielen",
+      "scanDesc": "Ohne Installation · Werbefrei · Sofort HD"
+    }
   }
 }
