@@ -3,6 +3,8 @@
  */
 
 import type React from 'react'
+import { toast } from 'sonner'
+import i18n from '@/i18n'
 import type { VideoType } from '@/types'
 import { createHlsInstance, type HlsFatalError } from './hlsInstance'
 import { loadDPlayerDependencies } from './playerUtils'
@@ -145,13 +147,13 @@ export async function initDPlayer(options: DPlayerInitOptions): Promise<any> {
         },
       },
     },
-    contextmenu: [{ text: '更多工具', link: 'https://lzw.me/tools' }],
+    contextmenu: [{ text: i18n.t('player.menu.moreTools'), link: 'https://lzw.me/tools' }],
   })
 
   // 错误事件
   dp.on('error', (e: { message?: string }) => {
     if (e?.message) {
-      window.h5Utils?.alert(`播放失败：${e.message || '请检查 URL 是否正确'}`, { icon: 'error' })
+      toast.error(`${i18n.t('player.playFailed')}：${e.message || i18n.t('player.checkUrl')}`)
     }
   })
 

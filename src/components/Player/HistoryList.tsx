@@ -41,7 +41,11 @@ export default function HistoryList({
 
   const handleCopy = async (url: string) => {
     const success = await copyToClipboard(url)
-    toast.success(success ? t('common.copied') : '复制失败')
+    if (success) {
+      toast.success(t('common.copied'))
+    } else {
+      toast.error(t('common.copyFailed'))
+    }
   }
 
   const handleAddFavorite = (url: string, name?: string) => {
@@ -68,7 +72,7 @@ export default function HistoryList({
     }
     setEditingIndex(null)
     setEditingName('')
-    toast.success(t('common.saved', { defaultValue: '已保存' }))
+    toast.success(t('common.saved'))
   }
 
   const currentList = activeTab === 'history' ? history : favorites
@@ -157,7 +161,7 @@ export default function HistoryList({
                         type="text"
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
-                        placeholder={t('common.videoName', { defaultValue: '视频名称' })}
+                        placeholder={t('common.videoName')}
                         className="flex-1 px-2 py-1 text-sm rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         autoFocus
                         onKeyDown={(e) => {
@@ -168,16 +172,16 @@ export default function HistoryList({
                       <button
                         onClick={() => handleSaveEdit(idx)}
                         className="p-1 rounded bg-green-600 hover:bg-green-700 text-white transition-all"
-                        aria-label={t('common.save', { defaultValue: '保存' })}
-                        title={t('common.save', { defaultValue: '保存' })}
+                        aria-label={t('common.save')}
+                        title={t('common.save')}
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={handleCancelEdit}
                         className="p-1 rounded bg-slate-600 hover:bg-slate-700 text-white transition-all"
-                        aria-label={t('common.cancel', { defaultValue: '取消' })}
-                        title={t('common.cancel', { defaultValue: '取消' })}
+                        aria-label={t('common.cancel')}
+                        title={t('common.cancel')}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -225,8 +229,8 @@ export default function HistoryList({
                       <button
                         onClick={() => handleStartEdit(idx, item.name || '')}
                         className="p-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-600 dark:text-cyan-400 hover:text-white transition-all"
-                        aria-label={t('common.edit', { defaultValue: '编辑名称' })}
-                        title={t('common.edit', { defaultValue: '编辑名称' })}
+                        aria-label={t('common.edit')}
+                        title={t('common.edit')}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -244,8 +248,8 @@ export default function HistoryList({
                         <button
                           onClick={() => onShare(item.url, item.name)}
                           className="p-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-600 dark:text-cyan-400 hover:text-white transition-all"
-                          aria-label={t('share.title', { defaultValue: '分享' })}
-                          title={t('share.title', { defaultValue: '分享' })}
+                          aria-label={t('share.title')}
+                          title={t('share.title')}
                         >
                           <Share2 className="w-3.5 h-3.5" />
                         </button>

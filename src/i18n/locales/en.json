@@ -216,19 +216,29 @@
     "themeSystem": "System"
   },
   "player": {
+    "checkUrl": "Please check whether the URL is correct",
     "embedNoUrl": "Missing playback URL",
+    "enterUrl": "Enter a video URL (M3U8, MP4, FLV or magnet link)",
     "errorHttp": "Request failed (HTTP {{code}}). Check the URL or whether authorization is required.",
     "errorMedia": "Media decode error: the codec may be unsupported.",
     "errorNetwork": "Network error: failed to load video segments. Check your connection and try again.",
     "errorOther": "Playback error. Check that the video URL is valid.",
     "errorRetry": "Retry",
+    "errorSource": "Video source unavailable. Please check the URL.",
     "errorTitle": "Playback failed",
+    "fallbackHint": "Falling back to {{strategy}}, retrying…",
     "httpWarn": "Browsers block http media on https pages. Please visit this site over http:// to play it.",
+    "menu": {
+      "downloader": "M3U8 Downloader App",
+      "moreTools": "More tools",
+      "onlineDownloader": "M3U8 Online Downloader"
+    },
     "muted": "Muted",
     "paused": "Paused",
     "placeholderPrompt": "Enter M3U8 URL to start playing",
     "playbackSpeed": "Playback Speed",
     "playDemo": "Play demo video",
+    "playFailed": "Playback failed",
     "playing": "Playing",
     "rotate": "Rotate",
     "rotated": "Screen rotated",
@@ -238,6 +248,7 @@
     "shortcuts": "Shortcuts",
     "speedChanged": "Playback Speed",
     "unmuted": "Unmuted",
+    "unsupportedFormat": "Unsupported format: {{format}}",
     "volume": "Volume"
   },
   "settings": {

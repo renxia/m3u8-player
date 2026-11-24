@@ -196,11 +196,11 @@ export default function HomePage() {
       switch (shortcutName) {
         case 'togglePlay':
           playerRef.current?.togglePlay?.()
-          toast.info(video.paused ? t('player.paused', { defaultValue: '已暂停' }) : t('player.playing', { defaultValue: '播放中' }))
+          toast.info(video.paused ? t('player.paused') : t('player.playing'))
           break
         case 'toggleMute':
           playerRef.current?.toggleMute?.()
-          toast.info(video.muted ? t('player.muted', { defaultValue: '已静音' }) : t('player.unmuted', { defaultValue: '已取消静音' }))
+          toast.info(video.muted ? t('player.muted') : t('player.unmuted'))
           break
         case 'fullscreen':
           playerRef.current?.toggleFullscreen?.()
@@ -215,24 +215,24 @@ export default function HomePage() {
           break
         case 'volumeUp':
           playerRef.current?.setVolume?.(video.volume + 0.1)
-          toast.info(`${t('player.volume', { defaultValue: '音量' })}: ${Math.round((video.volume + 0.1) * 100)}%`)
+          toast.info(`${t('player.volume')}: ${Math.round((video.volume + 0.1) * 100)}%`)
           break
         case 'volumeDown':
           playerRef.current?.setVolume?.(video.volume - 0.1)
-          toast.info(`${t('player.volume', { defaultValue: '音量' })}: ${Math.round((video.volume - 0.1) * 100)}%`)
+          toast.info(`${t('player.volume')}: ${Math.round((video.volume - 0.1) * 100)}%`)
           break
         case 'speedUp': {
           const nextSpeedUp = getNextPlaybackRate(currentPlaybackRate, true)
           playerRef.current?.setPlaybackRate?.(nextSpeedUp)
           setCurrentPlaybackRate(nextSpeedUp)
-          toast.info(`${t('player.playbackSpeed', { defaultValue: '播放速度' })}: ${nextSpeedUp}x`)
+          toast.info(`${t('player.playbackSpeed')}: ${nextSpeedUp}x`)
           break
         }
         case 'speedDown': {
           const nextSpeedDown = getNextPlaybackRate(currentPlaybackRate, false)
           playerRef.current?.setPlaybackRate?.(nextSpeedDown)
           setCurrentPlaybackRate(nextSpeedDown)
-          toast.info(`${t('player.playbackSpeed', { defaultValue: '播放速度' })}: ${nextSpeedDown}x`)
+          toast.info(`${t('player.playbackSpeed')}: ${nextSpeedDown}x`)
           break
         }
         case 'pip':
@@ -240,11 +240,11 @@ export default function HomePage() {
           break
         case 'screenshot':
           playerRef.current?.screenshot?.()
-          toast.success(t('player.screenshotSuccess', { defaultValue: '截图成功' }))
+          toast.success(t('player.screenshotSuccess'))
           break
         case 'rotate':
           playerRef.current?.rotate()
-          toast.info(t('player.rotated', { defaultValue: '画面已旋转' }))
+          toast.info(t('player.rotated'))
           break
       }
     },

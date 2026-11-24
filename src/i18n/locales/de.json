@@ -216,19 +216,29 @@
     "themeSystem": "System"
   },
   "player": {
+    "checkUrl": "Bitte prüfe, ob die URL korrekt ist",
     "embedNoUrl": "Wiedergabe-URL fehlt",
+    "enterUrl": "Video-URL eingeben (M3U8, MP4, FLV oder Magnet-Link)",
     "errorHttp": "Anfrage fehlgeschlagen (HTTP {{code}}). Prüfe die URL oder ob eine Autorisierung nötig ist.",
     "errorMedia": "Dekodierungsfehler: Der Codec wird möglicherweise nicht unterstützt.",
     "errorNetwork": "Netzwerkfehler: Videosegmente konnten nicht geladen werden. Prüfe die Verbindung und versuche es erneut.",
     "errorOther": "Wiedergabefehler. Prüfe, ob die Video-URL gültig ist.",
     "errorRetry": "Erneut versuchen",
+    "errorSource": "Videoquelle nicht verfügbar. Bitte prüfe die URL.",
     "errorTitle": "Wiedergabe fehlgeschlagen",
+    "fallbackHint": "Wechsle zu {{strategy}}, versuche erneut…",
     "httpWarn": "Aus Sicherheitsgründen blockieren Browser http-Medien auf https-Seiten. Rufe die Seite über http:// auf, um das Video abzuspielen.",
+    "menu": {
+      "downloader": "M3U8-Downloader-App",
+      "moreTools": "Weitere Tools",
+      "onlineDownloader": "M3U8-Online-Downloader"
+    },
     "muted": "Stummgeschaltet",
     "paused": "Pausiert",
     "placeholderPrompt": "M3U8-URL eingeben zum Abspielen",
     "playbackSpeed": "Wiedergabegeschwindigkeit",
     "playDemo": "Demo-Video abspielen",
+    "playFailed": "Wiedergabe fehlgeschlagen",
     "playing": "Wiedergabe",
     "rotate": "Drehen",
     "rotated": "Bildschirm gedreht",
@@ -238,6 +248,7 @@
     "shortcuts": "Tastenkürzel",
     "speedChanged": "Wiedergabegeschwindigkeit",
     "unmuted": "Stummschaltung aufgehoben",
+    "unsupportedFormat": "Nicht unterstütztes Format: {{format}}",
     "volume": "Lautstärke"
   },
   "settings": {

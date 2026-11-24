@@ -3,6 +3,7 @@
  * 实现 HLS → MP4 → 备用源的自动降级机制
  */
 
+import i18n from '@/i18n'
 import type { PlayerType, VideoType } from '@/types'
 import { logger } from '@/utils/logger'
 
@@ -331,15 +332,15 @@ export class ErrorClassifier {
    */
   static getUserFriendlyMessage(error: Error): string {
     if (ErrorClassifier.isNetworkError(error)) {
-      return '网络连接失败，请检查网络设置'
+      return i18n.t('player.errorNetwork')
     }
     if (ErrorClassifier.isFormatError(error)) {
-      return '视频格式不支持，正在尝试其他播放方式'
+      return i18n.t('player.errorMedia')
     }
     if (ErrorClassifier.isSourceError(error)) {
-      return '视频源不可用，请检查视频地址'
+      return i18n.t('player.errorSource')
     }
-    return '播放失败，请重试'
+    return i18n.t('player.errorOther')
   }
 }
 

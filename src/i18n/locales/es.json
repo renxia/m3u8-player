@@ -216,19 +216,29 @@
     "themeSystem": "Sistema"
   },
   "player": {
+    "checkUrl": "Comprueba que la URL sea correcta",
     "embedNoUrl": "Falta la URL de reproducción",
+    "enterUrl": "Introduce una URL de vídeo (M3U8, MP4, FLV o enlace magnet)",
     "errorHttp": "La solicitud falló (HTTP {{code}}). Comprueba la URL o si requiere autorización.",
     "errorMedia": "Error de decodificación: puede que el códec no sea compatible.",
     "errorNetwork": "Error de red: no se pudieron cargar los segmentos de vídeo. Comprueba la conexión e inténtalo de nuevo.",
     "errorOther": "Error de reproducción. Comprueba que la URL del vídeo sea válida.",
     "errorRetry": "Reintentar",
+    "errorSource": "Fuente de vídeo no disponible. Comprueba la URL.",
     "errorTitle": "Error de reproducción",
+    "fallbackHint": "Cambiando a {{strategy}}, reintentando…",
     "httpWarn": "Por seguridad, el navegador bloquea contenido http en páginas https. Accede al sitio con http:// para reproducir este vídeo.",
+    "menu": {
+      "downloader": "App M3U8 Downloader",
+      "moreTools": "Más herramientas",
+      "onlineDownloader": "Descargador M3U8 en línea"
+    },
     "muted": "Silenciado",
     "paused": "Pausado",
     "placeholderPrompt": "Introduce la URL M3U8 para empezar a reproducir",
     "playbackSpeed": "Velocidad de reproducción",
     "playDemo": "Reproducir video de demostración",
+    "playFailed": "Error de reproducción",
     "playing": "Reproduciendo",
     "rotate": "Rotar",
     "rotated": "Pantalla rotada",
@@ -238,6 +248,7 @@
     "shortcuts": "Atajos",
     "speedChanged": "Velocidad de reproducción",
     "unmuted": "Sonido activado",
+    "unsupportedFormat": "Formato no compatible: {{format}}",
     "volume": "Volumen"
   },
   "settings": {

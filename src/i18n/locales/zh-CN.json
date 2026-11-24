@@ -212,19 +212,29 @@
     "themeSystem": "跟随系统"
   },
   "player": {
+    "checkUrl": "请检查 URL 是否正确",
     "embedNoUrl": "缺少 url 播放地址",
+    "enterUrl": "请输入视频地址（M3U8、MP4、FLV 或磁力链）",
     "errorHttp": "请求失败（HTTP {{code}}），请检查地址是否有效或是否需要鉴权",
     "errorMedia": "视频解码失败，可能是不支持的编码格式",
     "errorNetwork": "网络异常，无法加载视频分片，请检查网络后重试",
     "errorOther": "播放出错，请检查视频地址是否有效",
     "errorRetry": "重试",
+    "errorSource": "视频源不可用，请检查视频地址",
     "errorTitle": "播放失败",
+    "fallbackHint": "播放方式降级（{{strategy}}），正在重试…",
     "httpWarn": "由于浏览器安全限制，https 页面下无法播放 http 协议的资源，请改用 http:// 访问",
+    "menu": {
+      "downloader": "M3U8 下载器客户端",
+      "moreTools": "更多工具",
+      "onlineDownloader": "M3U8 在线下载器"
+    },
     "muted": "已静音",
     "paused": "已暂停",
     "placeholderPrompt": "输入 M3U8 地址开始播放",
     "playbackSpeed": "播放速度",
     "playDemo": "播放示例视频",
+    "playFailed": "播放失败",
     "playing": "播放中",
     "rotate": "旋转",
     "rotated": "画面已旋转",
@@ -234,6 +244,7 @@
     "shortcuts": "快捷键",
     "speedChanged": "播放速度",
     "unmuted": "已取消静音",
+    "unsupportedFormat": "不支持的播放格式：{{format}}",
     "volume": "音量"
   },
   "settings": {

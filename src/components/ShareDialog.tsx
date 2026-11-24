@@ -127,7 +127,7 @@ export default function ShareDialog({ show, onClose, content }: ShareDialogProps
       toast.success(t('share.linkCopied'))
       setTimeout(() => setStatus('idle'), 2000)
     } else {
-      toast.error(t('share.copyFailed', { defaultValue: '复制失败' }))
+      toast.error(t('share.copyFailed'))
     }
   }, [shareUrl, t])
 

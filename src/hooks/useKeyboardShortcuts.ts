@@ -14,8 +14,6 @@ export interface KeyboardShortcut {
   callback: (e: KeyboardEvent) => void
   /** 是否在输入框中禁用 */
   disableInInput?: boolean
-  /** 快捷键描述（UI 中优先使用 i18n shortcuts.*，缺失时回退到此字段） */
-  description?: string
 }
 
 export interface UseKeyboardShortcutsOptions {
@@ -105,7 +103,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '播放/暂停',
   },
   {
     name: 'toggleMute',
@@ -114,7 +111,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '静音/取消静音',
   },
   {
     name: 'fullscreen',
@@ -123,7 +119,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '全屏/退出全屏',
   },
   {
     name: 'seekForward',
@@ -132,7 +127,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '快进 10 秒',
   },
   {
     name: 'seekBackward',
@@ -141,7 +135,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '快退 10 秒',
   },
   {
     name: 'volumeUp',
@@ -150,7 +143,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '音量增加 10%',
   },
   {
     name: 'volumeDown',
@@ -159,7 +151,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '音量减少 10%',
   },
   {
     name: 'speedUp',
@@ -168,7 +159,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '加速',
   },
   {
     name: 'speedDown',
@@ -177,7 +167,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '减速',
   },
   {
     name: 'pip',
@@ -186,7 +175,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '画中画',
   },
   {
     name: 'screenshot',
@@ -195,7 +183,6 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '截图',
   },
   {
     name: 'rotate',
@@ -204,6 +191,5 @@ export const PLAYER_SHORTCUTS: KeyboardShortcut[] = [
       e.stopPropagation()
     },
     disableInInput: true,
-    description: '旋转画面',
   },
 ]

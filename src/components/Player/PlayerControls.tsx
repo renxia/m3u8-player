@@ -50,7 +50,7 @@ export default function PlayerControls({
       const videoElement = playerRef.current?.containerRef?.current?.querySelector('video')
       if (videoElement) {
         videoElement.playbackRate = speed
-        toast.success(`${t('player.speedChanged', { defaultValue: '播放速度' })}: ${speed}x`)
+        toast.success(`${t('player.speedChanged')}: ${speed}x`)
       }
     },
     [playerRef, t],
@@ -62,7 +62,7 @@ export default function PlayerControls({
   const handleScreenshot = useCallback(() => {
     const videoElement = playerRef.current?.containerRef?.current?.querySelector('video')
     if (!videoElement) {
-      toast.error(t('player.screenshotFailed', { defaultValue: '截图失败：未找到视频元素' }))
+      toast.error(t('player.screenshotFailed'))
       return
     }
 
@@ -71,14 +71,14 @@ export default function PlayerControls({
       canvas.width = videoElement.videoWidth
       canvas.height = videoElement.videoHeight
       const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('无法获取 Canvas 上下文')
+      if (!ctx) throw new Error('Canvas 2D context unavailable')
 
       ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
 
       // 转换为图片并下载
       canvas.toBlob((blob) => {
         if (!blob) {
-          toast.error(t('player.screenshotFailed', { defaultValue: '截图失败' }))
+          toast.error(t('player.screenshotFailed'))
           return
         }
 
@@ -89,11 +89,11 @@ export default function PlayerControls({
         link.click()
         URL.revokeObjectURL(url)
 
-        toast.success(t('player.screenshotSuccess', { defaultValue: '截图成功' }))
+        toast.success(t('player.screenshotSuccess'))
       }, 'image/png')
     } catch (error) {
       console.error('[PlayerControls] Screenshot error:', error)
-      toast.error(`${t('player.screenshotFailed', { defaultValue: '截图失败' })}: ${(error as Error).message}`)
+      toast.error(`${t('player.screenshotFailed')}: ${(error as Error).message}`)
     }
   }, [playerRef, t])
 
@@ -102,7 +102,7 @@ export default function PlayerControls({
    */
   const handleRotate = useCallback(() => {
     playerRef.current?.rotate()
-    toast.info(t('player.rotated', { defaultValue: '画面已旋转' }))
+    toast.info(t('player.rotated'))
   }, [playerRef, t])
 
   return (
@@ -121,8 +121,8 @@ export default function PlayerControls({
               'focus:outline-none focus:ring-2 focus:ring-indigo-500',
               'cursor-pointer transition-all',
             )}
-            aria-label={t('player.playbackSpeed', { defaultValue: '播放速度' })}
-            title={t('player.playbackSpeed', { defaultValue: '播放速度' })}
+            aria-label={t('player.playbackSpeed')}
+            title={t('player.playbackSpeed')}
           >
             {PLAYBACK_RATES.map((speed) => (
               <option key={speed} value={speed}>
@@ -142,11 +142,11 @@ export default function PlayerControls({
               'bg-amber-600 hover:bg-amber-700 text-white',
               'transition-all',
             )}
-            aria-label={t('player.screenshot', { defaultValue: '截图' })}
-            title={t('player.screenshot', { defaultValue: '截图' })}
+            aria-label={t('player.screenshot')}
+            title={t('player.screenshot')}
           >
             <Camera className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('player.screenshot', { defaultValue: '截图' })}</span>
+            <span className="hidden sm:inline">{t('player.screenshot')}</span>
           </button>
         )}
 
@@ -160,11 +160,11 @@ export default function PlayerControls({
               'bg-emerald-600 hover:bg-emerald-700 text-white',
               'transition-all',
             )}
-            aria-label={t('player.rotate', { defaultValue: '旋转' })}
-            title={t('player.rotate', { defaultValue: '旋转' })}
+            aria-label={t('player.rotate')}
+            title={t('player.rotate')}
           >
             <RotateCw className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('player.rotate', { defaultValue: '旋转' })}</span>
+            <span className="hidden sm:inline">{t('player.rotate')}</span>
           </button>
         )}
 
@@ -178,11 +178,11 @@ export default function PlayerControls({
               'bg-slate-600 hover:bg-slate-700 text-white',
               'transition-all',
             )}
-            aria-label={t('player.shortcuts', { defaultValue: '键盘快捷键' })}
-            title={t('player.shortcuts', { defaultValue: '键盘快捷键' })}
+            aria-label={t('player.shortcuts')}
+            title={t('player.shortcuts')}
           >
             <Keyboard className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('player.shortcuts', { defaultValue: '快捷键' })}</span>
+            <span className="hidden sm:inline">{t('player.shortcuts')}</span>
           </button>
         )}
 
@@ -196,11 +196,11 @@ export default function PlayerControls({
               'bg-cyan-600 hover:bg-cyan-700 text-white',
               'transition-all',
             )}
-            aria-label={t('share.title', { defaultValue: '分享' })}
-            title={t('share.title', { defaultValue: '分享' })}
+            aria-label={t('share.title')}
+            title={t('share.title')}
           >
             <Share2 className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('share.title', { defaultValue: '分享' })}</span>
+            <span className="hidden sm:inline">{t('share.title')}</span>
           </button>
         )}
       </div>

@@ -46,6 +46,8 @@ scripts/               build.ts / i18n-align.ts
 - 新增语言：`languages.ts` 加一项 → `src/i18n/locales/<lang>.json` 加文件 → `src/i18n/index.ts` 的 `resources` 注册 → `pnpm run i18n:align`。
 - 文案 key 结构：首页用 `meta.*`，其余页面用 `<page>.meta.*`（由 `getSeoI18nPrefix()` 映射）；UI 文案分别在 `index/player/cache/common/settings/share/shortcuts/nav/footer` 命名空间下。
 - **禁止在 JSX 里硬编码中文字面量**，一律 `t('ns.key')`；缺失 key 用 `pnpm run i18n:align` 补齐后填真实翻译。
+- **不要给 `t()` 加中文 `defaultValue`**：key 齐全时它是死代码，key 缺失时会让非中文用户看到中文。新增文案必须 7 个语言包同时补齐。
+- 有意保留的非 i18n 文案：Header 的语言自称（`中文` / `日本語` / …）、DevTools 面板（`import.meta.env.DEV` 下才挂载）、`lib/{network,resource}/` 与 `smartPreloader` 的内部调试描述（当前无 UI 消费方）。
 
 ## 播放器
 
@@ -83,7 +85,7 @@ L1 存储：indexedDB / Cache API
 - 颜色用 Tailwind 语义类并同时给 `dark:` 变体，不要写死 hex（`App.tsx` 的 Toaster 内联色是历史遗留）。
 - 图标按钮必须有 `aria-label`；弹窗统一用 `components/ui/Dialog`（自带 role/aria-modal/焦点陷阱/Esc）。
 - 开关用 `role="switch"` + `aria-checked`。
-- 提示统一用 `sonner`（`toast.success/error/info`），**不要再用 `utils/toast` 的 `dialog`**（依赖外部 CDN 的 h5Utils，被拦截会抛错）。
+- 提示统一用 `sonner`（`toast.success/error/info`）。`utils/toast` 已删除，不要恢复——它包的是 CDN 的 `h5Utils`，被拦截时会静默失联。非 React 上下文（播放器配置、`lib/*`）用 `i18n.t()` + `sonner`。
 
 ## 提交约定
 

@@ -216,19 +216,29 @@
     "themeSystem": "システム"
   },
   "player": {
+    "checkUrl": "URL が正しいか確認してください",
     "embedNoUrl": "再生URLがありません",
+    "enterUrl": "動画 URL（M3U8・MP4・FLV・マグネットリンク）を入力してください",
     "errorHttp": "リクエストに失敗しました（HTTP {{code}}）。URL または認証の要否を確認してください。",
     "errorMedia": "メディアのデコードに失敗しました。対応していないコーデックの可能性があります。",
     "errorNetwork": "ネットワークエラー：動画セグメントを読み込めません。接続を確認して再試行してください。",
     "errorOther": "再生エラーです。動画 URL が有効か確認してください。",
     "errorRetry": "再試行",
+    "errorSource": "動画ソースを利用できません。URL を確認してください。",
     "errorTitle": "再生に失敗しました",
+    "fallbackHint": "再生方式を {{strategy}} に切り替えて再試行しています…",
     "httpWarn": "ブラウザのセキュリティ制限により、https ページでは http の動画を再生できません。http:// でアクセスしてください。",
+    "menu": {
+      "downloader": "M3U8 ダウンローダー（アプリ）",
+      "moreTools": "その他のツール",
+      "onlineDownloader": "M3U8 オンラインダウンローダー"
+    },
     "muted": "ミュート",
     "paused": "一時停止",
     "placeholderPrompt": "M3U8 アドレスを入力して再生を開始",
     "playbackSpeed": "再生速度",
     "playDemo": "サンプル動画を再生",
+    "playFailed": "再生に失敗しました",
     "playing": "再生中",
     "rotate": "回転",
     "rotated": "画面回転しました",
@@ -238,6 +248,7 @@
     "shortcuts": "ショートカット",
     "speedChanged": "再生速度",
     "unmuted": "ミュート解除",
+    "unsupportedFormat": "未対応の形式です：{{format}}",
     "volume": "音量"
   },
   "settings": {

@@ -69,7 +69,7 @@ export function canShareFiles(): boolean {
 export async function systemShare(content: ShareContent, imageFile?: File): Promise<boolean> {
   const shareUrl = buildShareUrl(content)
   const shareData: ShareData = {
-    title: content.title || 'M3U8 在线播放器',
+    title: content.title || i18n.t('share.poster.defaultTitle'),
     text: content.title ? `${content.title}\n${shareUrl}` : shareUrl,
     url: shareUrl,
   }
@@ -573,15 +573,15 @@ export async function generateShareImage(content: ShareContent): Promise<string>
   const cardH = 440
   const cardY = H - PAD - cardH
 
-  const scanTitle = i18n.t('share.poster.scanTitle', { defaultValue: '扫码即刻播放' })
-  const scanDesc = i18n.t('share.poster.scanDesc', { defaultValue: '免安装 · 无广告 · 高清秒开' })
+  const scanTitle = i18n.t('share.poster.scanTitle')
+  const scanDesc = i18n.t('share.poster.scanDesc')
   const chipParts = scanDesc
     .split(/[·•|｜]/)
     .map((s) => s.trim())
     .filter(Boolean)
 
   // 主标题先测量，用于纵向排布（优先 2 行，避免末行孤字）
-  const rawTitle = (content.title || '').trim() || i18n.t('share.poster.defaultTitle', { defaultValue: 'M3U8 在线播放器' })
+  const rawTitle = (content.title || '').trim() || i18n.t('share.poster.defaultTitle')
   const titleSizes = [96, 88, 80, 72, 64, 56, 48]
   let title = fitTitle(ctx, rawTitle, contentW, 2, titleSizes)
   // 3 行时降一档字号，给底部二维码卡片留出空间

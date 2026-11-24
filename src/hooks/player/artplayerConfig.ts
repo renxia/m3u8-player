@@ -3,6 +3,7 @@
  */
 
 import type React from 'react'
+import i18n from '@/i18n'
 import { cacheConfigManager, preloader } from '@/lib/cache'
 import { PLAYBACK_RATES } from '@/lib/constants'
 import type { VideoType } from '@/types'
@@ -178,19 +179,19 @@ export async function initArtPlayer(options: ArtPlayerInitOptions): Promise<any>
 
           artInstance.on('destroy', () => artInstance.torrent.destroy())
         } else {
-          artInstance.notice.show = 'Unsupported playback format: torrent'
+          artInstance.notice.show = i18n.t('player.unsupportedFormat', { format: 'torrent' })
         }
       },
     },
     contextmenu: [
       {
         index: 80,
-        html: 'M3U8下载器客户端',
+        html: i18n.t('player.menu.downloader'),
         click: () => window.open('https://m3u8-downloader.lzw.me/portal/', '_blank'),
       },
       {
         index: 99,
-        html: 'M3U8在线下载器',
+        html: i18n.t('player.menu.onlineDownloader'),
         click: () => window.open('https://m3u8-downloader.lzw.me', '_blank'),
       },
     ],

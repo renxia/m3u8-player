@@ -216,19 +216,29 @@
     "themeSystem": "Système"
   },
   "player": {
+    "checkUrl": "Vérifiez que l'URL est correcte",
     "embedNoUrl": "URL de lecture manquante",
+    "enterUrl": "Saisissez une URL vidéo (M3U8, MP4, FLV ou lien magnet)",
     "errorHttp": "Échec de la requête (HTTP {{code}}). Vérifiez l'URL ou l'autorisation requise.",
     "errorMedia": "Erreur de décodage : le codec n'est peut-être pas pris en charge.",
     "errorNetwork": "Erreur réseau : impossible de charger les segments vidéo. Vérifiez votre connexion puis réessayez.",
     "errorOther": "Erreur de lecture. Vérifiez que l'URL de la vidéo est valide.",
     "errorRetry": "Réessayer",
+    "errorSource": "Source vidéo indisponible. Vérifiez l'URL.",
     "errorTitle": "Échec de la lecture",
+    "fallbackHint": "Repli sur {{strategy}}, nouvelle tentative…",
     "httpWarn": "Pour des raisons de sécurité, un navigateur bloque les médias http sur une page https. Accédez au site en http:// pour lire cette vidéo.",
+    "menu": {
+      "downloader": "Application M3U8 Downloader",
+      "moreTools": "Plus d'outils",
+      "onlineDownloader": "Téléchargeur M3U8 en ligne"
+    },
     "muted": "Sourdine",
     "paused": "En pause",
     "placeholderPrompt": "Entrez l'URL M3U8 pour commencer la lecture",
     "playbackSpeed": "Vitesse de lecture",
     "playDemo": "Lire la vidéo de démonstration",
+    "playFailed": "Échec de la lecture",
     "playing": "En cours de lecture",
     "rotate": "Tourner",
     "rotated": "Écran tourné",
@@ -238,6 +248,7 @@
     "shortcuts": "Raccourcis",
     "speedChanged": "Vitesse de lecture",
     "unmuted": "Sourdine désactivée",
+    "unsupportedFormat": "Format non pris en charge : {{format}}",
     "volume": "Volume"
   },
   "settings": {
